@@ -1,0 +1,103 @@
+import 'package:flutter/material.dart';
+import 'package:my_worldcup_local/widgets/worldcup_list.dart';
+
+import '../dto/worldcup_dao.dart';
+import '../models/worldcup_model.dart';
+import '../screens/play_worldcup_screen.dart';
+import 'outlined_icon_button.dart';
+
+class WorldCupSelectDialog extends StatefulWidget {
+  WorldCupModel model;
+  WorldCupSelectDialog(this.model, {super.key});
+
+  @override
+  State<WorldCupSelectDialog> createState() => _WorldCupSelectDialogState();
+}
+
+class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
+
+  // 선택된 라운드
+  int selectedRound = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.model.title),
+      icon: const Icon(Icons.cancel),
+      content: SizedBox(
+        height: 200,
+        child: Column(
+          children: [
+            const Spacer(),
+            Text(widget.model.info),
+            const Spacer(),
+            const Padding(padding: EdgeInsets.only(top: 5)),
+            const Text("- 라운드 수를 선택해주세요- "),
+            const Padding(padding: EdgeInsets.only(top: 5)),
+            DropdownMenu(
+              initialSelection: widget.model.maxRound,
+              menuStyle: const MenuStyle(padding: WidgetStatePropertyAll(EdgeInsets.all(0))),
+              dropdownMenuEntries: makeRoundList(widget.model)
+                  .map<DropdownMenuEntry<int>>((int value){
+                return DropdownMenuEntry<int>(value: value, label: '$value 강');
+              }).toList(),
+              onSelected: (value) {
+                selectedRound = value as int;
+              },
+            ),
+            const Spacer(),
+          ],
+        ),
+      ),
+      actions: [
+        // 월드컵 게임 시작
+        IconOutlinedButton(
+          "시작",
+          Icons.play_arrow,
+          Colors.deepPurpleAccent,
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => PlayWorldCupScreen(widget.model.idx, selectedRound),
+              ),
+            );
+          },
+        ),
+        // 월드컵 삭제
+        IconOutlinedButton(
+          "삭제",
+          Icons.delete,
+          Colors.red,
+          onPressed: () {
+            deleteWorldCup(context, widget.model.idx);
+          },
+        ),
+      ],
+    );
+  }
+}
+
+// 최대 라운드 수에서 최소 4강까지 만들어주는 함수
+List<int> makeRoundList(WorldCupModel model){
+  List<int> tempList = [];
+  int? maxRound = model.maxRound;
+  while(true){
+    if(maxRound == null) break;
+    if(maxRound ~/ 2 < 2) break; // 4강까지 만들어줌
+    tempList.add(maxRound);
+    maxRound = maxRound~/2;
+  }
+  return tempList.reversed.toList();
+}
+
+// 월드컵 삭제
+void deleteWorldCup(BuildContext context, int idx) {
+  WorldCupDao? dao = WorldCupDao();
+
+  // 삭제
+  dao.deleteWorldCupByIdx(idx)
+      .catchError((error) => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("데이터를 삭제할 수 없습니다. 잠시후에 다시 시도해주세요."))))
+      .then((value) => Navigator.of(context).pop());
+
+  dao = null;
+}
