@@ -34,16 +34,17 @@ class WorldCupDao{
   }
 
   // db에 월드컵을 저장한다.
-  Future<void> addWorldCup(WorldCupModel model) async {
+  Future<int> addWorldCup(WorldCupModel model) async {
     try{
       final db = await dbProvider.database;
 
       // 작성한 월드컵 데이터를 db에 저장한다.
-      await db.insert(worldCupTable, model.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      int idx = await db.insert(worldCupTable, model.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+
+      return idx;
     }catch(e){
       rethrow;
     }
-
   }
 
   // 월드컵 idx에 해당되는 아이템을 전부 불러온다.

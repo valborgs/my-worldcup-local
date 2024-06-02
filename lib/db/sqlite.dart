@@ -44,8 +44,8 @@ class SqliteProvider{
 
     await database.execute("CREATE TABLE worldcup_item_table ("
         "idx INTEGER PRIMARY KEY, "
-        "itemImageSrc TEXT, "
-        "itemInfo TEXT, "
+        "imagePath TEXT, "
+        "imageInfo TEXT, "
         "worldCupIdx INTEGER"
         ")");
   }

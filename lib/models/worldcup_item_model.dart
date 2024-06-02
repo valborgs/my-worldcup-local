@@ -2,17 +2,17 @@ class WorldCupItemModel{
   // idx
   int idx;
   // 타이틀
-  String itemImageSrc;
+  String imagePath;
   // 설명
-  String itemInfo;
+  String imageInfo;
   // 월드컵 idx
   int worldCupIdx;
 
   // 생성자
   WorldCupItemModel(
       this.idx,
-      this.itemImageSrc,
-      this.itemInfo,
+      this.imagePath,
+      this.imageInfo,
       this.worldCupIdx,
       );
 
@@ -20,8 +20,8 @@ class WorldCupItemModel{
   Map<String, dynamic> toMap(){
     return Map.of({
       "idx": idx,
-      "itemImageSrc": itemImageSrc,
-      "itemInfo": itemInfo,
+      "imagePath": imagePath,
+      "imageInfo": imageInfo,
       "worldCupIdx": worldCupIdx,
     });
   }
@@ -30,8 +30,8 @@ class WorldCupItemModel{
   factory WorldCupItemModel.fromDB(Map<String, dynamic> data){
     return WorldCupItemModel(
       data['idx'],
-      data['itemImageSrc'],
-      data['itemInfo'],
+      data['imagePath'],
+      data['imageInfo'],
       data['worldCupIdx'],
     );
   }

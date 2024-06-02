@@ -23,7 +23,6 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.model.title),
-      icon: const Icon(Icons.cancel),
       content: SizedBox(
         height: 200,
         child: Column(
