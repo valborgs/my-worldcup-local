@@ -7,6 +7,7 @@ import 'package:my_worldcup_local/models/worldcup_item_model.dart';
 import 'package:my_worldcup_local/models/worldcup_model.dart';
 
 import '../dto/worldcup_dao.dart';
+import '../widgets/worldcup_add_picutre_dialog.dart';
 
 class AddWorldCupScreen extends StatefulWidget {
   const AddWorldCupScreen({super.key});
@@ -24,9 +25,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
   late FocusNode _infoFocusNode;
   late List<String> _imagePathList;
   late List<String> _imageInfoList;
-  late TextEditingController _imageInfoController;
-  late FocusNode _imageInfoFocusNode;
-  String _preImagePath = "";
+
 
   @override
   void initState() {
@@ -38,8 +37,6 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     _infoFocusNode = FocusNode();
     _imagePathList = [];
     _imageInfoList = [];
-    _imageInfoController = TextEditingController();
-    _imageInfoFocusNode = FocusNode();
   }
 
   @override
@@ -51,9 +48,6 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     _infoFocusNode.dispose();
     _imagePathList = [];
     _imageInfoList = [];
-    _imageInfoController.dispose();
-    _imageInfoFocusNode.dispose();
-    _preImagePath = "";
   }
 
   @override
@@ -116,103 +110,21 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
               ),
             ),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-            Container(
-              padding: const EdgeInsetsDirectional.all(20),
-              decoration: BoxDecoration(
-                color: Colors.grey.withAlpha(50),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(30),
-                  bottom: Radius.circular(30),
-                ),
-              ),
+            Text("등록된 항목 개수 : ${_imagePathList.length}개"),
+            const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
+            InkWell(
+              onTap: () => showAddPictureDialog(context),
               child: Column(
                 children: [
-                  const Text(
-                    "사진 추가",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-                  Row(
-                    children: [
-                      // 사진 찍기
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => getCameraImage(),
-                          child: Column(
-                            children: [
-                              DottedBorder(
-                                color: Colors.black,
-                                strokeWidth: 1,
-                                child: Container(
-                                  width: double.maxFinite,
-                                  height: 30,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.grey,
-                                  ),
-                                  child: const Icon(Icons.camera_alt),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // 앨범에서 가져오기
-                      Expanded(
-                        child: InkWell(
-                          onTap: () => getAlbumImage(),
-                          child: Column(
-                            children: [
-                              DottedBorder(
-                                color: Colors.black,
-                                strokeWidth: 1,
-                                child: Container(
-                                  width: double.maxFinite,
-                                  height: 30,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.grey,
-                                  ),
-                                  child: const Icon(Icons.photo_album),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-                  // 사진 설명 입력
-                  TextFormField(
-                    controller: _imageInfoController,
-                    focusNode: _imageInfoFocusNode,
-                    decoration: const InputDecoration(
-                      labelText: '사진 설명',
-                      hintStyle: TextStyle(
-                        color: Colors.black38,
-                        fontSize: 12,
-                      ),
+                  DottedBorder(
+                    child: const SizedBox(
+                      width: double.maxFinite,
+                      child: Icon(Icons.add),
                     ),
-                    maxLength: 20,
-                  ),
-                  const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      OutlinedButton(
-                          onPressed: resetAddPicture,
-                          child: const Text("초기화", style: TextStyle(fontWeight: FontWeight.bold,color: Colors.red),)
-                      ),
-                      OutlinedButton(
-                          onPressed: addPicture,
-                          child: const Text("추가", style: TextStyle(fontWeight: FontWeight.bold,color: Colors.deepPurple),)
-                      ),
-                    ],
                   ),
                 ],
               ),
             ),
-            const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-            Text("등록된 항목 개수 : ${_imagePathList.length}개"),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
             Expanded(
               child: Container(
@@ -252,41 +164,6 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
       return '설명을 입력해주세요.';
     }
     return null;
-  }
-
-  Future<void> getAlbumImage() async{
-    FocusManager.instance.primaryFocus?.unfocus();
-    final ImagePicker picker = ImagePicker();
-    XFile? file = await picker.pickImage(source: ImageSource.gallery);
-    if(file != null){
-      setState(() {
-        _preImagePath = file.path;
-      });
-    }
-  }
-
-  Future<void> getCameraImage() async{
-    FocusManager.instance.primaryFocus?.unfocus();
-    final ImagePicker picker = ImagePicker();
-    XFile? file = await picker.pickImage(source: ImageSource.camera);
-    if(file != null){
-      setState(() {
-        _preImagePath = file.path;
-      });
-    }
-  }
-
-  void addPicture() {
-    if(_preImagePath.isEmpty || _imageInfoController.text.isEmpty) return;
-    setState(() {
-      _imagePathList.add(_preImagePath);
-      _imageInfoList.add(_imageInfoController.text);
-    });
-  }
-
-  void resetAddPicture(){
-    _preImagePath = "";
-    _imageInfoController.clear();
   }
 
   Widget makeListItem(BuildContext context, int index, String src, String info){
@@ -425,4 +302,23 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
           return false;
     }
   }
+
+  Future<void> showAddPictureDialog(BuildContext context) async {
+    List<String> result = await showDialog(
+        context: context,
+        builder: (context) {
+          return const WorldCupAddPictureDialog();
+        }
+    );
+
+    if(result.isNotEmpty){
+      setState(() {
+        _imagePathList.add(result[0]);
+        _imageInfoList.add(result[1]);
+      });
+    }
+  }
 }
+
+
+

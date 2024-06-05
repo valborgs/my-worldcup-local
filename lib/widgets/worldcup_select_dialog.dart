@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:my_worldcup_local/widgets/worldcup_list.dart';
 
 import '../dto/worldcup_dao.dart';
 import '../models/worldcup_model.dart';
