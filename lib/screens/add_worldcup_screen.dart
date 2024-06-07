@@ -110,7 +110,12 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
               ),
             ),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-            Text("등록된 항목 개수 : ${_imagePathList.length}개"),
+            Text(
+              "등록된 항목 개수 : ${_imagePathList.length}개",
+              style: _imagePathList.isNotEmpty
+                  ? isPictureListNotEmpty()
+                  : isPictureListEmpty(),
+            ),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
             InkWell(
               onTap: () => showAddPictureDialog(context),
@@ -134,11 +139,15 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
 
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _imagePathList.length,
-                  itemBuilder: (context, index) => makeListItem(context, index, _imagePathList[index], _imageInfoList[index]),
-                ),
+                child: GridView.builder(
+                  itemCount: _imageInfoList.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemBuilder: (context, index) => makeListItem(context, index, _imagePathList[index], _imageInfoList[index]),
+                )
               ),
             ),
           ],
@@ -189,11 +198,9 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                       showDialog(
                         context: context,
                         builder: (context) {
-
                           Image image = Image.file(
                             File(src),
                           );
-
                           return Dialog(
                             child: SizedBox(
                               width: image.width,
@@ -205,10 +212,10 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                       );
                     },
                     child: AspectRatio(
-                      aspectRatio: 1,
+                      aspectRatio: 2,
                       child: Image.file(
                         File(src),
-                        fit: BoxFit.fitWidth,
+                        fit: BoxFit.scaleDown,
                       ),
                     ),
                   ),
@@ -274,6 +281,11 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     // 제목, 설명 입력 체크
     if(!_formKey.currentState!.validate()) return false;
 
+    // 등록된 항목이 없을 경우 체크
+    if(_imagePathList.isEmpty){
+
+    }
+
     // Dao 객체
     var dao = WorldCupDao();
     // 월드컵 객체 생성
@@ -301,6 +313,20 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
       const SnackBar(content: Text("데이터를 저장할 수 없습니다. 잠시후에 다시 시도해주세요."));
           return false;
     }
+  }
+
+  TextStyle isPictureListEmpty(){
+    return const TextStyle(
+      color: Colors.red,
+      fontWeight: FontWeight.bold,
+    );
+  }
+
+  TextStyle isPictureListNotEmpty(){
+    return const TextStyle(
+      color: Colors.black,
+      fontWeight: FontWeight.normal,
+    );
   }
 
   Future<void> showAddPictureDialog(BuildContext context) async {
