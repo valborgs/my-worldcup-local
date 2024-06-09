@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../dto/worldcup_dao.dart';
 import '../models/worldcup_model.dart';
 import '../screens/play_worldcup_screen.dart';
+import '../tools/make_round.dart';
 import 'outlined_icon_button.dart';
 
 class WorldCupSelectDialog extends StatefulWidget {
@@ -33,9 +34,9 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
             const Text("- 라운드 수를 선택해주세요- "),
             const Padding(padding: EdgeInsets.only(top: 5)),
             DropdownMenu(
-              initialSelection: widget.model.maxRound,
+              initialSelection: makeMaxRound(widget.model.maxRound),
               menuStyle: const MenuStyle(padding: WidgetStatePropertyAll(EdgeInsets.all(0))),
-              dropdownMenuEntries: makeRoundList(widget.model)
+              dropdownMenuEntries: makeRoundList(widget.model.maxRound)
                   .map<DropdownMenuEntry<int>>((int value){
                 return DropdownMenuEntry<int>(value: value, label: '$value 강');
               }).toList(),
@@ -75,18 +76,6 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
   }
 }
 
-// 최대 라운드 수에서 최소 4강까지 만들어주는 함수
-List<int> makeRoundList(WorldCupModel model){
-  List<int> tempList = [];
-  int? maxRound = model.maxRound;
-  while(true){
-    if(maxRound == null) break;
-    if(maxRound ~/ 2 < 2) break; // 4강까지 만들어줌
-    tempList.add(maxRound);
-    maxRound = maxRound~/2;
-  }
-  return tempList.reversed.toList();
-}
 
 // 월드컵 삭제
 void deleteWorldCup(BuildContext context, int idx) {

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:my_worldcup_local/models/worldcup_model.dart';
+import 'package:my_worldcup_local/tools/make_round.dart';
 import 'package:my_worldcup_local/widgets/worldcup_select_dialog.dart';
 
 class WorldCupListItem extends StatelessWidget {
@@ -16,7 +17,7 @@ class WorldCupListItem extends StatelessWidget {
           ? Image.file(File(worldCupModel.titleImageSrc), fit: BoxFit.cover)
           : Image.asset("assets/images/khe.jpg"),
       title: Text(worldCupModel.title),
-      subtitle: Text("최대 라운드 : ${worldCupModel.maxRound}강"),
+      subtitle: Text("최대 라운드 : ${makeMaxRound(worldCupModel.maxRound)}강"),
       isThreeLine: true,
       onTap: () {
         // 선택한 월드컵 다이얼로그를 띄운다.
