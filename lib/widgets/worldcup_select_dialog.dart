@@ -57,7 +57,7 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
           onPressed: () {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => PlayWorldCupScreen(widget.model.idx, selectedRound),
+                builder: (context) => PlayWorldCupScreen(widget.model, selectedRound),
               ),
             );
           },
