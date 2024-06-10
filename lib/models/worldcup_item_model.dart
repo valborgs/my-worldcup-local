@@ -19,7 +19,6 @@ class WorldCupItemModel{
   // dao 사용을 위해 model에서 Map으로 변환
   Map<String, dynamic> toMap(){
     return Map.of({
-      "idx": idx,
       "imagePath": imagePath,
       "imageInfo": imageInfo,
       "worldCupIdx": worldCupIdx,

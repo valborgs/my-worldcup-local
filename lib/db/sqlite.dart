@@ -34,7 +34,7 @@ class SqliteProvider{
 
   initDB(Database database, int version) async {
     await database.execute("CREATE TABLE worldcup_table ("
-        "idx INTEGER PRIMARY KEY, "
+        "idx INTEGER PRIMARY KEY AUTOINCREMENT, "
         "title TEXT, "
         "info TEXT, "
         "date INTEGER, "
@@ -43,7 +43,7 @@ class SqliteProvider{
         ")");
 
     await database.execute("CREATE TABLE worldcup_item_table ("
-        "idx INTEGER PRIMARY KEY, "
+        "idx INTEGER PRIMARY KEY AUTOINCREMENT, "
         "imagePath TEXT, "
         "imageInfo TEXT, "
         "worldCupIdx INTEGER"
