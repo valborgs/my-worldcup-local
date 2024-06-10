@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:my_worldcup_local/dto/worldcup_dao.dart';
 import 'package:my_worldcup_local/models/worldcup_item_model.dart';
 import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:provider/provider.dart';
-import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 import '../provider/worldcup_select_provider.dart';
 import '../widgets/worldcup_game.dart';
@@ -20,12 +20,10 @@ class PlayWorldCupScreen extends StatefulWidget {
 class _PlayWorldCupScreenState extends State<PlayWorldCupScreen> {
   var dao = WorldCupDao();
   List<WorldCupItemModel>? itemList;
-  String? title;
 
   @override
   void initState() {
     super.initState();
-    title = widget.worldCupModel.title;
     getItemList();
   }
 
@@ -39,12 +37,17 @@ class _PlayWorldCupScreenState extends State<PlayWorldCupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return
-      ChangeNotifierProvider(
-      create: (context) => WorldCupSelectProvider(),
-      child: itemList != null
-          ? WorldCupGame(title, itemList!, widget.selectedRound)
-          : const AnimatedSmoothIndicator(activeIndex: 1, count: 1),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.worldCupModel.title),
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+      ),
+      body: ChangeNotifierProvider(
+        create: (context) => WorldCupSelectProvider(),
+        child: itemList != null
+            ? WorldCupGame(widget.worldCupModel, itemList!, widget.selectedRound)
+            : const SizedBox(width: double.maxFinite, height: double.maxFinite),
+      ),
     );
   }
 }

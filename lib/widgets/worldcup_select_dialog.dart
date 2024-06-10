@@ -16,11 +16,11 @@ class WorldCupSelectDialog extends StatefulWidget {
 
 class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
 
-  // 선택된 라운드
-  int selectedRound = 0;
-
   @override
   Widget build(BuildContext context) {
+    // 선택된 라운드
+    int selectedRound = makeMaxRound(widget.model.maxRound);
+
     return AlertDialog(
       title: Text(widget.model.title),
       content: SizedBox(

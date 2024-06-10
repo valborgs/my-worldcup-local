@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:my_worldcup_local/screens/result_worldcup_screen.dart';
 import 'package:my_worldcup_local/widgets/item_bottom.dart';
 import 'package:my_worldcup_local/widgets/item_top.dart';
@@ -10,10 +11,10 @@ import '../models/worldcup_item_model.dart';
 import '../provider/worldcup_select_provider.dart';
 
 class WorldCupGame extends StatefulWidget {
-  String? title;
+  WorldCupModel worldCupModel;
   List<WorldCupItemModel> itemList;
   int selectedRound;
-  WorldCupGame(this.title, this.itemList, this.selectedRound, {super.key});
+  WorldCupGame(this.worldCupModel, this.itemList, this.selectedRound, {super.key});
 
   @override
   State<WorldCupGame> createState() => _WorldCupGameState();
@@ -83,10 +84,12 @@ class _WorldCupGameState extends State<WorldCupGame> {
     return Future.delayed(const Duration(seconds: 3), () {
       // 결승전이었을 경우
       if(maxRound==1){
+        // 우승 항목
+        var winnerModel = Provider.of<WorldCupSelectProvider>(context, listen: false).selectedModel;
         // 게임이 끝나면 결과 화면으로 이동
         Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => const ResultWorldCupScreen(),
+              builder: (context) => ResultWorldCupScreen(widget.worldCupModel, winnerModel, widget.selectedRound),
             ),
         );
       }else{
@@ -120,6 +123,7 @@ class _WorldCupGameState extends State<WorldCupGame> {
           Column(
             children: [
               ItemTop(topItem),
+              const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
               ItemBottom(bottomItem),
             ],
           ),
