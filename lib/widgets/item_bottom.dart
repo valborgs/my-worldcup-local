@@ -53,7 +53,7 @@ class _ItemBottomState extends State<ItemBottom> with TickerProviderStateMixin {
         _tween.end = const Offset(0, -0.5);
         _controller.forward();
       }else{
-        _tween.end = const Offset(0, 1);
+        _tween.end = const Offset(0, 1.1);
         _controller.forward();
       }
     });
