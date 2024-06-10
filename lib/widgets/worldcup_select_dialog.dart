@@ -81,10 +81,12 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
 void deleteWorldCup(BuildContext context, int idx) {
   WorldCupDao? dao = WorldCupDao();
 
+
   // 삭제
   dao.deleteWorldCupByIdx(idx)
       .catchError((error) => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("데이터를 삭제할 수 없습니다. 잠시후에 다시 시도해주세요."))))
       .then((value) => Navigator.of(context).pop());
+  dao.deleteWorldCupItemByIdx(idx);
 
   dao = null;
 }

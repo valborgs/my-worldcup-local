@@ -39,7 +39,7 @@ class WorldCupDao{
       final db = await dbProvider.database;
 
       // 작성한 월드컵 데이터를 db에 저장한다.
-      int idx = await db.insert(worldCupTable, model.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      int idx = await db.insert(worldCupTable, model.toMap());
 
       return idx;
     }catch(e){
@@ -80,7 +80,7 @@ class WorldCupDao{
       final db = await dbProvider.database;
 
       // 작성한 월드컵 데이터를 db에 저장한다.
-      await db.insert(worldCupItemTable, model.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      await db.insert(worldCupItemTable, model.toMap());
     }catch(e){
       rethrow;
     }
@@ -92,6 +92,17 @@ class WorldCupDao{
       final db = await dbProvider.database;
 
       await db.delete(worldCupTable, where: "idx = ?", whereArgs: [idx] );
+    }catch(e){
+      rethrow;
+    }
+  }
+
+  // idx에 해당되는 월드컵 아이템을 DB에서 삭제한다.
+  Future<void> deleteWorldCupItemByIdx(int idx) async {
+    try{
+      final db = await dbProvider.database;
+
+      await db.delete(worldCupItemTable, where: "worldCupIdx = ?", whereArgs: [idx] );
     }catch(e){
       rethrow;
     }
