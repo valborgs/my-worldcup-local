@@ -5,9 +5,11 @@ import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:my_worldcup_local/screens/play_worldcup_screen.dart';
 
+import '../api/imgbb_upload.dart';
 import '../api/kakaotalk_feed.dart';
 import '../models/worldcup_item_model.dart';
 import '../models/worldcup_model.dart';
+import '../tools/make_binary_file.dart';
 
 class ResultWorldCupScreen extends StatefulWidget {
   WorldCupModel worldCupModel;
@@ -167,10 +169,16 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
   // 카카오톡 공유하기 기능
   Future<void> shareGameWithKakao() async {
     var title = widget.worldCupModel.title;
-    var image = widget.winnerModel.imagePath;
+    var image = File(widget.winnerModel.imagePath);
+    // 바이너리 파일로 변환
+    var binaryFile = base64Encode1(image);
+    // 이미지 호스팅 서버에 업로드하여 이미지 주소를 받아옴
+    var imgUrl = await uploadImage(binaryFile);
+    imgUrl ??= "";
+
     var description = '${widget.worldCupModel.title} 우승자 : ${widget.winnerModel.imageInfo}';
 
-    var myTemplate = await makeFeedTemplate(title, description, image, image);
+    var myTemplate = await makeFeedTemplate(title, description, imgUrl!, "");
     sendFeed(myTemplate);
   }
 }

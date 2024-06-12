@@ -7,7 +7,7 @@ Future<FeedTemplate> makeFeedTemplate(String title, String description, String i
     content: Content(
       title: title,
       description: description,
-      imageUrl: await getUrlFromStorage(),
+      imageUrl: Uri.parse(imageUrl),
       link: Link(
           webUrl: Uri.parse(linkUrl),
           mobileWebUrl: Uri.parse(linkUrl)),
