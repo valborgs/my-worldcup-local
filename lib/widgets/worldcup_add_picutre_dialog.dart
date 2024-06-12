@@ -102,7 +102,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                   ? 200 : 0,
               child: _preImagePath != ""
                   ? Image.file(File(_preImagePath))
-                  : Image.asset("assets/images/khe.jpg"),
+                  : Image.asset("assets/images/free_character.png"),
             ),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
             // 사진 설명 입력

@@ -15,7 +15,7 @@ class WorldCupListItem extends StatelessWidget {
       contentPadding: const EdgeInsets.all(5),
       leading: worldCupModel.titleImageSrc!=""
           ? Image.file(File(worldCupModel.titleImageSrc), fit: BoxFit.cover)
-          : Image.asset("assets/images/khe.jpg"),
+          : Image.asset("assets/images/free_character.png"),
       title: Text(worldCupModel.title),
       subtitle: Text("최대 라운드 : ${makeMaxRound(worldCupModel.maxRound)}강"),
       isThreeLine: true,
