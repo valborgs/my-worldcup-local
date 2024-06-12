@@ -8,8 +8,8 @@ import '../models/worldcup_item_model.dart';
 import '../provider/worldcup_select_provider.dart';
 
 class ItemTop extends StatefulWidget {
-  WorldCupItemModel itemModel;
-  ItemTop(this.itemModel, {super.key});
+  final WorldCupItemModel itemModel;
+  const ItemTop(this.itemModel, {super.key});
 
   @override
   State<ItemTop> createState() => _ItemTopState();
@@ -60,12 +60,17 @@ class _ItemTopState extends State<ItemTop> with TickerProviderStateMixin {
       }
     });
 
+    var isTouchable = true;
+
     return Expanded(
       child: SlideTransition(
         position: _animation,
         child: InkWell(
           onTap: () {
-            selectProvider.setSelectedItem(SelectedItemPosition.top, widget.itemModel);
+            if(isTouchable) {
+              isTouchable = false;
+              selectProvider.setSelectedItem(SelectedItemPosition.top, widget.itemModel);
+            }
           },
           child: Container(
             color: Colors.black,
