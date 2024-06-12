@@ -28,6 +28,8 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  firebase_core: ^2.31.0
+  firebase_storage: ^11.7.5
   kakao_flutter_sdk_share: ^1.9.1+2 # 카카오톡 공유 API 패키지
   provider: ^6.1.2 # 프로바이더
   confetti: ^0.7.0 # 팡파레 효과
