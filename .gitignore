@@ -45,4 +45,4 @@ app.*.map.json
 /lib/firebase_options.dart
 /android/app/google-services.json
 /.env
-pubspec.lock
+/pubspec.lock
