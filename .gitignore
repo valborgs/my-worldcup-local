@@ -30,6 +30,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+pubspec.lock
 
 # Symbolication related
 app.*.symbols
@@ -45,4 +46,3 @@ app.*.map.json
 /lib/firebase_options.dart
 /android/app/google-services.json
 /.env
-/pubspec.lock
