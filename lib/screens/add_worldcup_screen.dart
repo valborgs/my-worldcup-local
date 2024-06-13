@@ -330,6 +330,9 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
   }
 
   Future<void> showAddPictureDialog(BuildContext context) async {
+    // 키보드 내리기
+    FocusManager.instance.primaryFocus?.unfocus();
+
     List<String> result = await showDialog(
         context: context,
         builder: (context) {
