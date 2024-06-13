@@ -112,7 +112,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
             Text(
               "등록된 항목 개수 : ${_imagePathList.length}개",
-              style: _imagePathList.isNotEmpty
+              style: (_imagePathList.isNotEmpty && _imagePathList.length>3)
                   ? isPictureListNotEmpty()
                   : isPictureListEmpty(),
             ),
@@ -282,8 +282,8 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     if(!_formKey.currentState!.validate()) return false;
 
     // 등록된 항목이 없을 경우 체크
-    if(_imagePathList.isEmpty){
-
+    if(_imagePathList.isEmpty || _imagePathList.length<4){
+      return false;
     }
 
     // Dao 객체
