@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:kakao_flutter_sdk_share/kakao_flutter_sdk_share.dart';
 import 'package:my_worldcup_local/screens/main_worldcup_screen.dart';
 
@@ -14,6 +15,9 @@ Future<void> main() async {
     nativeAppKey: dotenv.env['kakao_nativeAppKey'],
     javaScriptAppKey: dotenv.env['kakao_javaScriptAppKey'],
   );
+
+  // 구글 애드몹
+  MobileAds.instance.initialize();
 
   runApp(const MyWorldCup());
 }
