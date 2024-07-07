@@ -129,14 +129,15 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                       ),
                     ),
                     const Padding(padding: EdgeInsets.only(top: 10)),
+                    // 정식 출시 전까지는 가렸다가 출시 후에 공유 버튼 살리기
                     // 공유 버튼
-                    IconButton(
-                        onPressed: () => shareGameWithKakao(),
-                        icon: Image.network(
-                          'https://developers.kakao.com/assets/img/about/logos/kakaotalksharing/kakaotalk_sharing_btn_medium.png',
-                          width: 40,
-                        )
-                    ),
+                    // IconButton(
+                    //     onPressed: () => shareGameWithKakao(),
+                    //     icon: Image.network(
+                    //       'https://developers.kakao.com/assets/img/about/logos/kakaotalksharing/kakaotalk_sharing_btn_medium.png',
+                    //       width: 40,
+                    //     )
+                    // ),
                   ],
                 ),
                 // 팡파레 효과
