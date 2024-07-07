@@ -30,6 +30,7 @@ class MyWorldCup extends StatelessWidget {
     return MaterialApp(
       title: "내가 만든 월드컵",
       themeMode: ThemeMode.light,
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme:ColorScheme.fromSeed(seedColor: Colors.deepPurpleAccent),
         useMaterial3: true,
