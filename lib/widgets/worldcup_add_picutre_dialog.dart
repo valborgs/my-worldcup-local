@@ -62,7 +62,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                           strokeWidth: 1,
                           child: Container(
                             width: double.maxFinite,
-                            height: 30,
+                            height: 48,
                             decoration: const BoxDecoration(
                                 color: Colors.grey),
                             child: const Icon(Icons.camera_alt),
@@ -83,7 +83,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                           strokeWidth: 1,
                           child: Container(
                             width: double.maxFinite,
-                            height: 30,
+                            height: 48,
                             decoration: const BoxDecoration(
                                 color: Colors.grey),
                             child: const Icon(Icons.photo_album),

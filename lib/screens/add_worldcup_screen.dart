@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:my_worldcup_local/models/worldcup_item_model.dart';
 import 'package:my_worldcup_local/models/worldcup_model.dart';
 
@@ -124,6 +123,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                   DottedBorder(
                     child: const SizedBox(
                       width: double.maxFinite,
+                      height: 48,
                       child: Icon(Icons.add),
                     ),
                   ),
