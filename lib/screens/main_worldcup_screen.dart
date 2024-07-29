@@ -30,16 +30,19 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
       appBar: AppBar(
         title: const Text("내가 만든 월드컵"),
         actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const AddWorldCupScreen(),
-                  fullscreenDialog: true,
-                ),
-              );
-            },
-            icon: const Icon(Icons.add),
+          Semantics(
+            label: "Add WorldCup Button",
+            child: IconButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const AddWorldCupScreen(),
+                    fullscreenDialog: true,
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add),
+            ),
           ),
         ],
       ),

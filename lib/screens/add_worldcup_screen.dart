@@ -56,15 +56,18 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
       appBar: AppBar(
         title: const Text("월드컵 등록"),
         actions: [
-          IconButton(
-            onPressed: () {
-              addWorldCup().then((value) {
-                if(value){
-                  Navigator.of(context).pop();
-                }
-              });
+          Semantics(
+            label: "Confirm Button",
+            child: IconButton(
+              onPressed: () {
+                addWorldCup().then((value) {
+                  if(value){
+                    Navigator.of(context).pop();
+                  }
+                });
               } ,
-            icon: const Icon(Icons.check_rounded),
+              icon: const Icon(Icons.check_rounded),
+            ),
           ),
         ],
       ),
@@ -116,18 +119,21 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                   : isPictureListEmpty(),
             ),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-            InkWell(
-              onTap: () => showAddPictureDialog(context),
-              child: Column(
-                children: [
-                  DottedBorder(
-                    child: const SizedBox(
-                      width: double.maxFinite,
-                      height: 48,
-                      child: Icon(Icons.add),
+            Semantics(
+              label: "Add Item Button",
+              child: InkWell(
+                onTap: () => showAddPictureDialog(context),
+                child: Column(
+                  children: [
+                    DottedBorder(
+                      child: const SizedBox(
+                        width: double.maxFinite,
+                        height: 48,
+                        child: Icon(Icons.add),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),

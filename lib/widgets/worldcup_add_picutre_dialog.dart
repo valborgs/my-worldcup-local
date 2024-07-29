@@ -53,43 +53,49 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
               children: [
                 // 사진 찍기
                 Expanded(
-                  child: InkWell(
-                    onTap: () => getCameraImage(),
-                    child: Column(
-                      children: [
-                        DottedBorder(
-                          color: Colors.black,
-                          strokeWidth: 1,
-                          child: Container(
-                            width: double.maxFinite,
-                            height: 48,
-                            decoration: const BoxDecoration(
-                                color: Colors.grey),
-                            child: const Icon(Icons.camera_alt),
+                  child: Semantics(
+                    label: "Take a photo",
+                    child: InkWell(
+                      onTap: () => getCameraImage(),
+                      child: Column(
+                        children: [
+                          DottedBorder(
+                            color: Colors.black,
+                            strokeWidth: 1,
+                            child: Container(
+                              width: double.maxFinite,
+                              height: 48,
+                              decoration: const BoxDecoration(
+                                  color: Colors.grey),
+                              child: const Icon(Icons.camera_alt),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 // 앨범에서 가져오기
                 Expanded(
-                  child: InkWell(
-                    onTap: () => getAlbumImage(),
-                    child: Column(
-                      children: [
-                        DottedBorder(
-                          color: Colors.black,
-                          strokeWidth: 1,
-                          child: Container(
-                            width: double.maxFinite,
-                            height: 48,
-                            decoration: const BoxDecoration(
-                                color: Colors.grey),
-                            child: const Icon(Icons.photo_album),
+                  child: Semantics(
+                    label: "Get a picture from album",
+                    child: InkWell(
+                      onTap: () => getAlbumImage(),
+                      child: Column(
+                        children: [
+                          DottedBorder(
+                            color: Colors.black,
+                            strokeWidth: 1,
+                            child: Container(
+                              width: double.maxFinite,
+                              height: 48,
+                              decoration: const BoxDecoration(
+                                  color: Colors.grey),
+                              child: const Icon(Icons.photo_album),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
