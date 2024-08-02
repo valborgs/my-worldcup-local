@@ -57,6 +57,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
         title: const Text("월드컵 등록"),
         actions: [
           Semantics(
+            button: true,
             label: "Confirm Button",
             child: IconButton(
               onPressed: () {

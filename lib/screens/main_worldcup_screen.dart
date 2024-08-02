@@ -31,6 +31,7 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
         title: const Text("내가 만든 월드컵"),
         actions: [
           Semantics(
+            button: true,
             label: "Add WorldCup Button",
             child: IconButton(
               onPressed: () {
