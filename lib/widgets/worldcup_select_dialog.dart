@@ -22,13 +22,13 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
     int selectedRound = makeMaxRound(widget.model.maxRound);
 
     return AlertDialog(
-      title: Text(widget.model.title),
+      title: Text(widget.model.title, semanticsLabel: "월드컵 제목",),
       content: SizedBox(
         height: 200,
         child: Column(
           children: [
             const Spacer(),
-            Text(widget.model.info),
+            Text(widget.model.info, semanticsLabel: "월드컵 설명",),
             const Spacer(),
             const Padding(padding: EdgeInsets.only(top: 5)),
             const Text("- 라운드 수를 선택해주세요- "),

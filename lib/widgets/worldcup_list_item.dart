@@ -16,8 +16,8 @@ class WorldCupListItem extends StatelessWidget {
       leading: worldCupModel.titleImageSrc!=""
           ? Image.file(File(worldCupModel.titleImageSrc), fit: BoxFit.cover)
           : Image.asset("assets/images/free_character.png"),
-      title: Text(worldCupModel.title),
-      subtitle: Text("최대 라운드 : ${makeMaxRound(worldCupModel.maxRound)}강"),
+      title: Text(worldCupModel.title, semanticsLabel: "월드컵 게임 타이틀",),
+      subtitle: Text("최대 라운드 : ${makeMaxRound(worldCupModel.maxRound)}강", semanticsLabel: "월드컵 최대 라운드",),
       isThreeLine: true,
       onTap: () {
         // 선택한 월드컵 다이얼로그를 띄운다.

@@ -28,10 +28,11 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("내가 만든 월드컵"),
+        title: const Text("내가 만든 월드컵", semanticsLabel: "내가 만든 월드컵 화면",),
         actions: [
           Semantics(
             button: true,
+            enabled: true,
             label: "Add WorldCup Button",
             child: IconButton(
               onPressed: () {
@@ -53,10 +54,15 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
           children: [
             // 애드몹 배너
             if(_bannerAd != null)
-              SizedBox(
-                width: _bannerAd?.size.width.toDouble(),
-                height: _bannerAd?.size.height.toDouble(),
-                child: AdWidget(ad: _bannerAd!),
+              Semantics(
+                button: true,
+                enabled: true,
+                label: "Banner Ad",
+                child: SizedBox(
+                  width: _bannerAd?.size.width.toDouble(),
+                  height: _bannerAd?.size.height.toDouble(),
+                  child: AdWidget(ad: _bannerAd!),
+                ),
               ),
             // 월드컵 리스트
             const WorldCupList(),

@@ -48,7 +48,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
     return Scaffold(
       resizeToAvoidBottomInset:false,
       appBar: AppBar(
-        title: Text("${widget.worldCupModel.title} 우승자"),
+        title: Text("${widget.worldCupModel.title} 우승자", semanticsLabel: "월드컵 우승자 화면",),
       ),
       // 화면
       body: Stack(
@@ -70,6 +70,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                         style: TextStyle(
                           fontSize: 22,
                         ),
+                        semanticsLabel: "축하 문구",
                       ),
                       Icon(Icons.auto_awesome, color: Colors.yellow,)
                     ],
@@ -88,6 +89,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                   style: const TextStyle(
                     fontSize: 18,
                   ),
+                  semanticsLabel: "우승자 이름",
                 ),
                 const Padding(padding: EdgeInsets.only(top: 30)),
                 // 버튼 묶음
@@ -124,6 +126,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                             style: TextStyle(
                               color: Colors.white,
                             ),
+                            semanticsLabel: "다시 하기 버튼",
                           )
                         ],
                       ),

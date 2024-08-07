@@ -46,6 +46,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
             const Text(
               "사진 추가",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              semanticsLabel: "사진 추가",
             ),
             const Padding(
                 padding: EdgeInsetsDirectional.only(bottom: 10)),

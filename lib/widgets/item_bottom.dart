@@ -92,6 +92,7 @@ class _ItemBottomState extends State<ItemBottom> with TickerProviderStateMixin {
                         fontWeight: FontWeight.bold,
                         backgroundColor: Colors.grey.withOpacity(0.5),
                       ),
+                      semanticsLabel: "항목 이름",
                     ),
                   ),
                 ],

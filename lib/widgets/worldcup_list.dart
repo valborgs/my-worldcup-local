@@ -29,6 +29,7 @@ class _WorldCupListState extends State<WorldCupList> {
               child: const Text(
                 "오른쪽 상단의 + 버튼을 눌러 \n월드컵 게임을 추가해주세요",
                 style: TextStyle(fontSize: 20),
+                semanticsLabel: "항목이 비어있음",
               ),
             )
           )

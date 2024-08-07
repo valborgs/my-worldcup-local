@@ -54,7 +54,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text("월드컵 등록"),
+        title: const Text("월드컵 등록", semanticsLabel: "월드컵 등록 화면",),
         actions: [
           Semantics(
             button: true,
