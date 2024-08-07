@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:my_worldcup_local/dto/worldcup_dao.dart';
 import 'package:my_worldcup_local/widgets/worldcup_list_item.dart';
@@ -21,7 +22,17 @@ class _WorldCupListState extends State<WorldCupList> {
 
     _loadWorldCupList();
 
-    return Expanded(
+    return worldCupList.isEmpty
+        ? Expanded(
+            child: Container(
+              alignment: Alignment.center,
+              child: const Text(
+                "오른쪽 상단의 + 버튼을 눌러 \n월드컵 게임을 추가해주세요",
+                style: TextStyle(fontSize: 20),
+              ),
+            )
+          )
+        : Expanded(
         child: ListView.builder(
           itemBuilder: (context, index) => WorldCupListItem(worldCupList[index]),
           itemCount: worldCupList.length,
