@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:my_worldcup_local/screens/help_screen.dart';
 
 import '../ad/ad_helper.dart';
 import '../widgets/worldcup_list.dart';
@@ -26,8 +27,25 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
+        leading: Semantics(
+          label: "도움말 버튼",
+          button: true,
+          enabled: true,
+          child: IconButton(
+            onPressed: (){
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => HelpScreen(false),
+                  fullscreenDialog: true,
+                ),
+              );
+            },
+            icon: const Icon(Icons.help_outline),
+          ),
+        ),
         title: const Text("내가 만든 월드컵", semanticsLabel: "내가 만든 월드컵 화면",),
         actions: [
           Semantics(
