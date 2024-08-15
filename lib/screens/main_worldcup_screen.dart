@@ -35,6 +35,7 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
           button: true,
           enabled: true,
           child: IconButton(
+            tooltip: "도움말",
             onPressed: (){
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -43,7 +44,7 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
                 ),
               );
             },
-            icon: const Icon(Icons.help_outline),
+            icon: const Icon(Icons.help_outline, semanticLabel: "도움말",),
           ),
         ),
         title: const Text("내가 만든 월드컵", semanticsLabel: "내가 만든 월드컵 화면",),
@@ -61,7 +62,7 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
                   ),
                 );
               },
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add, semanticLabel: "추가"),
             ),
           ),
         ],

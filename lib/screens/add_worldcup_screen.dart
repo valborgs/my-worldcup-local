@@ -67,7 +67,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                   }
                 });
               } ,
-              icon: const Icon(Icons.check_rounded),
+              icon: const Icon(Icons.check_rounded, semanticLabel: "확인"),
             ),
           ),
         ],
@@ -130,7 +130,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                       child: const SizedBox(
                         width: double.maxFinite,
                         height: 48,
-                        child: Icon(Icons.add),
+                        child: Icon(Icons.add, semanticLabel: "추가"),
                       ),
                     ),
                   ],
@@ -240,6 +240,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                 icon: const Icon(
                   Icons.highlight_remove_rounded,
                   color: Colors.red,
+                  semanticLabel: "삭제",
                 ),
                 onPressed: () => deleteDialog(index),
               ),

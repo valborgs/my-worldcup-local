@@ -48,19 +48,22 @@ class _HelpScreenState extends State<HelpScreen> {
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.only(top: 80),
-        child: IntroductionScreen(
-          pages: pageViewModel,
-          showNextButton: true,
-          next: const Text("다음"),
-          showSkipButton: true,
-          skip: const Text("스킵하기"),
-          done: const Text("시작하기"),
-          onDone: () {
-            finishScreen();
-          },
-          onSkip: () {
-            finishScreen();
-          },
+        child: Semantics(
+          label: "도움말, 소개 화면",
+          child: IntroductionScreen(
+            pages: pageViewModel,
+            showNextButton: true,
+            next: const Text("다음", semanticsLabel: "다음",),
+            showSkipButton: true,
+            skip: const Text("스킵하기", semanticsLabel: "스킵하기",),
+            done: const Text("시작하기", semanticsLabel: "시작하기",),
+            onDone: () {
+              finishScreen();
+            },
+            onSkip: () {
+              finishScreen();
+            },
+          ),
         ),
       ),
     );

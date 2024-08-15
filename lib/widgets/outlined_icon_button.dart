@@ -22,7 +22,7 @@ class IconOutlinedButton extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: textColor),
+          Icon(icon, color: textColor, semanticLabel: "선택 버튼"),
           const Padding(padding: EdgeInsets.only(right: 10)),
           Text(text, style: TextStyle(color: textColor)),
         ],

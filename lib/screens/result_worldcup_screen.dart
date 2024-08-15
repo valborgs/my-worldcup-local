@@ -72,7 +72,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                         ),
                         semanticsLabel: "축하 문구",
                       ),
-                      Icon(Icons.auto_awesome, color: Colors.yellow,)
+                      Icon(Icons.auto_awesome, color: Colors.yellow, semanticLabel: "축하")
                     ],
                   ),
                 ),
@@ -119,6 +119,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                           Icon(
                             Icons.replay,
                             color: Colors.white,
+                            semanticLabel: "다시하기",
                           ),
                           Padding(padding: EdgeInsets.only(right: 10)),
                           Text(

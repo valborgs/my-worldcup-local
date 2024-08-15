@@ -68,7 +68,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                               height: 48,
                               decoration: const BoxDecoration(
                                   color: Colors.grey),
-                              child: const Icon(Icons.camera_alt),
+                              child: const Icon(Icons.camera_alt, semanticLabel: "카메라"),
                             ),
                           ),
                         ],
@@ -92,7 +92,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                               height: 48,
                               decoration: const BoxDecoration(
                                   color: Colors.grey),
-                              child: const Icon(Icons.photo_album),
+                              child: const Icon(Icons.photo_album, semanticLabel: "앨범"),
                             ),
                           ),
                         ],
