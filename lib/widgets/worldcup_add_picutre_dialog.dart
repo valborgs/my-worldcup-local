@@ -16,7 +16,9 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
 
   late TextEditingController _imageInfoController;
   late FocusNode _imageInfoFocusNode;
+  late GlobalKey<FormState> _formKey;
   String _preImagePath = "";
+  bool isPictureEmpty = false;
 
 
   @override
@@ -24,6 +26,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
     super.initState();
     _imageInfoController = TextEditingController();
     _imageInfoFocusNode = FocusNode();
+    _formKey = GlobalKey<FormState>();
   }
 
   @override
@@ -111,19 +114,30 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                   ? Image.file(File(_preImagePath))
                   : Image.asset("assets/images/free_character.png"),
             ),
+            isPictureEmpty
+                ? const Text("사진을 추가해주세요", style: const TextStyle(color: Colors.red),)
+                : const Padding(padding: EdgeInsetsDirectional.only(bottom: 1)),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
             // 사진 설명 입력
-            TextFormField(
-              controller: _imageInfoController,
-              focusNode: _imageInfoFocusNode,
-              decoration: const InputDecoration(
-                labelText: '사진 설명',
-                hintStyle: TextStyle(
-                  color: Colors.black38,
-                  fontSize: 12,
-                ),
+            Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _imageInfoController,
+                    validator: (value) => checkImageInfo(),
+                    focusNode: _imageInfoFocusNode,
+                    decoration: const InputDecoration(
+                      labelText: '사진 설명',
+                      hintStyle: TextStyle(
+                        color: Colors.black38,
+                        fontSize: 12,
+                      ),
+                    ),
+                    maxLength: 20,
+                  ),
+                ],
               ),
-              maxLength: 20,
             ),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
             Row(
@@ -162,10 +176,27 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
   }
 
   void addPicture() {
+    setState(() {
+      isPictureEmpty = false;
+    });
     // 키보드 내리기
     FocusManager.instance.primaryFocus?.unfocus();
-    if(_preImagePath.isEmpty || _imageInfoController.text.isEmpty) return;
+    if(_preImagePath.isEmpty){
+      setState(() {
+        isPictureEmpty = true;
+      });
+      return;
+    }
+    if(!_formKey.currentState!.validate()) return;
     Navigator.pop(context, [_preImagePath, _imageInfoController.text]);
+  }
+
+  // 유효성 검사
+  String? checkImageInfo() {
+    if(_imageInfoController.text.isEmpty){
+      return '사진 설명을 입력해주세요.';
+    }
+    return null;
   }
 
   void resetAddPicture(){
