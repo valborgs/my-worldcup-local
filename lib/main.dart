@@ -51,7 +51,10 @@ class MyWorldCup extends StatelessWidget {
       ),
       home: (isAlreadyShownHelp == true)
           ? const MainWorldCupScreen()
-          : HelpScreen(true)
+          : Semantics(
+            label: "도움말, 소개 화면",
+            child: HelpScreen(true)
+          )
     );
   }
 }
