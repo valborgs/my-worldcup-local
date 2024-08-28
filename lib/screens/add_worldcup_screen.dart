@@ -56,18 +56,25 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
       appBar: AppBar(
         title: const Text("월드컵 등록", semanticsLabel: "월드컵 등록 화면",),
         actions: [
-          Semantics(
-            button: true,
-            label: "Confirm Button",
-            child: IconButton(
-              onPressed: () {
-                addWorldCup().then((value) {
-                  if(value){
-                    Navigator.of(context).pop();
-                  }
-                });
-              } ,
-              icon: const Icon(Icons.check_rounded, semanticLabel: "확인"),
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: Semantics(
+              button: true,
+              label: "Confirm Button",
+              child: IconButton(
+                onPressed: () {
+                  addWorldCup().then((value) {
+                    if(value){
+                      Navigator.of(context).pop();
+                    }
+                  });
+                } ,
+                icon: const Icon(
+                  Icons.check_rounded,
+                  semanticLabel: "확인",
+                  size: 32,
+                ),
+              ),
             ),
           ),
         ],
@@ -130,7 +137,11 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                       child: const SizedBox(
                         width: double.maxFinite,
                         height: 48,
-                        child: Icon(Icons.add, semanticLabel: "추가"),
+                        child: Icon(
+                          Icons.add,
+                          semanticLabel: "추가",
+                          size: 32,
+                        ),
                       ),
                     ),
                   ],

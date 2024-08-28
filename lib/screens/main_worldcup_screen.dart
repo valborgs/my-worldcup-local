@@ -44,25 +44,36 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
                 ),
               );
             },
-            icon: const Icon(Icons.help_outline, semanticLabel: "도움말",),
+            icon: const Icon(
+              Icons.help_outline,
+              semanticLabel: "도움말",
+              size: 24,
+            ),
           ),
         ),
         title: const Text("내가 만든 월드컵", semanticsLabel: "내가 만든 월드컵 화면",),
         actions: [
-          Semantics(
-            button: true,
-            enabled: true,
-            label: "Add WorldCup Button",
-            child: IconButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const AddWorldCupScreen(),
-                    fullscreenDialog: true,
-                  ),
-                );
-              },
-              icon: const Icon(Icons.add, semanticLabel: "추가"),
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: Semantics(
+              button: true,
+              enabled: true,
+              label: "Add WorldCup Button",
+              child: IconButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const AddWorldCupScreen(),
+                      fullscreenDialog: true,
+                    ),
+                  );
+                },
+                icon: const Icon(
+                  Icons.add,
+                  semanticLabel: "추가",
+                  size: 32,
+                ),
+              ),
             ),
           ),
         ],
