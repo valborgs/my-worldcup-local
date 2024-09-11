@@ -77,12 +77,19 @@ class _ItemTopState extends State<ItemTop> with TickerProviderStateMixin {
             child: Center(
               child: Stack(
                 children: [
-                  Image.file(
-                    File(widget.itemModel.imagePath),
-                    width: double.infinity/2,
-                    height: double.infinity/2,
-                    fit: BoxFit.contain,
-                  ),
+                  widget.itemModel.worldCupIdx<0
+                    ? Image.asset(
+                      widget.itemModel.imagePath,
+                      width: double.infinity/2,
+                      height: double.infinity/2,
+                      fit: BoxFit.contain,
+                    )
+                    : Image.file(
+                      File(widget.itemModel.imagePath),
+                      width: double.infinity/2,
+                      height: double.infinity/2,
+                      fit: BoxFit.contain,
+                    ),
                   Container(
                     alignment: Alignment.center,
                     padding: const EdgeInsets.only(top: 150),

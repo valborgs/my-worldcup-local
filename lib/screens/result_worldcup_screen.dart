@@ -81,8 +81,10 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                   width: 150,
                   height: 150,
                   child: CircleAvatar(
-                    backgroundImage: Image.file(File(widget.winnerModel.imagePath)).image,
-                  ) ,
+                    backgroundImage: widget.winnerModel.worldCupIdx < 0
+                    ? Image.asset(widget.winnerModel.imagePath).image
+                    : Image.file(File(widget.winnerModel.imagePath)).image,
+                  ),
                 ),
                 Text(
                   widget.winnerModel.imageInfo,

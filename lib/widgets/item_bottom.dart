@@ -75,7 +75,14 @@ class _ItemBottomState extends State<ItemBottom> with TickerProviderStateMixin {
             child: Center(
               child: Stack(
                 children: [
-                  Image.file(
+                  widget.itemModel.worldCupIdx<0
+                      ? Image.asset(
+                    widget.itemModel.imagePath,
+                    width: double.infinity/2,
+                    height: double.infinity/2,
+                    fit: BoxFit.contain,
+                  )
+                      : Image.file(
                     File(widget.itemModel.imagePath),
                     width: double.infinity/2,
                     height: double.infinity/2,
