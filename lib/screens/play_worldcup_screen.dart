@@ -28,21 +28,11 @@ class _PlayWorldCupScreenState extends State<PlayWorldCupScreen> {
   }
 
   Future<void> getItemList() async {
-    if (widget.worldCupModel.idx < 0){
-      // 샘플인 경우
-      await dao.getSampleItemList(widget.worldCupModel.idx).then((value) {
-        setState(() {
-          itemList = value;
-        });
+    await dao.getWorldCupItemList(widget.worldCupModel.idx).then((value) {
+      setState(() {
+        itemList = value;
       });
-    }else{
-      // 등록한 월드컵인 경우
-      await dao.getWorldCupItemList(widget.worldCupModel.idx).then((value) {
-        setState(() {
-          itemList = value;
-        });
-      });
-    }
+    });
   }
 
   @override

@@ -16,7 +16,7 @@ class WorldCupListItem extends StatelessWidget {
       leading:
       worldCupModel.titleImageSrc!="" ? (
           worldCupModel.idx<0
-              ? Image.asset(worldCupModel.titleImageSrc)
+              ? Image.asset(worldCupModel.titleImageSrc, fit: BoxFit.cover)
               : Image.file(File(worldCupModel.titleImageSrc), fit: BoxFit.cover)
       ) : Image.asset("assets/images/free_character.png"),
       title: Text(worldCupModel.title, semanticsLabel: "월드컵 게임 타이틀",),

@@ -25,6 +25,7 @@ class WorldCupModel{
   // dao 사용을 위해 model에서 Map으로 변환
   Map<String, dynamic> toMap(){
     return Map.of({
+      if(idx<0) "idx": idx,
       "title": title,
       "info": info,
       "date": date.millisecondsSinceEpoch, //millisecondsSinceEpoch는 현재시간을 ms로 변환하여 int값으로 반환해줌
