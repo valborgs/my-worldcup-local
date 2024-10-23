@@ -3,8 +3,10 @@ import 'dart:math';
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:my_worldcup_local/screens/play_worldcup_screen.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../api/imgbb_upload.dart';
 import '../api/kakaotalk_feed.dart';
@@ -137,13 +139,13 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                     const Padding(padding: EdgeInsets.only(top: 10)),
                     // 정식 출시 전까지는 가렸다가 출시 후에 공유 버튼 살리기
                     // 공유 버튼
-                    // IconButton(
-                    //     onPressed: () => shareGameWithKakao(),
-                    //     icon: Image.network(
-                    //       'https://developers.kakao.com/assets/img/about/logos/kakaotalksharing/kakaotalk_sharing_btn_medium.png',
-                    //       width: 40,
-                    //     )
-                    // ),
+                    IconButton(
+                        onPressed: () => shareGameWithKakao(),
+                        icon: Image.network(
+                          'https://developers.kakao.com/assets/img/about/logos/kakaotalksharing/kakaotalk_sharing_btn_medium.png',
+                          width: 40,
+                        )
+                    ),
                   ],
                 ),
                 // 팡파레 효과
@@ -195,7 +197,9 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
     });
 
     var title = widget.worldCupModel.title;
-    var image = File(widget.winnerModel.imagePath);
+    var image = widget.winnerModel.worldCupIdx<0
+        ? File(widget.winnerModel.imagePath)
+        : await getImageFileFromAssets(widget.winnerModel.imagePath);
     // 바이너리 파일로 변환
     var binaryFile = base64Encode1(image);
     // 이미지 호스팅 서버에 업로드하여 이미지 주소를 받아옴
@@ -204,11 +208,21 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
 
     var description = '${widget.worldCupModel.title} 우승자 : ${widget.winnerModel.imageInfo}';
 
-    var myTemplate = await makeFeedTemplate(title, description, imgUrl!, "");
+    var myTemplate = await makeFeedTemplate(title, description, imgUrl, "");
     sendFeed(myTemplate);
 
     setState(() {
       isLoading = false;
     });
   }
+}
+
+Future<File> getImageFileFromAssets(String path) async {
+  final byteData = await rootBundle.load('assets/$path');
+
+  final file = File('${(await getTemporaryDirectory()).path}/$path');
+  await file.create(recursive: true);
+  await file.writeAsBytes(byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes));
+
+  return file;
 }
