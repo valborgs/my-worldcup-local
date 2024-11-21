@@ -10,14 +10,15 @@ Future<FeedTemplate> makeFeedTemplate(String title, String description, String i
       imageUrl: Uri.parse(imageUrl),
       link: Link(
           webUrl: Uri.parse(linkUrl),
-          mobileWebUrl: Uri.parse(linkUrl)),
+          mobileWebUrl: Uri.parse(linkUrl)
+      ),
     ),
     buttons: [
       Button(
-        title: '월드컵 게임 체험하기',
+        title: '내가 만든 월드컵 게임 체험하기',
         link: Link(
-          androidExecutionParams: {'key1': 'value1', 'key2': 'value2'},
-          iosExecutionParams: {'key1': 'value1', 'key2': 'value2'},
+            webUrl: Uri.parse(linkUrl),
+            mobileWebUrl: Uri.parse(linkUrl),
         ),
       ),
     ],

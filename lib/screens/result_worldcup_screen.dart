@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:my_worldcup_local/screens/play_worldcup_screen.dart';
 import 'package:path_provider/path_provider.dart';
@@ -12,6 +13,7 @@ import '../api/imgbb_upload.dart';
 import '../api/kakaotalk_feed.dart';
 import '../models/worldcup_item_model.dart';
 import '../models/worldcup_model.dart';
+import '../tools/asset_to_file.dart';
 import '../tools/make_binary_file.dart';
 
 class ResultWorldCupScreen extends StatefulWidget {
@@ -197,7 +199,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
     });
 
     var title = widget.worldCupModel.title;
-    var image = widget.winnerModel.worldCupIdx<0
+    var image = widget.winnerModel.worldCupIdx>0
         ? File(widget.winnerModel.imagePath)
         : await getImageFileFromAssets(widget.winnerModel.imagePath);
     // 바이너리 파일로 변환
@@ -207,22 +209,12 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
     imgUrl ??= "";
 
     var description = '${widget.worldCupModel.title} 우승자 : ${widget.winnerModel.imageInfo}';
-
-    var myTemplate = await makeFeedTemplate(title, description, imgUrl, "");
+    var playstoreUrl = dotenv.env['playstore_url'];
+    var myTemplate = await makeFeedTemplate(title, description, imgUrl, (playstoreUrl!=null) ? playstoreUrl : "");
     sendFeed(myTemplate);
 
     setState(() {
       isLoading = false;
     });
   }
-}
-
-Future<File> getImageFileFromAssets(String path) async {
-  final byteData = await rootBundle.load('assets/$path');
-
-  final file = File('${(await getTemporaryDirectory()).path}/$path');
-  await file.create(recursive: true);
-  await file.writeAsBytes(byteData.buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes));
-
-  return file;
 }
