@@ -73,19 +73,20 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
             );
           },
         ),
-        // 월드컵 수정
-        IconOutlinedButton(
-          "수정",
-          Icons.edit,
-          Colors.orange,
-          onPressed: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => AddWorldCupScreen(editModel: widget.model),
-              ),
-            );
-          },
-        ),
+        // 월드컵 수정 (샘플 월드컵이 아닌 경우에만 표시)
+        if (widget.model.idx > 0)
+          IconOutlinedButton(
+            "수정",
+            Icons.edit,
+            Colors.orange,
+            onPressed: () {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => AddWorldCupScreen(editModel: widget.model),
+                ),
+              );
+            },
+          ),
         // 월드컵 삭제
         IconOutlinedButton(
           "삭제",

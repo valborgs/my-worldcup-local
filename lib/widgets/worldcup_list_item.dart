@@ -19,7 +19,10 @@ class WorldCupListItem extends StatelessWidget {
               ? Image.asset(worldCupModel.titleImageSrc, fit: BoxFit.cover)
               : Image.file(File(worldCupModel.titleImageSrc), fit: BoxFit.cover)
       ) : Image.asset("assets/images/free_character.png"),
-      title: Text(worldCupModel.title, semanticsLabel: "월드컵 게임 타이틀",),
+      title: Text(
+        worldCupModel.idx < 0 ? "(샘플) ${worldCupModel.title}" : worldCupModel.title, 
+        semanticsLabel: "월드컵 게임 타이틀",
+      ),
       subtitle: Text("최대 라운드 : ${makeMaxRound(worldCupModel.maxRound)}강", semanticsLabel: "월드컵 최대 라운드",),
       isThreeLine: true,
       onTap: () {

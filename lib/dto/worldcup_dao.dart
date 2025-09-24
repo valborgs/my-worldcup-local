@@ -1,7 +1,5 @@
 import 'package:my_worldcup_local/models/worldcup_item_model.dart';
 import 'package:my_worldcup_local/models/worldcup_model.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:sqflite/sqflite.dart';
 
 import '../db/sqlite.dart';
 
