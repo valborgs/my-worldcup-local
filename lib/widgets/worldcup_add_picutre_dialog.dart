@@ -6,7 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:my_worldcup_local/widgets/outlined_icon_button.dart';
 
 class WorldCupAddPictureDialog extends StatefulWidget {
-  const WorldCupAddPictureDialog({super.key});
+  final bool isEditMode;
+  final String? existingImageInfo;
+  const WorldCupAddPictureDialog({super.key, this.isEditMode = false, this.existingImageInfo});
 
   @override
   State<WorldCupAddPictureDialog> createState() => _WorldCupAddPictureDialogState();
@@ -27,6 +29,10 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
     _imageInfoController = TextEditingController();
     _imageInfoFocusNode = FocusNode();
     _formKey = GlobalKey<FormState>();
+    
+    if (widget.isEditMode && widget.existingImageInfo != null) {
+      _imageInfoController.text = widget.existingImageInfo!;
+    }
   }
 
   @override
@@ -46,10 +52,10 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
         width: double.maxFinite,
         child: Column(
           children: [
-            const Text(
-              "사진 추가",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              semanticsLabel: "사진 추가",
+            Text(
+              widget.isEditMode ? "사진 수정" : "사진 추가",
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              semanticsLabel: widget.isEditMode ? "사진 수정" : "사진 추가",
             ),
             const Padding(
                 padding: EdgeInsetsDirectional.only(bottom: 10)),
@@ -144,7 +150,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 IconOutlinedButton("취소", Icons.cancel_outlined, Colors.red, onPressed: () => Navigator.pop(context),),
-                IconOutlinedButton("추가", Icons.check, Colors.deepPurple, onPressed: addPicture,),
+                IconOutlinedButton(widget.isEditMode ? "수정" : "추가", Icons.check, Colors.deepPurple, onPressed: addPicture,),
               ],
             )
           ],

@@ -9,7 +9,8 @@ import '../dto/worldcup_dao.dart';
 import '../widgets/worldcup_add_picutre_dialog.dart';
 
 class AddWorldCupScreen extends StatefulWidget {
-  const AddWorldCupScreen({super.key});
+  final WorldCupModel? editModel;
+  const AddWorldCupScreen({super.key, this.editModel});
 
   @override
   State<AddWorldCupScreen> createState() => _AddWorldCupScreenState();
@@ -24,6 +25,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
   late FocusNode _infoFocusNode;
   late List<String> _imagePathList;
   late List<String> _imageInfoList;
+  bool get isEditMode => widget.editModel != null;
 
 
   @override
@@ -36,6 +38,10 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     _infoFocusNode = FocusNode();
     _imagePathList = [];
     _imageInfoList = [];
+    
+    if (isEditMode) {
+      _initializeEditMode();
+    }
   }
 
   @override
@@ -54,7 +60,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text("월드컵 등록", semanticsLabel: "월드컵 등록 화면",),
+        title: Text(isEditMode ? "월드컵 수정" : "월드컵 등록", semanticsLabel: isEditMode ? "월드컵 수정 화면" : "월드컵 등록 화면",),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 10),
@@ -63,11 +69,19 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
               label: "Confirm Button",
               child: IconButton(
                 onPressed: () {
-                  addWorldCup().then((value) {
-                    if(value){
-                      Navigator.of(context).pop();
-                    }
-                  });
+                  if (isEditMode) {
+                    updateWorldCup().then((value) {
+                      if(value){
+                        Navigator.of(context).pop();
+                      }
+                    });
+                  } else {
+                    addWorldCup().then((value) {
+                      if(value){
+                        Navigator.of(context).pop();
+                      }
+                    });
+                  }
                 } ,
                 icon: const Icon(
                   Icons.check_rounded,
@@ -212,22 +226,26 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                   ),
                   InkWell(
                     onTap: () {
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          Image image = Image.file(
-                            File(src),
-                          );
-                          return Dialog(
-                            child: SizedBox(
-                              width: image.width,
-                              height: image.height,
-                              child: image,
-                            ),
-                          );
-                        },
-                      );
+                      if (isEditMode) {
+                        showEditPictureDialog(context, index);
+                      } else {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            Image image = Image.file(
+                              File(src),
+                            );
+                            return Dialog(
+                              child: SizedBox(
+                                width: image.width,
+                                height: image.height,
+                                child: image,
+                              ),
+                            );
+                          },
+                        );
+                      }
                     },
                     child: AspectRatio(
                       aspectRatio: 2,
@@ -348,8 +366,56 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     );
   }
 
+  void _initializeEditMode() async {
+    if (widget.editModel != null) {
+      _titleController.text = widget.editModel!.title;
+      _infoController.text = widget.editModel!.info;
+      
+      WorldCupDao dao = WorldCupDao();
+      List<WorldCupItemModel> items = await dao.getWorldCupItemList(widget.editModel!.idx);
+      
+      setState(() {
+        _imagePathList = items.map((item) => item.imagePath).toList();
+        _imageInfoList = items.map((item) => item.imageInfo).toList();
+      });
+    }
+  }
+
+  Future<bool> updateWorldCup() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    if(!_formKey.currentState!.validate()) return false;
+
+    if(_imagePathList.isEmpty || _imagePathList.length<4){
+      return false;
+    }
+
+    var dao = WorldCupDao();
+    var model = WorldCupModel(
+        widget.editModel!.idx,
+        _titleController.text,
+        _infoController.text,
+        widget.editModel!.date,
+        _imagePathList.first,
+        _imagePathList.length
+    );
+
+    try{
+      await dao.updateWorldCup(model);
+      await dao.deleteWorldCupItemByIdx(widget.editModel!.idx);
+      
+      for(int i=0; i<_imagePathList.length; i++){
+        WorldCupItemModel itemModel = WorldCupItemModel(0, _imagePathList[i], _imageInfoList[i], widget.editModel!.idx);
+        await dao.addWorldCupItem(itemModel);
+      }
+      return true;
+    }catch(e){
+      print("DB Error : $e");
+      const SnackBar(content: Text("데이터를 업데이트할 수 없습니다. 잠시후에 다시 시도해주세요."));
+      return false;
+    }
+  }
+
   Future<void> showAddPictureDialog(BuildContext context) async {
-    // 키보드 내리기
     FocusManager.instance.primaryFocus?.unfocus();
 
     List<String> result = await showDialog(
@@ -363,6 +429,27 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
       setState(() {
         _imagePathList.add(result[0]);
         _imageInfoList.add(result[1]);
+      });
+    }
+  }
+
+  Future<void> showEditPictureDialog(BuildContext context, int index) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    List<String> result = await showDialog(
+        context: context,
+        builder: (context) {
+          return WorldCupAddPictureDialog(
+            isEditMode: true, 
+            existingImageInfo: _imageInfoList[index]
+          );
+        }
+    );
+
+    if(result.isNotEmpty){
+      setState(() {
+        _imagePathList[index] = result[0];
+        _imageInfoList[index] = result[1];
       });
     }
   }

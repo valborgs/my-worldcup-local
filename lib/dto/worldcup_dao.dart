@@ -46,6 +46,22 @@ class WorldCupDao{
       rethrow;
     }
   }
+
+  // db에서 월드컵을 업데이트한다.
+  Future<void> updateWorldCup(WorldCupModel model) async {
+    try{
+      final db = await dbProvider.database;
+
+      await db.update(
+        worldCupTable, 
+        model.toMap(),
+        where: "idx = ?",
+        whereArgs: [model.idx]
+      );
+    }catch(e){
+      rethrow;
+    }
+  }
   
   // db에 샘플 월드컵을 저장한다.
   Future<void> addSampleWorldCup() async {

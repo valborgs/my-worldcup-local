@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../dto/worldcup_dao.dart';
 import '../models/worldcup_model.dart';
 import '../screens/play_worldcup_screen.dart';
+import '../screens/add_worldcup_screen.dart';
 import '../tools/make_round.dart';
 import 'outlined_icon_button.dart';
 
@@ -68,6 +69,19 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (context) => PlayWorldCupScreen(widget.model, selectedRound),
+              ),
+            );
+          },
+        ),
+        // 월드컵 수정
+        IconOutlinedButton(
+          "수정",
+          Icons.edit,
+          Colors.orange,
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => AddWorldCupScreen(editModel: widget.model),
               ),
             );
           },
