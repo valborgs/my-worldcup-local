@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:my_worldcup_local/screens/play_worldcup_screen.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../ad/ad_helper.dart';
 import '../api/imgbb_upload.dart';
 import '../api/kakaotalk_feed.dart';
 import '../models/worldcup_item_model.dart';
@@ -29,11 +31,70 @@ class ResultWorldCupScreen extends StatefulWidget {
 class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
 
   late ConfettiController _confettiController;
+  InterstitialAd? _interstitialAd;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInterstitialAd();
+  }
 
   @override
   void dispose() {
     super.dispose();
     _confettiController.dispose();
+    _interstitialAd?.dispose();
+  }
+
+  void _loadInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: AdHelper.interstitialAdUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _interstitialAd = ad;
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          print('InterstitialAd failed to load: $error');
+        },
+      ),
+    );
+  }
+
+  void _showInterstitialAdAndNavigate(VoidCallback onAdClosed) {
+    if (_interstitialAd != null) {
+      _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          ad.dispose();
+          _interstitialAd = null;
+          _loadInterstitialAd(); // 다음 사용을 위해 새 광고 로드
+          onAdClosed();
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          print('Failed to show interstitial ad: $error');
+          ad.dispose();
+          _interstitialAd = null;
+          _loadInterstitialAd(); // 다음 사용을 위해 새 광고 로드
+          onAdClosed(); // 광고 실패 시에도 원래 동작 수행
+        },
+      );
+      _interstitialAd!.show();
+    } else {
+      // 광고가 로드되지 않은 경우 바로 원래 동작 수행
+      onAdClosed();
+    }
+  }
+
+  void _replayGame() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => PlayWorldCupScreen(widget.worldCupModel, widget.round),
+      ),
+    );
+  }
+
+  void _goBack() {
+    Navigator.of(context).pop();
   }
 
   // 로딩 이미지
@@ -49,11 +110,22 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
     _confettiController = ConfettiController(duration: const Duration(seconds: 5));
     _confettiController.play();
 
-    return Scaffold(
-      resizeToAvoidBottomInset:false,
-      appBar: AppBar(
-        title: Text("${widget.worldCupModel.title} 우승자", semanticsLabel: "월드컵 우승자 화면",),
-      ),
+    return WillPopScope(
+      onWillPop: () async {
+        _showInterstitialAdAndNavigate(_goBack);
+        return false; // WillPopScope에서 false를 반환하여 기본 뒤로가기 동작 방지
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset:false,
+        appBar: AppBar(
+          title: Text("${widget.worldCupModel.title} 우승자", semanticsLabel: "월드컵 우승자 화면",),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              _showInterstitialAdAndNavigate(_goBack);
+            },
+          ),
+        ),
       // 화면
       body: Stack(
         alignment: AlignmentDirectional.center,
@@ -105,11 +177,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                     // 다시하기 버튼
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => PlayWorldCupScreen(widget.worldCupModel, widget.round),
-                          ),
-                        );
+                        _showInterstitialAdAndNavigate(_replayGame);
                       },
                       style: const ButtonStyle(
                           backgroundColor: WidgetStatePropertyAll(Colors.red),
@@ -189,6 +257,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
           if(isLoading) spinkit,
         ],
       ) ,
+      ),
     );
   }
 
