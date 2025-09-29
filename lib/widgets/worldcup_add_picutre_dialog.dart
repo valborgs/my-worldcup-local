@@ -8,7 +8,8 @@ import 'package:my_worldcup_local/widgets/outlined_icon_button.dart';
 class WorldCupAddPictureDialog extends StatefulWidget {
   final bool isEditMode;
   final String? existingImageInfo;
-  const WorldCupAddPictureDialog({super.key, this.isEditMode = false, this.existingImageInfo});
+  final String? existingImagePath;
+  const WorldCupAddPictureDialog({super.key, this.isEditMode = false, this.existingImageInfo, this.existingImagePath});
 
   @override
   State<WorldCupAddPictureDialog> createState() => _WorldCupAddPictureDialogState();
@@ -30,8 +31,13 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
     _imageInfoFocusNode = FocusNode();
     _formKey = GlobalKey<FormState>();
     
-    if (widget.isEditMode && widget.existingImageInfo != null) {
-      _imageInfoController.text = widget.existingImageInfo!;
+    if (widget.isEditMode) {
+      if (widget.existingImageInfo != null) {
+        _imageInfoController.text = widget.existingImageInfo!;
+      }
+      if (widget.existingImagePath != null) {
+        _preImagePath = widget.existingImagePath!;
+      }
     }
   }
 
@@ -117,7 +123,21 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
               height: _preImagePath != ""
                   ? 200 : 0,
               child: _preImagePath != ""
-                  ? Image.file(File(_preImagePath))
+                  ? InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return Dialog(
+                              child: InteractiveViewer(
+                                child: Image.file(File(_preImagePath)),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      child: Image.file(File(_preImagePath)),
+                    )
                   : Image.asset("assets/images/free_character.png"),
             ),
             isPictureEmpty

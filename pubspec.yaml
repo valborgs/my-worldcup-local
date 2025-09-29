@@ -43,6 +43,7 @@ dependencies:
   smooth_page_indicator: ^1.1.0 # 로딩 인디케이터
   expandable_page_view: ^1.0.17 # 뷰페이저
   image_picker: ^1.1.1 # 이미지피커
+  file_picker: ^8.0.0+1 # 다중 파일 선택
   dotted_border: ^2.1.0 # 점선 박스
   sqflite: ^2.3.3+1 # sqlite
   path: ^1.9.0 # 파일 경로

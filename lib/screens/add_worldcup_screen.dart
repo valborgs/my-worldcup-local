@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:dotted_border/dotted_border.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:my_worldcup_local/models/worldcup_item_model.dart';
 import 'package:my_worldcup_local/models/worldcup_model.dart';
 
@@ -141,26 +143,66 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                   : isPictureListEmpty(),
             ),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-            Semantics(
-              label: "Add Item Button",
-              child: InkWell(
-                onTap: () => showAddPictureDialog(context),
-                child: Column(
-                  children: [
-                    DottedBorder(
-                      child: const SizedBox(
-                        width: double.maxFinite,
-                        height: 48,
-                        child: Icon(
-                          Icons.add,
-                          semanticLabel: "추가",
-                          size: 32,
+            Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    label: "Add Single Item Button",
+                    child: InkWell(
+                      onTap: () => showAddPictureDialog(context),
+                      child: DottedBorder(
+                        child: const SizedBox(
+                          height: 48,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add,
+                                semanticLabel: "단일 추가",
+                                size: 20,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                "이미지 선택",
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Semantics(
+                    label: "Add Multiple Items Button",
+                    child: InkWell(
+                      onTap: () => showMultipleImagePicker(context),
+                      child: DottedBorder(
+                        child: const SizedBox(
+                          height: 48,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add,
+                                semanticLabel: "복수 추가",
+                                size: 20,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                "여러개 선택",
+                                style: TextStyle(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
             Expanded(
@@ -226,26 +268,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                   ),
                   InkWell(
                     onTap: () {
-                      if (isEditMode) {
-                        showEditPictureDialog(context, index);
-                      } else {
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            Image image = Image.file(
-                              File(src),
-                            );
-                            return Dialog(
-                              child: SizedBox(
-                                width: image.width,
-                                height: image.height,
-                                child: image,
-                              ),
-                            );
-                          },
-                        );
-                      }
+                      showEditPictureDialog(context, index);
                     },
                     child: AspectRatio(
                       aspectRatio: 2,
@@ -441,7 +464,8 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
         builder: (context) {
           return WorldCupAddPictureDialog(
             isEditMode: true, 
-            existingImageInfo: _imageInfoList[index]
+            existingImageInfo: _imageInfoList[index],
+            existingImagePath: _imagePathList[index]
           );
         }
     );
@@ -451,6 +475,73 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
         _imagePathList[index] = result[0];
         _imageInfoList[index] = result[1];
       });
+    }
+  }
+
+  Future<void> showMultipleImagePicker(BuildContext context) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: true,
+      allowCompression: false,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      for (PlatformFile file in result.files) {
+        if (file.path != null) {
+          TextEditingController controller = TextEditingController();
+          String? description = await showDialog<String>(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('이미지 설명'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.file(
+                      File(file.path!),
+                      height: 200,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: controller,
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        labelText: '설명',
+                        hintText: '이미지에 대한 설명을 입력하세요',
+                      ),
+                      onSubmitted: (value) {
+                        Navigator.of(context).pop(value.isNotEmpty ? value : '설명 없음');
+                      },
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('취소'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(controller.text.isNotEmpty ? controller.text : '설명 없음');
+                    },
+                    child: const Text('확인'),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (description != null) {
+            setState(() {
+              _imagePathList.add(file.path!);
+              _imageInfoList.add(description);
+            });
+          }
+        }
+      }
     }
   }
 }
