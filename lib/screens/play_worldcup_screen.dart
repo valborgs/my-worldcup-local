@@ -46,7 +46,7 @@ class _PlayWorldCupScreenState extends State<PlayWorldCupScreen> {
         create: (context) => WorldCupSelectProvider(),
         child: itemList != null
             ? WorldCupGame(widget.worldCupModel, itemList!, widget.selectedRound)
-            : const SizedBox(width: double.maxFinite, height: double.maxFinite),
+            : const ColoredBox(color: Colors.black),
       ),
     );
   }

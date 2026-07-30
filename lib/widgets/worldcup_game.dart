@@ -3,8 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:my_worldcup_local/screens/result_worldcup_screen.dart';
-import 'package:my_worldcup_local/widgets/item_bottom.dart';
-import 'package:my_worldcup_local/widgets/item_top.dart';
+import 'package:my_worldcup_local/widgets/game_item.dart';
 import 'package:provider/provider.dart';
 
 import '../models/worldcup_item_model.dart';
@@ -118,25 +117,51 @@ class _WorldCupGameState extends State<WorldCupGame> {
       width: double.infinity,
       height: double.infinity,
       color: Colors.black,
-      child: Stack(
-        children: [
-          Column(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 화면이 세로보다 넓으면(폴더블 내부화면, 태블릿 가로 모드 등) 좌/우로 배치한다.
+          final axis = constraints.maxWidth >= constraints.maxHeight
+              ? Axis.horizontal
+              : Axis.vertical;
+
+          return Stack(
             children: [
-              ItemTop(topItem),
-              const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-              ItemBottom(bottomItem),
+              Flex(
+                direction: axis,
+                children: [
+                  GameItem(
+                    topItem,
+                    key: ValueKey(topItem.idx),
+                    position: SelectedItemPosition.top,
+                    axis: axis,
+                  ),
+                  const SizedBox(width: 16, height: 16),
+                  GameItem(
+                    bottomItem,
+                    key: ValueKey(bottomItem.idx),
+                    position: SelectedItemPosition.bottom,
+                    axis: axis,
+                  ),
+                ],
+              ),
+              Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                      (maxRound==1) ? "결승" : "$round / $maxRound",
+                      style: const TextStyle(
+                          fontSize: 24,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          backgroundColor: Colors.grey
+                      )
+                  ),
+                ),
+              ),
             ],
-          ),
-          Text(
-              (maxRound==1) ? "결승" : "$round / $maxRound",
-              style: const TextStyle(
-                  fontSize: 24,
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  backgroundColor: Colors.grey
-              )
-          ),
-        ],
+          );
+        },
       ),
     );
   }
