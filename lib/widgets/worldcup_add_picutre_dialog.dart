@@ -141,7 +141,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                   : Image.asset("assets/images/free_character.png"),
             ),
             isPictureEmpty
-                ? const Text("사진을 추가해주세요", style: const TextStyle(color: Colors.red),)
+                ? const Text("사진을 추가해주세요", style: TextStyle(color: Colors.red),)
                 : const Padding(padding: EdgeInsetsDirectional.only(bottom: 1)),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
             // 사진 설명 입력

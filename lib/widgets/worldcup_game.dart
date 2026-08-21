@@ -10,10 +10,10 @@ import '../models/worldcup_item_model.dart';
 import '../provider/worldcup_select_provider.dart';
 
 class WorldCupGame extends StatefulWidget {
-  WorldCupModel worldCupModel;
-  List<WorldCupItemModel> itemList;
-  int selectedRound;
-  WorldCupGame(this.worldCupModel, this.itemList, this.selectedRound, {super.key});
+  final WorldCupModel worldCupModel;
+  final List<WorldCupItemModel> itemList;
+  final int selectedRound;
+  const WorldCupGame(this.worldCupModel, this.itemList, this.selectedRound, {super.key});
 
   @override
   State<WorldCupGame> createState() => _WorldCupGameState();

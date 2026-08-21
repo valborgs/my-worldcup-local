@@ -6,8 +6,8 @@ import 'package:my_worldcup_local/tools/make_round.dart';
 import 'package:my_worldcup_local/widgets/worldcup_select_dialog.dart';
 
 class WorldCupListItem extends StatelessWidget {
-  WorldCupModel worldCupModel;
-  WorldCupListItem(this.worldCupModel, {super.key});
+  final WorldCupModel worldCupModel;
+  const WorldCupListItem(this.worldCupModel, {super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -40,8 +40,8 @@ Future<void> main() async {
 }
 
 class MyWorldCup extends StatefulWidget {
-  bool? isAlreadyShownHelp;
-  MyWorldCup(this.isAlreadyShownHelp, {super.key});
+  final bool? isAlreadyShownHelp;
+  const MyWorldCup(this.isAlreadyShownHelp, {super.key});
 
   @override
   State<MyWorldCup> createState() => _MyWorldCupState();
@@ -87,7 +87,7 @@ class _MyWorldCupState extends State<MyWorldCup> {
           ? const MainWorldCupScreen()
           : Semantics(
             label: "도움말, 소개 화면",
-            child: HelpScreen(true)
+            child: const HelpScreen(true)
           )
     );
   }

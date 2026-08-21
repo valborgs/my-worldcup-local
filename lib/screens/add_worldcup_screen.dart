@@ -1,9 +1,9 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:dotted_border/dotted_border.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:my_worldcup_local/models/worldcup_item_model.dart';
 import 'package:my_worldcup_local/models/worldcup_model.dart';
 
@@ -369,7 +369,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
       }
       return true;
     }catch(e){
-      print("DB Error : $e");
+      log('DB Error', error: e, name: 'add_worldcup_screen');
       const SnackBar(content: Text("데이터를 저장할 수 없습니다. 잠시후에 다시 시도해주세요."));
           return false;
     }
@@ -432,7 +432,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
       }
       return true;
     }catch(e){
-      print("DB Error : $e");
+      log('DB Error', error: e, name: 'add_worldcup_screen');
       const SnackBar(content: Text("데이터를 업데이트할 수 없습니다. 잠시후에 다시 시도해주세요."));
       return false;
     }
@@ -489,6 +489,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
 
     if (result != null && result.files.isNotEmpty) {
       for (PlatformFile file in result.files) {
+        if (!context.mounted) return;
         if (file.path != null) {
           TextEditingController controller = TextEditingController();
           String? description = await showDialog<String>(

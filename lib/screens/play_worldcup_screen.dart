@@ -9,9 +9,9 @@ import '../provider/worldcup_select_provider.dart';
 import '../widgets/worldcup_game.dart';
 
 class PlayWorldCupScreen extends StatefulWidget {
-  WorldCupModel worldCupModel;
-  int selectedRound;
-  PlayWorldCupScreen(this.worldCupModel, this.selectedRound, {super.key});
+  final WorldCupModel worldCupModel;
+  final int selectedRound;
+  const PlayWorldCupScreen(this.worldCupModel, this.selectedRound, {super.key});
 
   @override
   State<PlayWorldCupScreen> createState() => _PlayWorldCupScreenState();

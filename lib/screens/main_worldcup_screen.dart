@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -31,7 +33,8 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
         _showBackDialog();
       },
       child: Scaffold(
@@ -45,7 +48,7 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
                 onPressed: (){
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => HelpScreen(false),
+                      builder: (context) => const HelpScreen(false),
                       fullscreenDialog: true,
                     ),
                   );
@@ -156,7 +159,7 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
         });
       }, onAdFailedToLoad: (ad, error){
         // 광고 로드가 실패하면 아래의 코드를 실행한다.
-        print(error.message);
+        log(error.message, name: 'main_worldcup_screen');
         ad.dispose();
       }),
     ).load();

@@ -1,14 +1,13 @@
+import 'dart:developer';
 import 'dart:io';
-import 'dart:math';
+import 'dart:math' hide log;
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:my_worldcup_local/screens/play_worldcup_screen.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../ad/ad_helper.dart';
 import '../api/imgbb_upload.dart';
@@ -19,10 +18,10 @@ import '../tools/asset_to_file.dart';
 import '../tools/make_binary_file.dart';
 
 class ResultWorldCupScreen extends StatefulWidget {
-  WorldCupModel worldCupModel;
-  WorldCupItemModel winnerModel;
-  int round;
-  ResultWorldCupScreen(this.worldCupModel, this.winnerModel, this.round, {super.key});
+  final WorldCupModel worldCupModel;
+  final WorldCupItemModel winnerModel;
+  final int round;
+  const ResultWorldCupScreen(this.worldCupModel, this.winnerModel, this.round, {super.key});
 
   @override
   State<ResultWorldCupScreen> createState() => _ResultWorldCupScreen();
@@ -55,7 +54,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
           _interstitialAd = ad;
         },
         onAdFailedToLoad: (LoadAdError error) {
-          print('InterstitialAd failed to load: $error');
+          log('InterstitialAd failed to load', error: error, name: 'result_worldcup_screen');
         },
       ),
     );
@@ -71,7 +70,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
           onAdClosed();
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
-          print('Failed to show interstitial ad: $error');
+          log('Failed to show interstitial ad', error: error, name: 'result_worldcup_screen');
           ad.dispose();
           _interstitialAd = null;
           _loadInterstitialAd(); // 다음 사용을 위해 새 광고 로드
@@ -110,10 +109,11 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
     _confettiController = ConfettiController(duration: const Duration(seconds: 5));
     _confettiController.play();
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
         _showInterstitialAdAndNavigate(_goBack);
-        return false; // WillPopScope에서 false를 반환하여 기본 뒤로가기 동작 방지
       },
       child: Scaffold(
         resizeToAvoidBottomInset:false,
@@ -132,7 +132,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
         children: [
           Container(
             height: double.maxFinite,
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
             alignment: Alignment.center,
             child: Column(

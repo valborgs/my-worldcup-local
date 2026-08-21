@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:kakao_flutter_sdk_share/kakao_flutter_sdk_share.dart';
 
 // DefaultTemplate으로 메시지 만드는 함수
@@ -38,7 +40,7 @@ Future<bool> sendFeed(FeedTemplate myTemplate) async {
       await ShareClient.instance.launchKakaoTalk(uri);
       result = true;
     } catch (error) {
-      print('카카오톡 공유 실패 $error');
+      log('카카오톡 공유 실패', error: error, name: 'kakaotalk_feed');
       result = false;
     }
   } else {
@@ -48,7 +50,7 @@ Future<bool> sendFeed(FeedTemplate myTemplate) async {
       await launchBrowserTab(shareUrl, popupOpen: true);
       result = true;
     } catch (error) {
-      print('카카오톡 공유 실패 $error');
+      log('카카오톡 공유 실패', error: error, name: 'kakaotalk_feed');
       result = false;
     }
   }

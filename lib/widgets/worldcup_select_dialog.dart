@@ -8,8 +8,8 @@ import '../tools/make_round.dart';
 import 'outlined_icon_button.dart';
 
 class WorldCupSelectDialog extends StatefulWidget {
-  WorldCupModel model;
-  WorldCupSelectDialog(this.model, {super.key});
+  final WorldCupModel model;
+  const WorldCupSelectDialog(this.model, {super.key});
 
   @override
   State<WorldCupSelectDialog> createState() => _WorldCupSelectDialogState();

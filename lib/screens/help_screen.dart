@@ -5,8 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'main_worldcup_screen.dart';
 
 class HelpScreen extends StatefulWidget {
-  bool isFirstShow;
-  HelpScreen(this.isFirstShow, {super.key});
+  final bool isFirstShow;
+  const HelpScreen(this.isFirstShow, {super.key});
 
   @override
   State<HelpScreen> createState() => _HelpScreenState();
@@ -75,6 +75,8 @@ class _HelpScreenState extends State<HelpScreen> {
       // 이후에는 앱을 다시 켜도 Help화면이 안나온다.
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setBool("isAlreadyShownHelp", true);
+
+      if (!mounted) return;
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(

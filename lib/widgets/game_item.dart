@@ -118,7 +118,7 @@ class _GameItemState extends State<GameItem> with TickerProviderStateMixin {
                             fontSize: fontSize,
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            backgroundColor: Colors.grey.withOpacity(0.5),
+                            backgroundColor: Colors.grey.withValues(alpha: 0.5),
                           ),
                           semanticsLabel: "항목 이름",
                         ),

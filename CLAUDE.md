@@ -85,6 +85,14 @@ The app requires a `.env` file in the root directory with:
 - Tournament rounds are generated using binary elimination logic in `lib/tools/make_round.dart`
 - Ad integration through Google Mobile Ads with helper classes in `lib/ad/`
 
+## Coding Conventions (avoid reintroducing known lint/deprecation issues)
+
+- **Back navigation interception**: Use `PopScope` with `onPopInvokedWithResult: (didPop, result) { ... }`, never `WillPopScope` (removed) or the deprecated `onPopInvoked` callback. Set `canPop: false` when the default pop must be intercepted (e.g., to show an ad or confirmation dialog first), and `return` early if `didPop` is already true.
+- **Color opacity**: Use `color.withValues(alpha: x)`, never `color.withOpacity(x)` (deprecated, loses precision).
+- **Logging**: Never use `print()` in `lib/`. Use `dart:developer`'s `log(message, error: e, name: 'source_name')` instead. If a file also imports `dart:math`, hide its `log` to avoid an `ambiguous_import` error: `import 'dart:math' hide log;`.
+- **Widget fields**: All `StatelessWidget`/`StatefulWidget` instance fields must be declared `final`, and their constructors should be `const` whenever every field can be const-initialized. Do not add mutable fields to a widget class — put mutable state in the corresponding `State` class instead.
+- **BuildContext across async gaps**: After any `await` inside a method that later uses `context` (navigation, `showDialog`, `ScaffoldMessenger`, etc.), guard with a mounted check before the first post-await context use: `if (!mounted) return;` inside a `State` method, or `if (!context.mounted) return;` when `context` is a parameter (e.g., a free function or a loop awaiting multiple times — check on every iteration).
+
 ## Asset Structure
 - `assets/images/` - App UI images and help screens
 - `assets/sample/female/` and `assets/sample/male/` - Sample tournament images
