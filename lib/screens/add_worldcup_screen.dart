@@ -484,7 +484,6 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.image,
       allowMultiple: true,
-      allowCompression: false,
     );
 
     if (result != null && result.files.isNotEmpty) {
