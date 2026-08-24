@@ -83,8 +83,16 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
     }
+}
+
+dependencies {
+    // play-services-ads가 끌어오는 work-runtime 2.7.0 → room-runtime 2.2.5는
+    // R8 full mode와 호환되지 않는 proguard 규칙을 갖고 있어 상향한다.
+    implementation "androidx.work:work-runtime:2.10.0"
+    implementation "androidx.room:room-runtime:2.6.1"
 }
 
 flutter {
