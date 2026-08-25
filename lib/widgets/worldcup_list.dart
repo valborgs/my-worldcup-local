@@ -6,7 +6,8 @@ import 'package:my_worldcup_local/widgets/worldcup_list_item.dart';
 import '../models/worldcup_model.dart';
 
 class WorldCupList extends StatefulWidget {
-  const WorldCupList({super.key});
+  final List<WorldCupModel>? initialWorldCupList;
+  const WorldCupList({this.initialWorldCupList, super.key});
 
   @override
   State<WorldCupList> createState() => _WorldCupListState();
@@ -15,7 +16,7 @@ class WorldCupList extends StatefulWidget {
 
 class _WorldCupListState extends State<WorldCupList> {
 
-  List<WorldCupModel> worldCupList = [];
+  late List<WorldCupModel> worldCupList = widget.initialWorldCupList ?? [];
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +45,7 @@ class _WorldCupListState extends State<WorldCupList> {
   void _loadWorldCupList() async {
     var db = WorldCupDao();
     List<WorldCupModel> newList = await db.getWorldCupList();
+    if (!mounted) return;
     setState(() {
       worldCupList = newList;
     });

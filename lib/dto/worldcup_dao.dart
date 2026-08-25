@@ -61,8 +61,10 @@ class WorldCupDao{
     }
   }
   
-  // db에 샘플 월드컵을 저장한다.
-  Future<void> addSampleWorldCup() async {
+  // 앱 시작 시마다 샘플 월드컵 데이터를 최신 상태로 동기화한다.
+  // 기존 샘플 데이터(idx -1, -2)를 지우고 다시 넣어서,
+  // 샘플 이미지 에셋이 교체/리네임되어도 로컬 db에 남아있던 예전 경로를 참조하지 않도록 한다.
+  Future<void> syncSampleWorldCup() async {
 
     String rootDirectory = "assets/sample";
     
@@ -112,16 +114,22 @@ class WorldCupDao{
     try{
       final db = await dbProvider.database;
 
-      // 작성한 월드컵 데이터를 db에 저장한다.
-      for(int i=0; i<newList.length; i++){
-        db.insert(worldCupTable, newList[i].toMap());
-      }
+      await db.transaction((txn) async {
+        // 예전에 저장됐던 샘플 월드컵/아이템 데이터를 모두 지운다.
+        await txn.delete(worldCupItemTable, where: "worldCupIdx < 0");
+        await txn.delete(worldCupTable, where: "idx < 0");
 
-      // 작성한 월드컵 아이템 데이터를 db에 저장한다.
-      for(int i=0; i<itemList1.length; i++){
-        db.insert(worldCupItemTable, itemList1[i].toMap());
-        db.insert(worldCupItemTable, itemList2[i].toMap());
-      }
+        // 최신 샘플 월드컵 데이터를 다시 저장한다.
+        for(int i=0; i<newList.length; i++){
+          await txn.insert(worldCupTable, newList[i].toMap());
+        }
+
+        // 최신 샘플 월드컵 아이템 데이터를 다시 저장한다.
+        for(int i=0; i<itemList1.length; i++){
+          await txn.insert(worldCupItemTable, itemList1[i].toMap());
+          await txn.insert(worldCupItemTable, itemList2[i].toMap());
+        }
+      });
     }catch(e){
       rethrow;
     }

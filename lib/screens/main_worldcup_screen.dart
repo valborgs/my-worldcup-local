@@ -6,11 +6,13 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:my_worldcup_local/screens/help_screen.dart';
 
 import '../ad/ad_helper.dart';
+import '../models/worldcup_model.dart';
 import '../widgets/worldcup_list.dart';
 import 'add_worldcup_screen.dart';
 
 class MainWorldCupScreen extends StatefulWidget {
-  const MainWorldCupScreen({super.key});
+  final List<WorldCupModel>? initialWorldCupList;
+  const MainWorldCupScreen({this.initialWorldCupList, super.key});
 
   @override
   State<MainWorldCupScreen> createState() => _MainWorldCupScreenState();
@@ -104,7 +106,7 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
                     ),
                   ),
                 // 월드컵 리스트
-                const WorldCupList(),
+                WorldCupList(initialWorldCupList: widget.initialWorldCupList),
               ],
             ),
           ),

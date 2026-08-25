@@ -8,6 +8,7 @@ import 'package:my_worldcup_local/screens/main_worldcup_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dto/worldcup_dao.dart';
+import 'models/worldcup_model.dart';
 
 // 이 너비(dp) 이상을 '대화면'(폴더블 내부화면, 태블릿 등)으로 간주하여 회전을 허용한다.
 const double _kLargeScreenWidth = 600.0;
@@ -25,23 +26,26 @@ Future<void> main() async {
   );
 
   // 구글 애드몹
-  MobileAds.instance.initialize();
+  await MobileAds.instance.initialize();
 
   SharedPreferences prefs = await SharedPreferences.getInstance();
   bool? isAlreadyShownHelp = prefs.getBool("isAlreadyShownHelp");
 
-  if(isAlreadyShownHelp==null){
-    // 앱을 처음 실행할 때에만 샘플 월드컵 데이터를 추가한다.
-    var dao = WorldCupDao();
-    dao.addSampleWorldCup();
-  }
+  // 앱을 시작할 때마다 샘플 월드컵 데이터를 최신 상태로 동기화한다.
+  // (샘플 이미지 에셋이 교체되어도 로컬 db가 예전 경로를 들고 있지 않도록 함)
+  var dao = WorldCupDao();
+  await dao.syncSampleWorldCup();
 
-  runApp(MyWorldCup(isAlreadyShownHelp));
+  // 첫 화면 진입 시 빈 목록이 잠깐 보였다가 바뀌는 깜빡임을 없애기 위해 미리 불러온다.
+  List<WorldCupModel> initialWorldCupList = await dao.getWorldCupList();
+
+  runApp(MyWorldCup(isAlreadyShownHelp, initialWorldCupList));
 }
 
 class MyWorldCup extends StatefulWidget {
   final bool? isAlreadyShownHelp;
-  const MyWorldCup(this.isAlreadyShownHelp, {super.key});
+  final List<WorldCupModel> initialWorldCupList;
+  const MyWorldCup(this.isAlreadyShownHelp, this.initialWorldCupList, {super.key});
 
   @override
   State<MyWorldCup> createState() => _MyWorldCupState();
@@ -84,7 +88,7 @@ class _MyWorldCupState extends State<MyWorldCup> {
         return child!;
       },
       home: (widget.isAlreadyShownHelp == true)
-          ? const MainWorldCupScreen()
+          ? MainWorldCupScreen(initialWorldCupList: widget.initialWorldCupList)
           : Semantics(
             label: "도움말, 소개 화면",
             child: const HelpScreen(true)
