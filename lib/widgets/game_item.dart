@@ -31,9 +31,6 @@ class _GameItemState extends State<GameItem> with TickerProviderStateMixin {
   late Tween<Offset> _tween;
   late Animation<Offset> _animation;
 
-  // 중복 탭 방지 (한 라운드에 한 번만 선택 가능)
-  var _isTouchable = true;
-
   late WorldCupSelectProvider _selectProvider;
 
   void _resetController() {
@@ -80,8 +77,10 @@ class _GameItemState extends State<GameItem> with TickerProviderStateMixin {
         position: _animation,
         child: InkWell(
           onTap: () {
-            if (_isTouchable) {
-              _isTouchable = false;
+            // 중복 탭 방지 (한 대결에 한 번만 선택 가능).
+            // 탭 가능 여부는 라운드 전환 시점에 WorldCupGame.setGame()이
+            // 초기화하는 Provider 상태를 기준으로 판단한다.
+            if (!_selectProvider.hasSelected) {
               _selectProvider.setSelectedItem(widget.position, widget.itemModel);
             }
           },

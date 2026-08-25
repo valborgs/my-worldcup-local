@@ -40,6 +40,8 @@ class _WorldCupGameState extends State<WorldCupGame> {
   // 아래에 있는 선택 항목
   late WorldCupItemModel bottomItem;
 
+  late WorldCupSelectProvider selectProvider;
+
   // 게임 시작 시 초기 셋팅
   @override
   void initState() {
@@ -59,11 +61,11 @@ class _WorldCupGameState extends State<WorldCupGame> {
     round = 1;
     // 최대 라운드
     maxRound = nowList.length ~/ 2;
+
+    selectProvider = Provider.of<WorldCupSelectProvider>(context, listen: false);
     // nowList에서 2개 항목을 꺼내 위아래 화면에 배치한다.
     setGame();
 
-    // Provider
-    final selectProvider = Provider.of<WorldCupSelectProvider>(context, listen: false);
     // 항목이 선택될때마다 nextList에 해당 항목을 추가
     selectProvider.addListener((){
       nextList.add(selectProvider.selectedModel);
@@ -73,6 +75,13 @@ class _WorldCupGameState extends State<WorldCupGame> {
 
   // 매 라운드가 시작할 때마다 nowList에서 항목 2개를 각각 topItem, bottomItem에 넣는다.
   void setGame(){
+    // 직전 대결의 선택 상태를 초기화한다.
+    // GameItem은 항목의 idx를 key로 사용하는데, 직전 대결에서 이긴 항목이
+    // 다음 대결에서도 같은 위치(top/bottom)에 다시 배치되면 Flutter가
+    // 이전 위젯의 State를 그대로 재사용한다. 탭 가능 여부를 GameItem의
+    // 로컬 State가 아닌 이 Provider가 단일 기준으로 관리해야
+    // "직전에 탭했던 항목이 다음 대결에서 탭이 안 먹는" 문제가 생기지 않는다.
+    selectProvider.resetSelection();
     topItem = nowList.removeLast();
     bottomItem = nowList.removeLast();
   }
@@ -84,7 +93,7 @@ class _WorldCupGameState extends State<WorldCupGame> {
       // 결승전이었을 경우
       if(maxRound==1){
         // 우승 항목
-        var winnerModel = Provider.of<WorldCupSelectProvider>(context, listen: false).selectedModel;
+        var winnerModel = selectProvider.selectedModel;
         // 게임이 끝나면 결과 화면으로 이동
         Navigator.of(context).pushReplacement(
             MaterialPageRoute(
