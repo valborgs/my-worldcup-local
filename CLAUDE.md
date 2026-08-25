@@ -72,10 +72,6 @@ The app requires a `.env` file in the root directory with:
 - `kakao_javaScriptAppKey` - KakaoTalk JavaScript app key  
 - `imgbb_apiKey` - ImgBB API key for image uploads
 
-### Firebase Configuration
-- `firebase.json` is present for Firebase integration
-- Google services configuration files are included for both Android and iOS
-
 ## Key Development Notes
 
 - App is locked to portrait orientation
