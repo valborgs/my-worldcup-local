@@ -136,7 +136,11 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                           },
                         );
                       },
-                      child: Image.file(File(_preImagePath)),
+                      child: Image.file(
+                        File(_preImagePath),
+                        // 미리보기 박스(150x200dp) 이상으로 디코딩할 필요가 없다.
+                        cacheWidth: (150 * MediaQuery.of(context).devicePixelRatio).round(),
+                      ),
                     )
                   : Image.asset("assets/images/free_character.png"),
             ),

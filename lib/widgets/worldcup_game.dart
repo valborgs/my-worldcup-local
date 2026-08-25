@@ -90,6 +90,7 @@ class _WorldCupGameState extends State<WorldCupGame> {
   Future<void> showNext() async {
     // 항목 선택하고 3초후에 다음으로 진행
     return Future.delayed(const Duration(seconds: 3), () {
+      if (!mounted) return;
       // 결승전이었을 경우
       if(maxRound==1){
         // 우승 항목

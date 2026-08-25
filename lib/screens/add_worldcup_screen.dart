@@ -70,19 +70,11 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
               button: true,
               label: "Confirm Button",
               child: IconButton(
-                onPressed: () {
-                  if (isEditMode) {
-                    updateWorldCup().then((value) {
-                      if(value){
-                        Navigator.of(context).pop();
-                      }
-                    });
-                  } else {
-                    addWorldCup().then((value) {
-                      if(value){
-                        Navigator.of(context).pop();
-                      }
-                    });
+                onPressed: () async {
+                  final success = isEditMode ? await updateWorldCup() : await addWorldCup();
+                  if (success) {
+                    if (!context.mounted) return;
+                    Navigator.of(context).pop();
                   }
                 } ,
                 icon: const Icon(
@@ -275,6 +267,8 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                       child: Image.file(
                         File(src),
                         fit: BoxFit.scaleDown,
+                        // 카드 너비(100dp) 이상으로 디코딩할 필요가 없다.
+                        cacheWidth: (100 * MediaQuery.of(context).devicePixelRatio).round(),
                       ),
                     ),
                   ),
@@ -503,6 +497,8 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                       File(file.path!),
                       height: 200,
                       fit: BoxFit.contain,
+                      // 미리보기 높이(200dp) 이상으로 디코딩할 필요가 없다.
+                      cacheHeight: (200 * MediaQuery.of(context).devicePixelRatio).round(),
                     ),
                     const SizedBox(height: 10),
                     TextField(

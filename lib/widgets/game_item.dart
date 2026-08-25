@@ -91,6 +91,11 @@ class _GameItemState extends State<GameItem> with TickerProviderStateMixin {
                 final shortestSide = constraints.biggest.shortestSide;
                 final fontSize = (shortestSide * 0.06).clamp(18.0, 34.0);
                 final bottomInset = shortestSide * 0.08;
+                // BoxFit.contain 기준으로 가로/세로 중 어느 쪽이 제약이 될지 알 수 없으므로
+                // 박스의 긴 변을 기준으로 캐시 크기를 잡아 화질 저하 없이 상한만 둔다.
+                final cacheDimension = (constraints.biggest.longestSide *
+                        MediaQuery.of(context).devicePixelRatio)
+                    .round();
 
                 return Stack(
                   alignment: Alignment.center,
@@ -99,10 +104,12 @@ class _GameItemState extends State<GameItem> with TickerProviderStateMixin {
                         ? Image.asset(
                             widget.itemModel.imagePath,
                             fit: BoxFit.contain,
+                            cacheWidth: cacheDimension,
                           )
                         : Image.file(
                             File(widget.itemModel.imagePath),
                             fit: BoxFit.contain,
+                            cacheWidth: cacheDimension,
                           ),
                     Align(
                       alignment: Alignment.bottomCenter,

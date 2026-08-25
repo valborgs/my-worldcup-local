@@ -11,13 +11,16 @@ class WorldCupListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ListTile leading은 보통 56dp 정도의 작은 정사각형 영역이므로,
+    // 그 크기 이상으로 원본 해상도를 디코딩할 필요가 없다.
+    final cacheDimension = (56 * MediaQuery.of(context).devicePixelRatio).round();
     return ListTile(
       contentPadding: const EdgeInsets.all(5),
       leading:
       worldCupModel.titleImageSrc!="" ? (
           worldCupModel.idx<0
-              ? Image.asset(worldCupModel.titleImageSrc, fit: BoxFit.cover)
-              : Image.file(File(worldCupModel.titleImageSrc), fit: BoxFit.cover)
+              ? Image.asset(worldCupModel.titleImageSrc, fit: BoxFit.cover, cacheWidth: cacheDimension)
+              : Image.file(File(worldCupModel.titleImageSrc), fit: BoxFit.cover, cacheWidth: cacheDimension)
       ) : Image.asset("assets/images/free_character.png"),
       title: Text(
         worldCupModel.idx < 0 ? "(샘플) ${worldCupModel.title}" : worldCupModel.title, 

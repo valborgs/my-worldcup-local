@@ -159,7 +159,11 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                   child: CircleAvatar(
                     backgroundImage: widget.winnerModel.worldCupIdx < 0
                     ? Image.asset(widget.winnerModel.imagePath).image
-                    : Image.file(File(widget.winnerModel.imagePath)).image,
+                    // 아바타 크기(150dp) 이상으로 디코딩할 필요가 없다.
+                    : Image.file(
+                        File(widget.winnerModel.imagePath),
+                        cacheWidth: (150 * MediaQuery.of(context).devicePixelRatio).round(),
+                      ).image,
                   ),
                 ),
                 Text(
