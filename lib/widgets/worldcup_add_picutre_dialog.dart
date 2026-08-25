@@ -182,7 +182,12 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
   Future<void> getAlbumImage() async{
     FocusManager.instance.primaryFocus?.unfocus();
     final ImagePicker picker = ImagePicker();
-    XFile? file = await picker.pickImage(source: ImageSource.gallery);
+    XFile? file = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1280,
+      maxHeight: 1280,
+      imageQuality: 85,
+    );
     if(file != null){
       setState(() {
         _preImagePath = file.path;
@@ -193,7 +198,12 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
   Future<void> getCameraImage() async{
     FocusManager.instance.primaryFocus?.unfocus();
     final ImagePicker picker = ImagePicker();
-    XFile? file = await picker.pickImage(source: ImageSource.camera);
+    XFile? file = await picker.pickImage(
+      source: ImageSource.camera,
+      maxWidth: 1280,
+      maxHeight: 1280,
+      imageQuality: 85,
+    );
     if(file != null){
       setState(() {
         _preImagePath = file.path;
