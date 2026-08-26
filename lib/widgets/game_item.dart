@@ -14,11 +14,13 @@ class GameItem extends StatefulWidget {
   final WorldCupItemModel itemModel;
   final SelectedItemPosition position;
   final Axis axis;
+  final int matchId;
 
   const GameItem(
     this.itemModel, {
     required this.position,
     required this.axis,
+    required this.matchId,
     super.key,
   });
 
@@ -54,12 +56,13 @@ class _GameItemState extends State<GameItem> with TickerProviderStateMixin {
   @override
   void didUpdateWidget(covariant GameItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 같은 승자가 다음 대결에서도 같은 key/위치로 배치되면 State가 재사용된다.
-    // 아이템 정보가 같더라도 직전 선택 애니메이션의 offset은 남아 있으므로,
-    // 새 대결 위젯을 받을 때마다 반드시 원점으로 되돌린다.
-    _controller.reset();
-    _tween.begin = Offset.zero;
-    _tween.end = Offset.zero;
+    if (oldWidget.matchId != widget.matchId || oldWidget.axis != widget.axis) {
+      // 같은 승자가 다음 대결에서도 같은 key/위치로 배치되면 State가 재사용된다.
+      // matchId로 실제 대결 전환을 구분해 직전 애니메이션만 초기화한다.
+      _controller.reset();
+      _tween.begin = Offset.zero;
+      _tween.end = Offset.zero;
+    }
   }
 
   void _onSelectionChanged() {

@@ -64,11 +64,13 @@ void main() {
                   GameItem(top,
                       key: ValueKey(top.idx),
                       position: SelectedItemPosition.top,
-                      axis: Axis.horizontal),
+                      axis: Axis.horizontal,
+                      matchId: top.idx),
                   GameItem(bottom,
                       key: ValueKey(bottom.idx),
                       position: SelectedItemPosition.bottom,
-                      axis: Axis.horizontal),
+                      axis: Axis.horizontal,
+                      matchId: top.idx),
                 ],
               ),
             ),
@@ -161,8 +163,29 @@ void main() {
           reason: 'match $match: bottom 항목을 탭했지만 선택이 등록되지 않았다',
         );
 
+        final inputBlockerFinder = find.byWidgetPredicate(
+          (widget) => widget is IgnorePointer && widget.child is Flex,
+        );
+        final inputBlocker = tester.widget<IgnorePointer>(inputBlockerFinder);
+        expect(
+          inputBlocker.ignoring,
+          isTrue,
+          reason: 'match $match: 선택 직후 추가 포인터 입력을 차단해야 한다',
+        );
+
+        // 전환 대기 중 빠르게 다시 탭해도 새 제스처가 처리되지 않아야 한다.
+        await tester.tap(bottomFinder, warnIfMissed: false);
+        await tester.tap(bottomFinder, warnIfMissed: false);
+        await tester.pump();
+
         // 3초 지연 후 다음 대결(setGame)로 넘어간다.
         await tester.pump(const Duration(seconds: 4));
+
+        expect(
+          tester.widget<IgnorePointer>(inputBlockerFinder).ignoring,
+          isFalse,
+          reason: 'match $match: 다음 대결에서는 입력 잠금을 해제해야 한다',
+        );
 
         // 직전 승자가 동일한 key와 위치로 재사용되더라도 선택 애니메이션의
         // 이동값이 결승을 포함한 다음 대결에 남아 있으면 안 된다.
