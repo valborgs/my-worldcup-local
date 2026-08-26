@@ -19,9 +19,9 @@ class MainWorldCupScreen extends StatefulWidget {
 }
 
 class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
-
   late String admobBannerId;
   BannerAd? _bannerAd;
+  final _worldCupListKey = GlobalKey<WorldCupListState>();
 
   @override
   void initState() {
@@ -32,7 +32,6 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -40,77 +39,84 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
         _showBackDialog();
       },
       child: Scaffold(
-          appBar: AppBar(
-            leading: Semantics(
-              label: "도움말 버튼",
-              button: true,
-              enabled: true,
-              child: IconButton(
-                tooltip: "도움말",
-                onPressed: (){
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const HelpScreen(false),
-                      fullscreenDialog: true,
-                    ),
-                  );
-                },
-                icon: const Icon(
-                  Icons.help_outline,
-                  semanticLabel: "도움말",
-                  size: 24,
+        appBar: AppBar(
+          leading: Semantics(
+            label: "도움말 버튼",
+            button: true,
+            enabled: true,
+            child: IconButton(
+              tooltip: "도움말",
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const HelpScreen(false),
+                    fullscreenDialog: true,
+                  ),
+                );
+              },
+              icon: const Icon(
+                Icons.help_outline,
+                semanticLabel: "도움말",
+                size: 24,
+              ),
+            ),
+          ),
+          title: const Text(
+            "내가 만든 월드컵",
+            semanticsLabel: "내가 만든 월드컵 화면",
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: Semantics(
+                button: true,
+                enabled: true,
+                label: "Add WorldCup Button",
+                child: IconButton(
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const AddWorldCupScreen(),
+                        fullscreenDialog: true,
+                      ),
+                    );
+                    _worldCupListKey.currentState?.refresh();
+                  },
+                  icon: const Icon(
+                    Icons.add,
+                    semanticLabel: "추가",
+                    size: 32,
+                  ),
                 ),
               ),
             ),
-            title: const Text("내가 만든 월드컵", semanticsLabel: "내가 만든 월드컵 화면",),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: Semantics(
+          ],
+        ),
+        body: Container(
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+          child: Column(
+            children: [
+              // 애드몹 배너
+              if (_bannerAd != null)
+                Semantics(
                   button: true,
                   enabled: true,
-                  label: "Add WorldCup Button",
-                  child: IconButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const AddWorldCupScreen(),
-                          fullscreenDialog: true,
-                        ),
-                      );
-                    },
-                    icon: const Icon(
-                      Icons.add,
-                      semanticLabel: "추가",
-                      size: 32,
-                    ),
+                  label: "Banner Ad",
+                  child: SizedBox(
+                    width: _bannerAd?.size.width.toDouble(),
+                    height: _bannerAd?.size.height.toDouble(),
+                    child: AdWidget(ad: _bannerAd!),
                   ),
                 ),
+              // 월드컵 리스트
+              WorldCupList(
+                key: _worldCupListKey,
+                initialWorldCupList: widget.initialWorldCupList,
               ),
             ],
           ),
-          body: Container(
-            padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-            child: Column(
-              children: [
-                // 애드몹 배너
-                if(_bannerAd != null)
-                  Semantics(
-                    button: true,
-                    enabled: true,
-                    label: "Banner Ad",
-                    child: SizedBox(
-                      width: _bannerAd?.size.width.toDouble(),
-                      height: _bannerAd?.size.height.toDouble(),
-                      child: AdWidget(ad: _bannerAd!),
-                    ),
-                  ),
-                // 월드컵 리스트
-                WorldCupList(initialWorldCupList: widget.initialWorldCupList),
-              ],
-            ),
-          ),
         ),
+      ),
     );
   }
 
@@ -154,12 +160,12 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
       adUnitId: AdHelper.bannerAdUnitId,
       request: const AdRequest(),
       size: AdSize.banner,
-      listener: BannerAdListener(onAdLoaded: (ad){
+      listener: BannerAdListener(onAdLoaded: (ad) {
         setState(() {
           // 광고가 로드되면 아래의 코드를 실행한다.
           _bannerAd = ad as BannerAd;
         });
-      }, onAdFailedToLoad: (ad, error){
+      }, onAdFailedToLoad: (ad, error) {
         // 광고 로드가 실패하면 아래의 코드를 실행한다.
         log(error.message, name: 'main_worldcup_screen');
         ad.dispose();

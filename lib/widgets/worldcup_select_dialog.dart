@@ -9,14 +9,14 @@ import 'outlined_icon_button.dart';
 
 class WorldCupSelectDialog extends StatefulWidget {
   final WorldCupModel model;
-  const WorldCupSelectDialog(this.model, {super.key});
+  final VoidCallback onChanged;
+  const WorldCupSelectDialog(this.model, {required this.onChanged, super.key});
 
   @override
   State<WorldCupSelectDialog> createState() => _WorldCupSelectDialogState();
 }
 
 class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
-
   @override
   Widget build(BuildContext context) {
     // 선택된 라운드
@@ -26,8 +26,10 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
       title: Container(
         constraints: const BoxConstraints(maxHeight: 50),
         child: SingleChildScrollView(
-            child: Text(widget.model.title, semanticsLabel: "월드컵 제목",)
-        ),
+            child: Text(
+          widget.model.title,
+          semanticsLabel: "월드컵 제목",
+        )),
       ),
       content: SizedBox(
         height: 200,
@@ -37,8 +39,10 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
             Container(
               constraints: const BoxConstraints(maxHeight: 100),
               child: SingleChildScrollView(
-                  child: Text(widget.model.info, semanticsLabel: "월드컵 설명",)
-              ),
+                  child: Text(
+                widget.model.info,
+                semanticsLabel: "월드컵 설명",
+              )),
             ),
             const Spacer(),
             const Padding(padding: EdgeInsets.only(top: 5)),
@@ -46,9 +50,10 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
             const Padding(padding: EdgeInsets.only(top: 5)),
             DropdownMenu(
               initialSelection: makeMaxRound(widget.model.maxRound),
-              menuStyle: const MenuStyle(padding: WidgetStatePropertyAll(EdgeInsets.all(0))),
+              menuStyle: const MenuStyle(
+                  padding: WidgetStatePropertyAll(EdgeInsets.all(0))),
               dropdownMenuEntries: makeRoundList(widget.model.maxRound)
-                  .map<DropdownMenuEntry<int>>((int value){
+                  .map<DropdownMenuEntry<int>>((int value) {
                 return DropdownMenuEntry<int>(value: value, label: '$value 강');
               }).toList(),
               onSelected: (value) {
@@ -68,7 +73,8 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
           onPressed: () {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => PlayWorldCupScreen(widget.model, selectedRound),
+                builder: (context) =>
+                    PlayWorldCupScreen(widget.model, selectedRound),
               ),
             );
           },
@@ -80,11 +86,14 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
             Icons.edit,
             Colors.orange,
             onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => AddWorldCupScreen(editModel: widget.model),
-                ),
-              );
+              Navigator.of(context)
+                  .pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          AddWorldCupScreen(editModel: widget.model),
+                    ),
+                  )
+                  .then((_) => widget.onChanged());
             },
           ),
         // 월드컵 삭제
@@ -93,7 +102,7 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
           Icons.delete,
           Colors.red,
           onPressed: () {
-            deleteWorldCup(context, widget.model.idx);
+            deleteWorldCup(context, widget.model.idx, widget.onChanged);
           },
         ),
       ],
@@ -101,19 +110,24 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
   }
 }
 
-
 // 월드컵 삭제
-Future<void> deleteWorldCup(BuildContext context, int idx) async {
+Future<void> deleteWorldCup(
+  BuildContext context,
+  int idx,
+  VoidCallback onChanged,
+) async {
   final dao = WorldCupDao();
 
   try {
     await dao.deleteWorldCup(idx);
   } catch (error) {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("데이터를 삭제할 수 없습니다. 잠시후에 다시 시도해주세요.")));
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("데이터를 삭제할 수 없습니다. 잠시후에 다시 시도해주세요.")));
     return;
   }
 
   if (!context.mounted) return;
+  onChanged();
   Navigator.of(context).pop();
 }
