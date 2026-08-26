@@ -48,13 +48,13 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
 
   @override
   void dispose() {
-    super.dispose();
     _titleController.dispose();
     _infoController.dispose();
     _titleFocusNode.dispose();
     _infoFocusNode.dispose();
     _imagePathList = [];
     _imageInfoList = [];
+    super.dispose();
   }
 
   @override
@@ -354,18 +354,20 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
 
     // 등록
     try{
-      // 월드컵 등록
-      int worldCupIdx = await dao.addWorldCup(model);
-      // 월드컵 항목 등록
-      for(int i=0; i<_imagePathList.length; i++){
-        WorldCupItemModel itemModel = WorldCupItemModel(0, _imagePathList[i], _imageInfoList[i], worldCupIdx);
-        await dao.addWorldCupItem(itemModel);
-      }
+      final items = List.generate(
+        _imagePathList.length,
+        (index) => WorldCupItemModel(0, _imagePathList[index], _imageInfoList[index], 0),
+      );
+      await dao.addWorldCupWithItems(model, items);
       return true;
     }catch(e){
       log('DB Error', error: e, name: 'add_worldcup_screen');
-      const SnackBar(content: Text("데이터를 저장할 수 없습니다. 잠시후에 다시 시도해주세요."));
-          return false;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("데이터를 저장할 수 없습니다. 잠시후에 다시 시도해주세요.")),
+        );
+      }
+      return false;
     }
   }
 
@@ -390,7 +392,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
       
       WorldCupDao dao = WorldCupDao();
       List<WorldCupItemModel> items = await dao.getWorldCupItemList(widget.editModel!.idx);
-      
+      if (!mounted) return;
       setState(() {
         _imagePathList = items.map((item) => item.imagePath).toList();
         _imageInfoList = items.map((item) => item.imageInfo).toList();
@@ -417,17 +419,24 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     );
 
     try{
-      await dao.updateWorldCup(model);
-      await dao.deleteWorldCupItemByIdx(widget.editModel!.idx);
-      
-      for(int i=0; i<_imagePathList.length; i++){
-        WorldCupItemModel itemModel = WorldCupItemModel(0, _imagePathList[i], _imageInfoList[i], widget.editModel!.idx);
-        await dao.addWorldCupItem(itemModel);
-      }
+      final items = List.generate(
+        _imagePathList.length,
+        (index) => WorldCupItemModel(
+          0,
+          _imagePathList[index],
+          _imageInfoList[index],
+          widget.editModel!.idx,
+        ),
+      );
+      await dao.updateWorldCupWithItems(model, items);
       return true;
     }catch(e){
       log('DB Error', error: e, name: 'add_worldcup_screen');
-      const SnackBar(content: Text("데이터를 업데이트할 수 없습니다. 잠시후에 다시 시도해주세요."));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("데이터를 업데이트할 수 없습니다. 잠시후에 다시 시도해주세요.")),
+        );
+      }
       return false;
     }
   }
@@ -435,14 +444,15 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
   Future<void> showAddPictureDialog(BuildContext context) async {
     FocusManager.instance.primaryFocus?.unfocus();
 
-    List<String> result = await showDialog(
+    final result = await showDialog<List<String>>(
         context: context,
         builder: (context) {
           return const WorldCupAddPictureDialog();
         }
     );
 
-    if(result.isNotEmpty){
+    if (!mounted) return;
+    if(result != null && result.isNotEmpty){
       setState(() {
         _imagePathList.add(result[0]);
         _imageInfoList.add(result[1]);
@@ -453,7 +463,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
   Future<void> showEditPictureDialog(BuildContext context, int index) async {
     FocusManager.instance.primaryFocus?.unfocus();
 
-    List<String> result = await showDialog(
+    final result = await showDialog<List<String>>(
         context: context,
         builder: (context) {
           return WorldCupAddPictureDialog(
@@ -464,7 +474,8 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
         }
     );
 
-    if(result.isNotEmpty){
+    if (!mounted) return;
+    if(result != null && result.isNotEmpty){
       setState(() {
         _imagePathList[index] = result[0];
         _imageInfoList[index] = result[1];
@@ -530,6 +541,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
             },
           );
 
+          if (!mounted) return;
           if (description != null) {
             setState(() {
               _imagePathList.add(file.path!);

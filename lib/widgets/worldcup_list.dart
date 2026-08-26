@@ -19,9 +19,13 @@ class _WorldCupListState extends State<WorldCupList> {
   late List<WorldCupModel> worldCupList = widget.initialWorldCupList ?? [];
 
   @override
-  Widget build(BuildContext context) {
-
+  void initState() {
+    super.initState();
     _loadWorldCupList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
 
     return worldCupList.isEmpty
         ? Expanded(
@@ -42,9 +46,9 @@ class _WorldCupListState extends State<WorldCupList> {
     );
   }
 
-  void _loadWorldCupList() async {
-    var db = WorldCupDao();
-    List<WorldCupModel> newList = await db.getWorldCupList();
+  Future<void> _loadWorldCupList() async {
+    final db = WorldCupDao();
+    final newList = await db.getWorldCupList();
     if (!mounted) return;
     setState(() {
       worldCupList = newList;

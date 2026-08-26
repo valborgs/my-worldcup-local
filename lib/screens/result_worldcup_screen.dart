@@ -35,6 +35,8 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 5));
+    _confettiController.play();
     _loadInterstitialAd();
   }
 
@@ -106,9 +108,6 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _confettiController = ConfettiController(duration: const Duration(seconds: 5));
-    _confettiController.play();
-
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -267,27 +266,35 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
 
   // 카카오톡 공유하기 기능
   Future<void> shareGameWithKakao() async {
-    setState(() {
-      isLoading = true;
-    });
+    if (isLoading) return;
+    setState(() => isLoading = true);
 
-    var title = widget.worldCupModel.title;
-    var image = widget.winnerModel.worldCupIdx>0
-        ? File(widget.winnerModel.imagePath)
-        : await getImageFileFromAssets(widget.winnerModel.imagePath);
-    // 바이너리 파일로 변환
-    var binaryFile = base64Encode1(image);
-    // 이미지 호스팅 서버에 업로드하여 이미지 주소를 받아옴
-    var imgUrl = await uploadImage(binaryFile);
-    imgUrl ??= "";
+    try {
+      final title = widget.worldCupModel.title;
+      final image = widget.winnerModel.worldCupIdx > 0
+          ? File(widget.winnerModel.imagePath)
+          : await getImageFileFromAssets(widget.winnerModel.imagePath);
+      final binaryFile = base64Encode1(image);
+      final imgUrl = await uploadImage(binaryFile) ?? "";
+      if (imgUrl.isEmpty) {
+        throw StateError('ImgBB did not return an image URL.');
+      }
 
-    var description = '${widget.worldCupModel.title} 우승자 : ${widget.winnerModel.imageInfo}';
-    var playstoreUrl = dotenv.env['playstore_url'];
-    var myTemplate = await makeFeedTemplate(title, description, imgUrl, (playstoreUrl!=null) ? playstoreUrl : "");
-    sendFeed(myTemplate);
-
-    setState(() {
-      isLoading = false;
-    });
+      final description = '${widget.worldCupModel.title} 우승자 : ${widget.winnerModel.imageInfo}';
+      final playstoreUrl = dotenv.env['playstore_url'] ?? "";
+      final myTemplate = await makeFeedTemplate(title, description, imgUrl, playstoreUrl);
+      final didOpenShare = await sendFeed(myTemplate);
+      if (!didOpenShare) {
+        throw StateError('Kakao share UI could not be opened.');
+      }
+    } catch (error) {
+      log('Failed to share result', error: error, name: 'result_worldcup_screen');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('공유할 수 없습니다. 잠시 후 다시 시도해주세요.')),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 }

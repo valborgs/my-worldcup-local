@@ -105,10 +105,9 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
 // 월드컵 삭제
 Future<void> deleteWorldCup(BuildContext context, int idx) async {
   final dao = WorldCupDao();
-  dao.deleteWorldCupItemByIdx(idx);
 
   try {
-    await dao.deleteWorldCupByIdx(idx);
+    await dao.deleteWorldCup(idx);
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("데이터를 삭제할 수 없습니다. 잠시후에 다시 시도해주세요.")));

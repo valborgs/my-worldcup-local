@@ -30,9 +30,21 @@ void main() {
   // idx < 0 : 샘플 월드컵 항목 (Image.asset 경로)
   // idx >= 0 : 사용자가 직접 추가한(실제) 월드컵 항목 (Image.file 경로).
   // 테스트는 저장소 루트에서 실행되므로 아래 상대경로의 실제 파일이 존재한다.
-  final itemA = WorldCupItemModel(1, 'assets/sample/female/aespa_carina.jpg', 'A', -1);
-  final itemB = WorldCupItemModel(2, 'assets/sample/female/babymon_ahyun.jpg', 'B', 101);
+  final itemA =
+      WorldCupItemModel(1, 'assets/sample/female/aespa_carina.jpg', 'A', -1);
+  final itemB =
+      WorldCupItemModel(2, 'assets/sample/female/babymon_ahyun.jpg', 'B', 101);
   final itemC = WorldCupItemModel(3, 'assets/sample/female/chu.jpg', 'C', -1);
+
+  test('WorldCupModel은 DB 저장 후 날짜를 밀리초 정밀도로 복원한다', () {
+    final date = DateTime(2026, 8, 26, 12, 34, 56, 789);
+    final original = WorldCupModel(1, '제목', '설명', date, 'image.jpg', 16);
+    final dbRow = <String, dynamic>{'idx': 1, ...original.toMap()};
+
+    final restored = WorldCupModel.fromDB(dbRow);
+
+    expect(restored.date, date);
+  });
 
   testWidgets(
     '직전 대결에서 탭했던 항목이 같은 위치(top/bottom)로 다음 대결에 재배치되어도 '
@@ -49,8 +61,14 @@ void main() {
               // idx 기반 ValueKey로 배치한다.
               child: Row(
                 children: [
-                  GameItem(top, key: ValueKey(top.idx), position: SelectedItemPosition.top, axis: Axis.horizontal),
-                  GameItem(bottom, key: ValueKey(bottom.idx), position: SelectedItemPosition.bottom, axis: Axis.horizontal),
+                  GameItem(top,
+                      key: ValueKey(top.idx),
+                      position: SelectedItemPosition.top,
+                      axis: Axis.horizontal),
+                  GameItem(bottom,
+                      key: ValueKey(bottom.idx),
+                      position: SelectedItemPosition.bottom,
+                      axis: Axis.horizontal),
                 ],
               ),
             ),
@@ -108,9 +126,11 @@ void main() {
         WorldCupItemModel(5, 'assets/sample/male/astro_cha.jpg', 'E', -1),
         WorldCupItemModel(6, 'assets/sample/male/bnd_myung.jpg', 'F', 103),
         WorldCupItemModel(7, 'assets/sample/female/aespa_carina.jpg', 'G', -1),
-        WorldCupItemModel(8, 'assets/sample/female/babymon_ahyun.jpg', 'H', 104),
+        WorldCupItemModel(
+            8, 'assets/sample/female/babymon_ahyun.jpg', 'H', 104),
       ];
-      final worldCupModel = WorldCupModel(1, '테스트 월드컵', '', DateTime(2026, 1, 1), '', 8);
+      final worldCupModel =
+          WorldCupModel(1, '테스트 월드컵', '', DateTime(2026, 1, 1), '', 8);
       final selectProvider = WorldCupSelectProvider();
 
       await tester.pumpWidget(
@@ -129,7 +149,8 @@ void main() {
         final bottomFinder = find.byWidgetPredicate(
           (w) => w is GameItem && w.position == SelectedItemPosition.bottom,
         );
-        expect(bottomFinder, findsOneWidget, reason: 'match $match: bottom 항목을 찾을 수 없다');
+        expect(bottomFinder, findsOneWidget,
+            reason: 'match $match: bottom 항목을 찾을 수 없다');
 
         await tester.tap(bottomFinder);
         await tester.pump();
@@ -142,6 +163,18 @@ void main() {
 
         // 3초 지연 후 다음 대결(setGame)로 넘어간다.
         await tester.pump(const Duration(seconds: 4));
+
+        // 직전 승자가 동일한 key와 위치로 재사용되더라도 선택 애니메이션의
+        // 이동값이 결승을 포함한 다음 대결에 남아 있으면 안 된다.
+        final transitions = tester.widgetList<SlideTransition>(
+          find.byType(SlideTransition),
+        );
+        expect(
+          transitions
+              .every((transition) => transition.position.value == Offset.zero),
+          isTrue,
+          reason: 'match $match: 다음 대결에 직전 슬라이드 offset이 남아 있다',
+        );
       }
     },
   );

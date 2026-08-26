@@ -45,6 +45,23 @@ class WorldCupDao{
     }
   }
 
+  Future<int> addWorldCupWithItems(
+    WorldCupModel model,
+    List<WorldCupItemModel> items,
+  ) async {
+    final db = await dbProvider.database;
+    return db.transaction((txn) async {
+      final worldCupIdx = await txn.insert(worldCupTable, model.toMap());
+      for (final item in items) {
+        await txn.insert(
+          worldCupItemTable,
+          WorldCupItemModel(0, item.imagePath, item.imageInfo, worldCupIdx).toMap(),
+        );
+      }
+      return worldCupIdx;
+    });
+  }
+
   // db에서 월드컵을 업데이트한다.
   Future<void> updateWorldCup(WorldCupModel model) async {
     try{
@@ -59,6 +76,29 @@ class WorldCupDao{
     }catch(e){
       rethrow;
     }
+  }
+
+  Future<void> updateWorldCupWithItems(
+    WorldCupModel model,
+    List<WorldCupItemModel> items,
+  ) async {
+    final db = await dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.update(
+        worldCupTable,
+        model.toMap(),
+        where: 'idx = ?',
+        whereArgs: [model.idx],
+      );
+      await txn.delete(
+        worldCupItemTable,
+        where: 'worldCupIdx = ?',
+        whereArgs: [model.idx],
+      );
+      for (final item in items) {
+        await txn.insert(worldCupItemTable, item.toMap());
+      }
+    });
   }
   
   // 앱 시작 시마다 샘플 월드컵 데이터를 최신 상태로 동기화한다.
@@ -194,6 +234,19 @@ class WorldCupDao{
     }catch(e){
       rethrow;
     }
+  }
+
+
+  Future<void> deleteWorldCup(int idx) async {
+    final db = await dbProvider.database;
+    await db.transaction((txn) async {
+      await txn.delete(
+        worldCupItemTable,
+        where: 'worldCupIdx = ?',
+        whereArgs: [idx],
+      );
+      await txn.delete(worldCupTable, where: 'idx = ?', whereArgs: [idx]);
+    });
   }
 
 }

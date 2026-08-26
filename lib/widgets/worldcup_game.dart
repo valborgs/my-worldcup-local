@@ -46,7 +46,7 @@ class _WorldCupGameState extends State<WorldCupGame> {
   @override
   void initState() {
     super.initState();
-    nowList = widget.itemList;
+    nowList = List.of(widget.itemList);
     // 항목은 랜덤으로 섞은 후
     nowList.shuffle(Random());
     // 선택한 라운드만큼 리스트를 수정하기
@@ -67,10 +67,19 @@ class _WorldCupGameState extends State<WorldCupGame> {
     setGame();
 
     // 항목이 선택될때마다 nextList에 해당 항목을 추가
-    selectProvider.addListener((){
+    selectProvider.addListener(_onItemSelected);
+  }
+
+  void _onItemSelected() {
+    if (!selectProvider.hasSelected) return;
       nextList.add(selectProvider.selectedModel);
       showNext();
-    });
+  }
+
+  @override
+  void dispose() {
+    selectProvider.removeListener(_onItemSelected);
+    super.dispose();
   }
 
   // 매 라운드가 시작할 때마다 nowList에서 항목 2개를 각각 topItem, bottomItem에 넣는다.
