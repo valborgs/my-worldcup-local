@@ -109,6 +109,11 @@ class _WorldCupGameState extends State<WorldCupGame> {
       if (maxRound == 1) {
         // 우승 항목
         var winnerModel = selectProvider.selectedModel;
+        // 뒤로가기 확인 다이얼로그 등이 열려 있으면 먼저 닫는다.
+        // 열어둔 채로 pushReplacement를 호출하면 게임 화면이 아니라
+        // 다이얼로그 라우트가 결과 화면으로 교체되어, 게임 화면이
+        // 스택에 남아있는 상태로 결과 화면이 쌓이는 문제가 있었다.
+        Navigator.of(context).popUntil((route) => route is PageRoute);
         // 게임이 끝나면 결과 화면으로 이동
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
