@@ -13,14 +13,14 @@ class WorldCupGame extends StatefulWidget {
   final WorldCupModel worldCupModel;
   final List<WorldCupItemModel> itemList;
   final int selectedRound;
-  const WorldCupGame(this.worldCupModel, this.itemList, this.selectedRound, {super.key});
+  const WorldCupGame(this.worldCupModel, this.itemList, this.selectedRound,
+      {super.key});
 
   @override
   State<WorldCupGame> createState() => _WorldCupGameState();
 }
 
 class _WorldCupGameState extends State<WorldCupGame> {
-
   // 진행 용어는 '강' 과 '라운드'로 구분한다.
   // '강' : 128강, 64강, 32강 등 모든 대결 항목이 한 번씩 게임을 진행하는 큰 횟수
   // '라운드' : '강' 안에서 항목끼리 대결할때 진행되는 횟수
@@ -34,6 +34,8 @@ class _WorldCupGameState extends State<WorldCupGame> {
   int round = -1;
   // 현재 '강'의 최대 라운드 수를 담을 변수
   int maxRound = -1;
+  int _matchId = 0;
+  bool _isTransitioning = false;
 
   // 위에 있는 선택 항목
   late WorldCupItemModel topItem;
@@ -46,12 +48,12 @@ class _WorldCupGameState extends State<WorldCupGame> {
   @override
   void initState() {
     super.initState();
-    nowList = widget.itemList;
+    nowList = List.of(widget.itemList);
     // 항목은 랜덤으로 섞은 후
     nowList.shuffle(Random());
     // 선택한 라운드만큼 리스트를 수정하기
     List<WorldCupItemModel> tempList = [];
-    for(int i=0; i<widget.selectedRound; i++){
+    for (int i = 0; i < widget.selectedRound; i++) {
       tempList.add(nowList[i]);
     }
     nowList.clear();
@@ -62,19 +64,30 @@ class _WorldCupGameState extends State<WorldCupGame> {
     // 최대 라운드
     maxRound = nowList.length ~/ 2;
 
-    selectProvider = Provider.of<WorldCupSelectProvider>(context, listen: false);
+    selectProvider =
+        Provider.of<WorldCupSelectProvider>(context, listen: false);
     // nowList에서 2개 항목을 꺼내 위아래 화면에 배치한다.
     setGame();
 
     // 항목이 선택될때마다 nextList에 해당 항목을 추가
-    selectProvider.addListener((){
-      nextList.add(selectProvider.selectedModel);
-      showNext();
-    });
+    selectProvider.addListener(_onItemSelected);
+  }
+
+  void _onItemSelected() {
+    if (!selectProvider.hasSelected || _isTransitioning) return;
+    setState(() => _isTransitioning = true);
+    nextList.add(selectProvider.selectedModel);
+    showNext();
+  }
+
+  @override
+  void dispose() {
+    selectProvider.removeListener(_onItemSelected);
+    super.dispose();
   }
 
   // 매 라운드가 시작할 때마다 nowList에서 항목 2개를 각각 topItem, bottomItem에 넣는다.
-  void setGame(){
+  void setGame() {
     // 직전 대결의 선택 상태를 초기화한다.
     // GameItem은 항목의 idx를 key로 사용하는데, 직전 대결에서 이긴 항목이
     // 다음 대결에서도 같은 위치(top/bottom)에 다시 배치되면 Flutter가
@@ -82,6 +95,7 @@ class _WorldCupGameState extends State<WorldCupGame> {
     // 로컬 State가 아닌 이 Provider가 단일 기준으로 관리해야
     // "직전에 탭했던 항목이 다음 대결에서 탭이 안 먹는" 문제가 생기지 않는다.
     selectProvider.resetSelection();
+    _matchId++;
     topItem = nowList.removeLast();
     bottomItem = nowList.removeLast();
   }
@@ -92,30 +106,32 @@ class _WorldCupGameState extends State<WorldCupGame> {
     return Future.delayed(const Duration(seconds: 3), () {
       if (!mounted) return;
       // 결승전이었을 경우
-      if(maxRound==1){
+      if (maxRound == 1) {
         // 우승 항목
         var winnerModel = selectProvider.selectedModel;
         // 게임이 끝나면 결과 화면으로 이동
         Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => ResultWorldCupScreen(widget.worldCupModel, winnerModel, widget.selectedRound),
-            ),
+          MaterialPageRoute(
+            builder: (context) => ResultWorldCupScreen(
+                widget.worldCupModel, winnerModel, widget.selectedRound),
+          ),
         );
-      }else{
+      } else {
         // 결승전이 아닌 경우
         setState(() {
-          if(nowList.isEmpty){
+          if (nowList.isEmpty) {
             // 라운드가 끝나면 다음 라운드를 위해 초기화
             round = 1;
             nowList.addAll(nextList);
             nowList.shuffle(Random());
             nextList.clear();
             maxRound = nowList.length ~/ 2;
-          }else{
+          } else {
             // 라운드가 아직 안 끝난 경우
-            round ++;
+            round++;
           }
           setGame();
+          _isTransitioning = false;
         });
       }
     });
@@ -136,37 +152,39 @@ class _WorldCupGameState extends State<WorldCupGame> {
 
           return Stack(
             children: [
-              Flex(
-                direction: axis,
-                children: [
-                  GameItem(
-                    topItem,
-                    key: ValueKey(topItem.idx),
-                    position: SelectedItemPosition.top,
-                    axis: axis,
-                  ),
-                  const SizedBox(width: 16, height: 16),
-                  GameItem(
-                    bottomItem,
-                    key: ValueKey(bottomItem.idx),
-                    position: SelectedItemPosition.bottom,
-                    axis: axis,
-                  ),
-                ],
+              IgnorePointer(
+                ignoring: _isTransitioning,
+                child: Flex(
+                  direction: axis,
+                  children: [
+                    GameItem(
+                      topItem,
+                      key: ValueKey(topItem.idx),
+                      position: SelectedItemPosition.top,
+                      axis: axis,
+                      matchId: _matchId,
+                    ),
+                    const SizedBox(width: 16, height: 16),
+                    GameItem(
+                      bottomItem,
+                      key: ValueKey(bottomItem.idx),
+                      position: SelectedItemPosition.bottom,
+                      axis: axis,
+                      matchId: _matchId,
+                    ),
+                  ],
+                ),
               ),
               Align(
                 alignment: Alignment.topCenter,
                 child: Padding(
                   padding: const EdgeInsets.only(top: 10),
-                  child: Text(
-                      (maxRound==1) ? "결승" : "$round / $maxRound",
+                  child: Text((maxRound == 1) ? "결승" : "$round / $maxRound",
                       style: const TextStyle(
                           fontSize: 24,
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
-                          backgroundColor: Colors.grey
-                      )
-                  ),
+                          backgroundColor: Colors.grey)),
                 ),
               ),
             ],
@@ -177,7 +195,7 @@ class _WorldCupGameState extends State<WorldCupGame> {
   }
 }
 
-enum SelectedItemPosition{
+enum SelectedItemPosition {
   top,
   bottom,
   none,

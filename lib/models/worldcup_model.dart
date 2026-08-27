@@ -40,7 +40,7 @@ class WorldCupModel{
         data['idx'],
         data['title'],
         data['info'],
-        DateTime.fromMicrosecondsSinceEpoch(data['date'] as int),
+        DateTime.fromMillisecondsSinceEpoch(data['date'] as int),
         data['titleImageSrc'],
         data['maxRound'],
     );

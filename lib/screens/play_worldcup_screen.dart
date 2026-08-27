@@ -18,7 +18,7 @@ class PlayWorldCupScreen extends StatefulWidget {
 }
 
 class _PlayWorldCupScreenState extends State<PlayWorldCupScreen> {
-  var dao = WorldCupDao();
+  final dao = WorldCupDao();
   List<WorldCupItemModel>? itemList;
 
   @override
@@ -28,11 +28,9 @@ class _PlayWorldCupScreenState extends State<PlayWorldCupScreen> {
   }
 
   Future<void> getItemList() async {
-    await dao.getWorldCupItemList(widget.worldCupModel.idx).then((value) {
-      setState(() {
-        itemList = value;
-      });
-    });
+    final value = await dao.getWorldCupItemList(widget.worldCupModel.idx);
+    if (!mounted) return;
+    setState(() => itemList = value);
   }
 
   @override

@@ -10,45 +10,47 @@ class WorldCupList extends StatefulWidget {
   const WorldCupList({this.initialWorldCupList, super.key});
 
   @override
-  State<WorldCupList> createState() => _WorldCupListState();
-
+  State<WorldCupList> createState() => WorldCupListState();
 }
 
-class _WorldCupListState extends State<WorldCupList> {
-
+class WorldCupListState extends State<WorldCupList> {
   late List<WorldCupModel> worldCupList = widget.initialWorldCupList ?? [];
 
   @override
+  void initState() {
+    super.initState();
+    refresh();
+  }
+
+  @override
   Widget build(BuildContext context) {
-
-    _loadWorldCupList();
-
     return worldCupList.isEmpty
         ? Expanded(
             child: Container(
-              alignment: Alignment.center,
-              child: const Text(
-                "오른쪽 상단의 + 버튼을 눌러 \n월드컵 게임을 추가해주세요",
-                style: TextStyle(fontSize: 20),
-                semanticsLabel: "항목이 비어있음",
-              ),
-            )
-          )
+            alignment: Alignment.center,
+            child: const Text(
+              "오른쪽 상단의 + 버튼을 눌러 \n월드컵 게임을 추가해주세요",
+              style: TextStyle(fontSize: 20),
+              semanticsLabel: "항목이 비어있음",
+            ),
+          ))
         : Expanded(
-        child: ListView.builder(
-          itemBuilder: (context, index) => WorldCupListItem(worldCupList[index]),
-          itemCount: worldCupList.length,
-        ),
-    );
+            child: ListView.builder(
+              itemBuilder: (context, index) => WorldCupListItem(
+                worldCupList[index],
+                onChanged: refresh,
+              ),
+              itemCount: worldCupList.length,
+            ),
+          );
   }
 
-  void _loadWorldCupList() async {
-    var db = WorldCupDao();
-    List<WorldCupModel> newList = await db.getWorldCupList();
+  Future<void> refresh() async {
+    final db = WorldCupDao();
+    final newList = await db.getWorldCupList();
     if (!mounted) return;
     setState(() {
       worldCupList = newList;
     });
   }
-
 }
