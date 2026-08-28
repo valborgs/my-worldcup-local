@@ -121,7 +121,8 @@ class CoverFlowPager<T> extends StatefulWidget {
 }
 
 class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
-  late final PageController _pageController;
+  late PageController _pageController;
+  late int _currentPageIndex;
   Object? _currentItemKey;
 
   int get _safeInitialPage {
@@ -132,24 +133,35 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: _safeInitialPage);
-    _currentItemKey = _keyAt(_safeInitialPage);
+    _currentPageIndex = _safeInitialPage;
+    _pageController = PageController(initialPage: _currentPageIndex);
+    _currentItemKey = _keyAt(_currentPageIndex);
   }
 
   @override
   void didUpdateWidget(covariant CoverFlowPager<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.items.isEmpty || !_pageController.hasClients) return;
-    final currentPage = (_pageController.page ?? _safeInitialPage).round();
+    if (widget.items.isEmpty) return;
+    final currentPage = _pageController.hasClients
+        ? (_pageController.page ?? _currentPageIndex.toDouble()).round()
+        : _currentPageIndex;
     final keyedIndex = _indexOfKey(_currentItemKey);
+    final currentItemWasRemoved = widget.itemKey != null &&
+        _currentItemKey != null &&
+        keyedIndex < 0;
     final targetPage = keyedIndex >= 0
         ? keyedIndex
         : currentPage.clamp(0, widget.items.length - 1);
+    _currentPageIndex = targetPage;
     _currentItemKey = _keyAt(targetPage);
-    if (targetPage != currentPage) {
+    if (currentItemWasRemoved || targetPage != currentPage) {
+      final previousController = _pageController;
+      _pageController = PageController(
+        initialPage: targetPage,
+        keepPage: false,
+      );
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!_pageController.hasClients || widget.items.isEmpty) return;
-        _pageController.jumpToPage(targetPage);
+        previousController.dispose();
       });
     }
   }
@@ -196,7 +208,10 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
                 itemCount: widget.items.length,
                 physics: const PageScrollPhysics(),
                 onPageChanged: (index) {
-                  setState(() => _currentItemKey = _keyAt(index));
+                  setState(() {
+                    _currentPageIndex = index;
+                    _currentItemKey = _keyAt(index);
+                  });
                   widget.onPageChanged?.call(widget.items[index], index);
                 },
                 itemBuilder: (context, index) {
@@ -219,8 +234,8 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
   }
 
   double get _currentPage {
-    if (!_pageController.hasClients) return _safeInitialPage.toDouble();
-    return _pageController.page ?? _safeInitialPage.toDouble();
+    if (!_pageController.hasClients) return _currentPageIndex.toDouble();
+    return _pageController.page ?? _currentPageIndex.toDouble();
   }
 
   List<Widget> _buildCards({

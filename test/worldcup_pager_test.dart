@@ -72,6 +72,27 @@ void main() {
     expect(find.bySemanticsLabel('월드컵 1 / 2'), findsOneWidget);
   });
 
+  testWidgets('현재 마지막 항목 삭제 후 남은 카드를 중앙에 표시한다',
+      (tester) async {
+    final hostKey = GlobalKey<_MutablePagerHostState>();
+    await tester.pumpWidget(
+      _MutablePagerHost(
+        key: hostKey,
+        initialItems: const ['A', 'B'],
+        initialPage: 1,
+      ),
+    );
+
+    hostKey.currentState!.removeCurrent();
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('월드컵 1 / 1'), findsOneWidget);
+    expect(
+      tester.getCenter(find.byKey(const ValueKey('coverFlowCard-0'))),
+      const Offset(400, 300),
+    );
+  });
+
   testWidgets('현재 카드에 접근성 탭 액션을 제공한다', (tester) async {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(buildPager(items: const ['A', 'B']));
@@ -86,17 +107,28 @@ void main() {
 }
 
 class _MutablePagerHost extends StatefulWidget {
-  const _MutablePagerHost({super.key});
+  final List<String> initialItems;
+  final int initialPage;
+
+  const _MutablePagerHost({
+    this.initialItems = const ['A', 'B', 'C'],
+    this.initialPage = 1,
+    super.key,
+  });
 
   @override
   State<_MutablePagerHost> createState() => _MutablePagerHostState();
 }
 
 class _MutablePagerHostState extends State<_MutablePagerHost> {
-  List<String> items = ['A', 'B', 'C'];
+  late List<String> items = List.of(widget.initialItems);
 
   void removeFirst() {
     setState(() => items = items.sublist(1));
+  }
+
+  void removeCurrent() {
+    setState(() => items.removeAt(widget.initialPage));
   }
 
   @override
@@ -105,7 +137,7 @@ class _MutablePagerHostState extends State<_MutablePagerHost> {
       home: Scaffold(
         body: CoverFlowPager<String>(
           items: items,
-          initialPage: 1,
+          initialPage: widget.initialPage,
           itemKey: (item) => item,
           itemBuilder: (context, item, index) => Text(item),
         ),
