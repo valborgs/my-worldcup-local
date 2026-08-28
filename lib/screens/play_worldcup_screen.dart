@@ -35,17 +35,57 @@ class _PlayWorldCupScreenState extends State<PlayWorldCupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.worldCupModel.title),
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _showExitGameDialog();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.worldCupModel.title),
+          systemOverlayStyle: SystemUiOverlayStyle.dark,
+        ),
+        body: ChangeNotifierProvider(
+          create: (context) => WorldCupSelectProvider(),
+          child: itemList != null
+              ? WorldCupGame(
+                  widget.worldCupModel, itemList!, widget.selectedRound)
+              : const ColoredBox(color: Colors.black),
+        ),
       ),
-      body: ChangeNotifierProvider(
-        create: (context) => WorldCupSelectProvider(),
-        child: itemList != null
-            ? WorldCupGame(widget.worldCupModel, itemList!, widget.selectedRound)
-            : const ColoredBox(color: Colors.black),
-      ),
+    );
+  }
+
+  // 게임 진행 중 뒤로가기 시 종료 확인
+  void _showExitGameDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('게임 종료'),
+          content: const Text('게임을 종료하시겠습니까?\n진행 상황은 저장되지 않습니다.'),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(dialogContext).textTheme.labelLarge,
+              ),
+              child: const Text('아니오'),
+              onPressed: () => Navigator.pop(dialogContext),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(dialogContext).textTheme.labelLarge,
+              ),
+              child: const Text('네'),
+              onPressed: () {
+                Navigator.pop(dialogContext); // 다이얼로그 닫기
+                Navigator.of(context).pop(); // 게임 화면 닫기
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }

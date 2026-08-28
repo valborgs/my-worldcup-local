@@ -19,7 +19,6 @@ class AddWorldCupScreen extends StatefulWidget {
 }
 
 class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
-
   late TextEditingController _titleController;
   late TextEditingController _infoController;
   late GlobalKey<FormState> _formKey;
@@ -28,7 +27,6 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
   late List<String> _imagePathList;
   late List<String> _imageInfoList;
   bool get isEditMode => widget.editModel != null;
-
 
   @override
   void initState() {
@@ -40,7 +38,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     _infoFocusNode = FocusNode();
     _imagePathList = [];
     _imageInfoList = [];
-    
+
     if (isEditMode) {
       _initializeEditMode();
     }
@@ -59,164 +57,177 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        title: Text(isEditMode ? "월드컵 수정" : "월드컵 등록", semanticsLabel: isEditMode ? "월드컵 수정 화면" : "월드컵 등록 화면",),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: Semantics(
-              button: true,
-              label: "Confirm Button",
-              child: IconButton(
-                onPressed: () async {
-                  final success = isEditMode ? await updateWorldCup() : await addWorldCup();
-                  if (success) {
-                    if (!context.mounted) return;
-                    Navigator.of(context).pop();
-                  }
-                } ,
-                icon: const Icon(
-                  Icons.check_rounded,
-                  semanticLabel: "확인",
-                  size: 32,
-                ),
-              ),
-            ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _showCancelDialog();
+      },
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        appBar: AppBar(
+          title: Text(
+            isEditMode ? "월드컵 수정" : "월드컵 등록",
+            semanticsLabel: isEditMode ? "월드컵 수정 화면" : "월드컵 등록 화면",
           ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _titleController,
-                    validator: (value) => checkTitle(),
-                    focusNode: _titleFocusNode,
-                    decoration: const InputDecoration(
-                      labelText: '제목',
-                      hintText: '만드실 월드컵의 제목을 입력해주세요.',
-                      hintStyle: TextStyle(
-                        color: Colors.black38,
-                        fontSize: 12,
-                      ),
-                    ),
-                    maxLength: 100,
-                  ),
-                  TextFormField(
-                    controller: _infoController,
-                    validator: (value) => checkInfo(),
-                    focusNode: _infoFocusNode,
-                    decoration: const InputDecoration(
-                      labelText: '설명',
-                      hintText: '만드실 월드컵의 설명을 간단히 입력해주세요.',
-                      hintStyle: TextStyle(
-                        color: Colors.black38,
-                        fontSize: 12,
-                      ),
-                    ),
-                    maxLength: 150,
-                  ),
-                ],
-              ),
-            ),
-            const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-            Text(
-              "등록된 항목 개수 : ${_imagePathList.length}개",
-              style: (_imagePathList.isNotEmpty && _imagePathList.length>3)
-                  ? isPictureListNotEmpty()
-                  : isPictureListEmpty(),
-            ),
-            const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-            Row(
-              children: [
-                Expanded(
-                  child: Semantics(
-                    label: "Add Single Item Button",
-                    child: InkWell(
-                      onTap: () => showAddPictureDialog(context),
-                      child: DottedBorder(
-                        child: const SizedBox(
-                          height: 48,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.add,
-                                semanticLabel: "단일 추가",
-                                size: 20,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                "이미지 선택",
-                                style: TextStyle(fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: Semantics(
+                button: true,
+                label: "Confirm Button",
+                child: IconButton(
+                  onPressed: () async {
+                    final success = isEditMode
+                        ? await updateWorldCup()
+                        : await addWorldCup();
+                    if (success) {
+                      if (!context.mounted) return;
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  icon: const Icon(
+                    Icons.check_rounded,
+                    semanticLabel: "확인",
+                    size: 32,
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Semantics(
-                    label: "Add Multiple Items Button",
-                    child: InkWell(
-                      onTap: () => showMultipleImagePicker(context),
-                      child: DottedBorder(
-                        child: const SizedBox(
-                          height: 48,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.add,
-                                semanticLabel: "복수 추가",
-                                size: 20,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                "여러개 선택",
-                                style: TextStyle(fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsetsDirectional.fromSTEB(20, 5, 20, 0),
-                decoration: BoxDecoration(
-                  color: Colors.grey.withAlpha(50),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                ),
-
-                child: GridView.builder(
-                  itemCount: _imageInfoList.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemBuilder: (context, index) => makeListItem(context, index, _imagePathList[index], _imageInfoList[index]),
-                )
               ),
             ),
           ],
+        ),
+        body: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _titleController,
+                      validator: (value) => checkTitle(),
+                      focusNode: _titleFocusNode,
+                      decoration: const InputDecoration(
+                        labelText: '제목',
+                        hintText: '만드실 월드컵의 제목을 입력해주세요.',
+                        hintStyle: TextStyle(
+                          color: Colors.black38,
+                          fontSize: 12,
+                        ),
+                      ),
+                      maxLength: 100,
+                    ),
+                    TextFormField(
+                      controller: _infoController,
+                      validator: (value) => checkInfo(),
+                      focusNode: _infoFocusNode,
+                      decoration: const InputDecoration(
+                        labelText: '설명',
+                        hintText: '만드실 월드컵의 설명을 간단히 입력해주세요.',
+                        hintStyle: TextStyle(
+                          color: Colors.black38,
+                          fontSize: 12,
+                        ),
+                      ),
+                      maxLength: 150,
+                    ),
+                  ],
+                ),
+              ),
+              const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
+              Text(
+                "등록된 항목 개수 : ${_imagePathList.length}개",
+                style: (_imagePathList.isNotEmpty && _imagePathList.length > 3)
+                    ? isPictureListNotEmpty()
+                    : isPictureListEmpty(),
+              ),
+              const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      label: "Add Single Item Button",
+                      child: InkWell(
+                        onTap: () => showAddPictureDialog(context),
+                        child: DottedBorder(
+                          child: const SizedBox(
+                            height: 48,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add,
+                                  semanticLabel: "단일 추가",
+                                  size: 20,
+                                ),
+                                SizedBox(width: 6),
+                                Text(
+                                  "이미지 선택",
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Semantics(
+                      label: "Add Multiple Items Button",
+                      child: InkWell(
+                        onTap: () => showMultipleImagePicker(context),
+                        child: DottedBorder(
+                          child: const SizedBox(
+                            height: 48,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add,
+                                  semanticLabel: "복수 추가",
+                                  size: 20,
+                                ),
+                                SizedBox(width: 6),
+                                Text(
+                                  "여러개 선택",
+                                  style: TextStyle(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
+              Expanded(
+                child: Container(
+                    padding: const EdgeInsetsDirectional.fromSTEB(20, 5, 20, 0),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withAlpha(50),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(30)),
+                    ),
+                    child: GridView.builder(
+                      itemCount: _imageInfoList.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      itemBuilder: (context, index) => makeListItem(context,
+                          index, _imagePathList[index], _imageInfoList[index]),
+                    )),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -224,7 +235,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
 
   // 유효성 검사
   String? checkTitle() {
-    if(_titleController.text.isEmpty){
+    if (_titleController.text.isEmpty) {
       _titleFocusNode.requestFocus();
       return '제목을 입력해주세요.';
     }
@@ -232,8 +243,8 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
   }
 
   String? checkInfo() {
-    if(_infoController.text.isEmpty){
-      if(_titleController.text.isNotEmpty){
+    if (_infoController.text.isEmpty) {
+      if (_titleController.text.isNotEmpty) {
         _infoFocusNode.requestFocus();
       }
       return '설명을 입력해주세요.';
@@ -241,7 +252,8 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     return null;
   }
 
-  Widget makeListItem(BuildContext context, int index, String src, String info){
+  Widget makeListItem(
+      BuildContext context, int index, String src, String info) {
     return SizedBox(
       width: 100,
       height: 80,
@@ -268,7 +280,9 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                         File(src),
                         fit: BoxFit.scaleDown,
                         // 카드 너비(100dp) 이상으로 디코딩할 필요가 없다.
-                        cacheWidth: (100 * MediaQuery.of(context).devicePixelRatio).round(),
+                        cacheWidth:
+                            (100 * MediaQuery.of(context).devicePixelRatio)
+                                .round(),
                       ),
                     ),
                   ),
@@ -297,7 +311,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     );
   }
 
-  void deleteDialog(int index){
+  void deleteDialog(int index) {
     showDialog(
       context: context,
       builder: (context) {
@@ -328,39 +342,66 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     );
   }
 
+  // 뒤로가기 시 등록/수정 취소 확인
+  void _showCancelDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(isEditMode ? '수정 취소' : '등록 취소'),
+          content: Text(isEditMode ? '수정을 취소하시겠습니까?' : '등록을 취소하시겠습니까?'),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(dialogContext).textTheme.labelLarge,
+              ),
+              child: const Text('아니오'),
+              onPressed: () => Navigator.pop(dialogContext),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(dialogContext).textTheme.labelLarge,
+              ),
+              child: const Text('네'),
+              onPressed: () {
+                Navigator.pop(dialogContext); // 다이얼로그 닫기
+                Navigator.of(context).pop(); // 등록 화면 닫기
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   // 월드컵 등록
   Future<bool> addWorldCup() async {
     // 키보드 내리기
     FocusManager.instance.primaryFocus?.unfocus();
     // 제목, 설명 입력 체크
-    if(!_formKey.currentState!.validate()) return false;
+    if (!_formKey.currentState!.validate()) return false;
 
     // 등록된 항목이 없을 경우 체크
-    if(_imagePathList.isEmpty || _imagePathList.length<4){
+    if (_imagePathList.isEmpty || _imagePathList.length < 4) {
       return false;
     }
 
     // Dao 객체
     var dao = WorldCupDao();
     // 월드컵 객체 생성
-    var model = WorldCupModel(
-        0,
-        _titleController.text,
-        _infoController.text,
-        DateTime.now(),
-        _imagePathList.first,
-        _imagePathList.length
-    );
+    var model = WorldCupModel(0, _titleController.text, _infoController.text,
+        DateTime.now(), _imagePathList.first, _imagePathList.length);
 
     // 등록
-    try{
+    try {
       final items = List.generate(
         _imagePathList.length,
-        (index) => WorldCupItemModel(0, _imagePathList[index], _imageInfoList[index], 0),
+        (index) => WorldCupItemModel(
+            0, _imagePathList[index], _imageInfoList[index], 0),
       );
       await dao.addWorldCupWithItems(model, items);
       return true;
-    }catch(e){
+    } catch (e) {
       log('DB Error', error: e, name: 'add_worldcup_screen');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -371,14 +412,14 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     }
   }
 
-  TextStyle isPictureListEmpty(){
+  TextStyle isPictureListEmpty() {
     return const TextStyle(
       color: Colors.red,
       fontWeight: FontWeight.bold,
     );
   }
 
-  TextStyle isPictureListNotEmpty(){
+  TextStyle isPictureListNotEmpty() {
     return const TextStyle(
       color: Colors.black,
       fontWeight: FontWeight.normal,
@@ -389,9 +430,10 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     if (widget.editModel != null) {
       _titleController.text = widget.editModel!.title;
       _infoController.text = widget.editModel!.info;
-      
+
       WorldCupDao dao = WorldCupDao();
-      List<WorldCupItemModel> items = await dao.getWorldCupItemList(widget.editModel!.idx);
+      List<WorldCupItemModel> items =
+          await dao.getWorldCupItemList(widget.editModel!.idx);
       if (!mounted) return;
       setState(() {
         _imagePathList = items.map((item) => item.imagePath).toList();
@@ -402,9 +444,9 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
 
   Future<bool> updateWorldCup() async {
     FocusManager.instance.primaryFocus?.unfocus();
-    if(!_formKey.currentState!.validate()) return false;
+    if (!_formKey.currentState!.validate()) return false;
 
-    if(_imagePathList.isEmpty || _imagePathList.length<4){
+    if (_imagePathList.isEmpty || _imagePathList.length < 4) {
       return false;
     }
 
@@ -415,10 +457,9 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
         _infoController.text,
         widget.editModel!.date,
         _imagePathList.first,
-        _imagePathList.length
-    );
+        _imagePathList.length);
 
-    try{
+    try {
       final items = List.generate(
         _imagePathList.length,
         (index) => WorldCupItemModel(
@@ -430,7 +471,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
       );
       await dao.updateWorldCupWithItems(model, items);
       return true;
-    }catch(e){
+    } catch (e) {
       log('DB Error', error: e, name: 'add_worldcup_screen');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -448,11 +489,10 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
         context: context,
         builder: (context) {
           return const WorldCupAddPictureDialog();
-        }
-    );
+        });
 
     if (!mounted) return;
-    if(result != null && result.isNotEmpty){
+    if (result != null && result.isNotEmpty) {
       setState(() {
         _imagePathList.add(result[0]);
         _imageInfoList.add(result[1]);
@@ -467,15 +507,13 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
         context: context,
         builder: (context) {
           return WorldCupAddPictureDialog(
-            isEditMode: true, 
-            existingImageInfo: _imageInfoList[index],
-            existingImagePath: _imagePathList[index]
-          );
-        }
-    );
+              isEditMode: true,
+              existingImageInfo: _imageInfoList[index],
+              existingImagePath: _imagePathList[index]);
+        });
 
     if (!mounted) return;
-    if(result != null && result.isNotEmpty){
+    if (result != null && result.isNotEmpty) {
       setState(() {
         _imagePathList[index] = result[0];
         _imageInfoList[index] = result[1];
@@ -509,7 +547,9 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                       height: 200,
                       fit: BoxFit.contain,
                       // 미리보기 높이(200dp) 이상으로 디코딩할 필요가 없다.
-                      cacheHeight: (200 * MediaQuery.of(context).devicePixelRatio).round(),
+                      cacheHeight:
+                          (200 * MediaQuery.of(context).devicePixelRatio)
+                              .round(),
                     ),
                     const SizedBox(height: 10),
                     TextField(
@@ -520,7 +560,8 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                         hintText: '이미지에 대한 설명을 입력하세요',
                       ),
                       onSubmitted: (value) {
-                        Navigator.of(context).pop(value.isNotEmpty ? value : '설명 없음');
+                        Navigator.of(context)
+                            .pop(value.isNotEmpty ? value : '설명 없음');
                       },
                     ),
                   ],
@@ -532,7 +573,9 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                   ),
                   TextButton(
                     onPressed: () {
-                      Navigator.of(context).pop(controller.text.isNotEmpty ? controller.text : '설명 없음');
+                      Navigator.of(context).pop(controller.text.isNotEmpty
+                          ? controller.text
+                          : '설명 없음');
                     },
                     child: const Text('확인'),
                   ),
@@ -553,6 +596,3 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     }
   }
 }
-
-
-
