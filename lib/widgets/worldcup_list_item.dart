@@ -7,59 +7,55 @@ import 'package:my_worldcup_local/widgets/worldcup_select_dialog.dart';
 
 class WorldCupListItem extends StatelessWidget {
   final WorldCupModel worldCupModel;
-  final VoidCallback onChanged;
-  const WorldCupListItem(this.worldCupModel,
-      {required this.onChanged, super.key});
+
+  const WorldCupListItem(this.worldCupModel, {super.key});
 
   @override
   Widget build(BuildContext context) {
     const cardRadius = 20.0;
-    final cacheWidth = (MediaQuery.sizeOf(context).width *
-            0.72 *
-            MediaQuery.devicePixelRatioOf(context))
-        .round();
-
-    return InkWell(
-      onTap: () {
-        showDialogBeforeGameStart(context, worldCupModel, onChanged);
-      },
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(cardRadius),
-                ),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: _buildThumbnail(cacheWidth),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cacheWidth = (constraints.maxWidth *
+                MediaQuery.devicePixelRatioOf(context))
+            .round();
+        return Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(cardRadius),
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: _buildThumbnail(cacheWidth),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              worldCupModel.idx < 0
-                  ? '(샘플) ${worldCupModel.title}'
-                  : worldCupModel.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-              semanticsLabel: '월드컵 게임 타이틀',
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '최대 라운드 : ${makeMaxRound(worldCupModel.maxRound)}강',
-              style: Theme.of(context).textTheme.bodyMedium,
-              semanticsLabel: '월드컵 최대 라운드',
-            ),
-          ],
-        ),
-      ),
+              const SizedBox(height: 12),
+              Text(
+                worldCupModel.idx < 0
+                    ? '(샘플) ${worldCupModel.title}'
+                    : worldCupModel.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                semanticsLabel: '월드컵 게임 타이틀',
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '최대 라운드 : ${makeMaxRound(worldCupModel.maxRound)}강',
+                style: Theme.of(context).textTheme.bodyMedium,
+                semanticsLabel: '월드컵 최대 라운드',
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

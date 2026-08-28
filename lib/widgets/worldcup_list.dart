@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:my_worldcup_local/dto/worldcup_dao.dart';
+import 'package:my_worldcup_local/tools/make_round.dart';
 import 'package:my_worldcup_local/widgets/worldcup_list_item.dart';
 
 import '../models/worldcup_model.dart';
@@ -51,11 +52,17 @@ class WorldCupListState extends State<WorldCupList> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: WorldCupListItem(model, onChanged: refresh),
+              child: WorldCupListItem(model),
             );
           },
           onCurrentItemTap: (context, model, index) {
             showDialogBeforeGameStart(context, model, refresh);
+          },
+          itemKey: (model) => model.idx,
+          semanticLabelBuilder: (model, index) {
+            final title = model.idx < 0 ? '(샘플) ${model.title}' : model.title;
+            return '$title, 최대 라운드 ${makeMaxRound(model.maxRound)}강, '
+                '${index + 1} / ${worldCupList.length}';
           },
         ),
       ),
@@ -76,6 +83,8 @@ class CoverFlowPager<T> extends StatefulWidget {
   final void Function(BuildContext context, T item, int index)?
       onCurrentItemTap;
   final void Function(T item, int index)? onPageChanged;
+  final Object Function(T item)? itemKey;
+  final String Function(T item, int index)? semanticLabelBuilder;
   final int initialPage;
   final double cardAspectRatio;
   final double cardWidthFactor;
@@ -92,6 +101,8 @@ class CoverFlowPager<T> extends StatefulWidget {
     required this.itemBuilder,
     this.onCurrentItemTap,
     this.onPageChanged,
+    this.itemKey,
+    this.semanticLabelBuilder,
     this.initialPage = 0,
     this.cardAspectRatio = 3 / 4,
     this.cardWidthFactor = 0.72,
@@ -111,7 +122,7 @@ class CoverFlowPager<T> extends StatefulWidget {
 
 class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
   late final PageController _pageController;
-  double _availableWidth = 0;
+  Object? _currentItemKey;
 
   int get _safeInitialPage {
     if (widget.items.isEmpty) return 0;
@@ -122,6 +133,7 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: _safeInitialPage);
+    _currentItemKey = _keyAt(_safeInitialPage);
   }
 
   @override
@@ -129,10 +141,15 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
     super.didUpdateWidget(oldWidget);
     if (widget.items.isEmpty || !_pageController.hasClients) return;
     final currentPage = (_pageController.page ?? _safeInitialPage).round();
-    if (currentPage >= widget.items.length) {
+    final keyedIndex = _indexOfKey(_currentItemKey);
+    final targetPage = keyedIndex >= 0
+        ? keyedIndex
+        : currentPage.clamp(0, widget.items.length - 1);
+    _currentItemKey = _keyAt(targetPage);
+    if (targetPage != currentPage) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_pageController.hasClients || widget.items.isEmpty) return;
-        _pageController.jumpToPage(widget.items.length - 1);
+        _pageController.jumpToPage(targetPage);
       });
     }
   }
@@ -148,26 +165,27 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
     if (widget.items.isEmpty) return const SizedBox.shrink();
     return LayoutBuilder(
       builder: (context, constraints) {
-        _availableWidth = constraints.maxWidth;
         return Stack(
           alignment: Alignment.center,
           clipBehavior: Clip.none,
           children: [
-            IgnorePointer(
-              child: AnimatedBuilder(
-                animation: _pageController,
-                builder: (context, child) {
-                  return Stack(
-                    alignment: Alignment.center,
-                    clipBehavior: Clip.none,
-                    children: _buildCards(
-                      context: context,
-                      currentPage: _currentPage,
-                      availableWidth: constraints.maxWidth,
-                      availableHeight: constraints.maxHeight,
-                    ),
-                  );
-                },
+            ExcludeSemantics(
+              child: IgnorePointer(
+                child: AnimatedBuilder(
+                  animation: _pageController,
+                  builder: (context, child) {
+                    return Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: _buildCards(
+                        context: context,
+                        currentPage: _currentPage,
+                        availableWidth: constraints.maxWidth,
+                        availableHeight: constraints.maxHeight,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
             ScrollConfiguration(
@@ -178,18 +196,22 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
                 itemCount: widget.items.length,
                 physics: const PageScrollPhysics(),
                 onPageChanged: (index) {
+                  setState(() => _currentItemKey = _keyAt(index));
                   widget.onPageChanged?.call(widget.items[index], index);
                 },
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     behavior: HitTestBehavior.translucent,
-                    onTapUp: (details) =>
-                        _handleTap(context, details.localPosition),
+                    onTapUp: (details) => _handleTap(
+                      context,
+                      _viewportPosition(details.globalPosition),
+                    ),
                     child: const SizedBox.expand(),
                   );
                 },
               ),
             ),
+            _buildAccessibilityControls(context),
           ],
         );
       },
@@ -216,25 +238,24 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
           (b - currentPage).abs().compareTo((a - currentPage).abs()));
 
     return indexes.map((index) {
-      final difference = index - currentPage;
-      final distance = difference.abs().clamp(0.0, 1.0);
-      final scale = 1 - distance * (1 - widget.sideScale);
-      final opacity = 1 - distance * (1 - widget.sideOpacity);
-      final cardSize = _cardSize(availableWidth, availableHeight);
+      final geometry = _cardGeometry(
+        index: index,
+        currentPage: currentPage,
+        viewportSize: Size(availableWidth, availableHeight),
+      );
       return Transform.translate(
-        offset: Offset(
-          difference * availableWidth * widget.horizontalSpacingFactor,
-          distance * widget.sideTranslateY,
-        ),
+        offset: geometry.translation,
         child: Transform.scale(
-          scale: scale,
+          scale: geometry.scale,
           child: Opacity(
-            opacity: opacity,
-            child: SizedBox(
-              key: ValueKey('coverFlowCard-$index'),
-              width: cardSize.width,
-              height: cardSize.height,
-              child: widget.itemBuilder(context, widget.items[index], index),
+            opacity: geometry.opacity,
+            child: RepaintBoundary(
+              child: SizedBox(
+                key: ValueKey('coverFlowCard-$index'),
+                width: geometry.unscaledSize.width,
+                height: geometry.unscaledSize.height,
+                child: widget.itemBuilder(context, widget.items[index], index),
+              ),
             ),
           ),
         ),
@@ -243,7 +264,7 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
   }
 
   void _handleTap(BuildContext context, Offset position) {
-    if (_availableWidth <= 0) return;
+    if (this.context.size == null) return;
     final currentPage = _currentPage;
     final tappedIndex = _findTappedCard(position, currentPage);
     if (tappedIndex == null) return;
@@ -271,23 +292,13 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
     final indexes = [for (var i = startIndex; i <= endIndex; i++) i]
       ..sort((a, b) =>
           (a - currentPage).abs().compareTo((b - currentPage).abs()));
-    final cardSize = _cardSize(size.width, size.height);
-
     for (final index in indexes) {
-      final difference = index - currentPage;
-      final distance = difference.abs().clamp(0.0, 1.0);
-      final scale = 1 - distance * (1 - widget.sideScale);
-      final center = Offset(
-        size.width / 2 +
-            difference * size.width * widget.horizontalSpacingFactor,
-        size.height / 2 + distance * widget.sideTranslateY,
+      final geometry = _cardGeometry(
+        index: index,
+        currentPage: currentPage,
+        viewportSize: size,
       );
-      final cardRect = Rect.fromCenter(
-        center: center,
-        width: cardSize.width * scale,
-        height: cardSize.height * scale,
-      );
-      if (cardRect.contains(position)) return index;
+      if (geometry.rect.contains(position)) return index;
     }
     return null;
   }
@@ -300,6 +311,66 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
         ? widthFromViewport
         : widthFromHeight;
     return Size(cardWidth, cardWidth / widget.cardAspectRatio);
+  }
+
+  _CardGeometry _cardGeometry({
+    required int index,
+    required double currentPage,
+    required Size viewportSize,
+  }) {
+    final difference = index - currentPage;
+    final distance = difference.abs().clamp(0.0, 1.0);
+    final scale = 1 - distance * (1 - widget.sideScale);
+    final opacity = 1 - distance * (1 - widget.sideOpacity);
+    final unscaledSize = _cardSize(viewportSize.width, viewportSize.height);
+    final translation = Offset(
+      difference * viewportSize.width * widget.horizontalSpacingFactor,
+      distance * widget.sideTranslateY,
+    );
+    return _CardGeometry(
+      unscaledSize: unscaledSize,
+      translation: translation,
+      scale: scale,
+      opacity: opacity,
+      viewportSize: viewportSize,
+    );
+  }
+
+  Offset _viewportPosition(Offset globalPosition) {
+    final renderObject = context.findRenderObject();
+    if (renderObject is! RenderBox) return Offset.zero;
+    return renderObject.globalToLocal(globalPosition);
+  }
+
+  Widget _buildAccessibilityControls(BuildContext context) {
+    final currentIndex = _currentPage.round().clamp(0, widget.items.length - 1);
+    final label = widget.semanticLabelBuilder
+            ?.call(widget.items[currentIndex], currentIndex) ??
+        '월드컵 ${currentIndex + 1} / ${widget.items.length}';
+    return Semantics(
+      container: true,
+      button: true,
+      label: label,
+      hint: '두 번 탭하여 현재 월드컵을 열거나 위아래로 쓸어 넘기세요',
+      onTap: () => widget.onCurrentItemTap
+          ?.call(context, widget.items[currentIndex], currentIndex),
+      onIncrease: currentIndex < widget.items.length - 1
+          ? () => _scrollToPage(currentIndex + 1)
+          : null,
+      onDecrease:
+          currentIndex > 0 ? () => _scrollToPage(currentIndex - 1) : null,
+      child: const ExcludeSemantics(child: SizedBox.expand()),
+    );
+  }
+
+  Object? _keyAt(int index) {
+    if (widget.items.isEmpty || widget.itemKey == null) return null;
+    return widget.itemKey!(widget.items[index]);
+  }
+
+  int _indexOfKey(Object? key) {
+    if (key == null || widget.itemKey == null) return -1;
+    return widget.items.indexWhere((item) => widget.itemKey!(item) == key);
   }
 
   Future<void> _scrollToPage(int index) async {
@@ -321,6 +392,27 @@ class _CoverFlowScrollBehavior extends MaterialScrollBehavior {
         PointerDeviceKind.mouse,
         PointerDeviceKind.stylus,
         PointerDeviceKind.trackpad,
-        PointerDeviceKind.unknown,
       };
+}
+
+class _CardGeometry {
+  final Size unscaledSize;
+  final Offset translation;
+  final double scale;
+  final double opacity;
+  final Size viewportSize;
+
+  const _CardGeometry({
+    required this.unscaledSize,
+    required this.translation,
+    required this.scale,
+    required this.opacity,
+    required this.viewportSize,
+  });
+
+  Rect get rect => Rect.fromCenter(
+        center: viewportSize.center(Offset.zero) + translation,
+        width: unscaledSize.width * scale,
+        height: unscaledSize.height * scale,
+      );
 }
