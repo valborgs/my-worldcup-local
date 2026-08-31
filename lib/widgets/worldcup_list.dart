@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:my_worldcup_local/dto/worldcup_dao.dart';
@@ -16,17 +19,56 @@ class WorldCupList extends StatefulWidget {
 }
 
 class WorldCupListState extends State<WorldCupList> {
+  static const _pageSize = 10;
+  static const _sheetHeaderHeight = 64.0;
+
   late List<WorldCupModel> worldCupList = widget.initialWorldCupList ?? [];
+  final _sheetController = DraggableScrollableController();
+  final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
+  Timer? _searchDebounce;
+  int _allTotalCount = 0;
+  int _totalCount = 0;
+  bool _isLoadingPage = false;
+  bool _isSearchMode = false;
+  String _searchQuery = '';
+  int _queryGeneration = 0;
+  List<WorldCupModel> _itemsBeforeSearch = [];
+  int _countBeforeSearch = 0;
+  double _collapsedSheetSize = 0.1;
 
   @override
   void initState() {
     super.initState();
+    _sheetController.addListener(_onSheetSizeChanged);
     refresh();
   }
 
   @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _sheetController.removeListener(_onSheetSizeChanged);
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    _sheetController.dispose();
+    super.dispose();
+  }
+
+  void _onSheetSizeChanged() {
+    if (!_sheetController.isAttached ||
+        _sheetController.size > _collapsedSheetSize + 0.02) {
+      return;
+    }
+    if (_isSearchMode) {
+      closeSearchMode();
+    } else if (_searchFocusNode.hasFocus) {
+      _searchFocusNode.unfocus();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (worldCupList.isEmpty) {
+    if (_allTotalCount == 0 && worldCupList.isEmpty && _searchQuery.isEmpty) {
       return Expanded(
         child: Container(
           alignment: Alignment.center,
@@ -40,40 +82,375 @@ class WorldCupListState extends State<WorldCupList> {
     }
 
     return Expanded(
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 32),
-        child: CoverFlowPager<WorldCupModel>(
-          items: worldCupList,
-          itemBuilder: (context, model, index) {
-            return Card(
-              margin: EdgeInsets.zero,
-              clipBehavior: Clip.antiAlias,
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final hasSheet = _allTotalCount > 5;
+          final minSheetSize = hasSheet
+              ? (_sheetHeaderHeight / constraints.maxHeight).clamp(0.05, 0.25)
+              : 0.0;
+          _collapsedSheetSize = minSheetSize;
+          return Stack(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  0,
+                  32,
+                  0,
+                  hasSheet ? _sheetHeaderHeight + 16 : 32,
+                ),
+                child: CoverFlowPager<WorldCupModel>(
+                  items: worldCupList,
+                  itemBuilder: (context, model, index) {
+                    return Card(
+                      margin: EdgeInsets.zero,
+                      clipBehavior: Clip.antiAlias,
+                      elevation: 8,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: WorldCupListItem(model),
+                    );
+                  },
+                  onCurrentItemTap: (context, model, index) {
+                    showDialogBeforeGameStart(context, model, refresh);
+                  },
+                  onPageChanged: (_, index) {
+                    if (index >= worldCupList.length - 3) _loadNextPage();
+                  },
+                  itemKey: (model) => model.idx,
+                  semanticLabelBuilder: (model, index) {
+                    final title =
+                        model.idx < 0 ? '(샘플) ${model.title}' : model.title;
+                    return '$title, 최대 라운드 ${makeMaxRound(model.maxRound)}강, '
+                        '${index + 1} / $_totalCount';
+                  },
+                ),
               ),
-              child: WorldCupListItem(model),
-            );
-          },
-          onCurrentItemTap: (context, model, index) {
-            showDialogBeforeGameStart(context, model, refresh);
-          },
-          itemKey: (model) => model.idx,
-          semanticLabelBuilder: (model, index) {
-            final title = model.idx < 0 ? '(샘플) ${model.title}' : model.title;
-            return '$title, 최대 라운드 ${makeMaxRound(model.maxRound)}강, '
-                '${index + 1} / ${worldCupList.length}';
-          },
+              if (hasSheet)
+                DraggableScrollableSheet(
+                  controller: _sheetController,
+                  initialChildSize: minSheetSize,
+                  minChildSize: minSheetSize,
+                  maxChildSize: 0.92,
+                  snap: true,
+                  snapSizes: [minSheetSize, 0.92],
+                  builder: (context, scrollController) {
+                    return Material(
+                      elevation: 16,
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(24),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (notification.metrics.extentAfter < 240) {
+                            _loadNextPage();
+                          }
+                          return false;
+                        },
+                        child: CustomScrollView(
+                          controller: scrollController,
+                          slivers: [
+                            SliverPersistentHeader(
+                              pinned: true,
+                              delegate: _SheetHeaderDelegate(
+                                extent: _isSearchMode
+                                    ? _sheetHeaderHeight * 2
+                                    : _sheetHeaderHeight,
+                                child: ColoredBox(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  child: Column(
+                                    children: [
+                                      _buildSheetHeader(minSheetSize),
+                                      if (_isSearchMode)
+                                        SizedBox(
+                                          height: _sheetHeaderHeight,
+                                          child: _buildSearchField(),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (worldCupList.isEmpty)
+                              const SliverFillRemaining(
+                                hasScrollBody: false,
+                                child: Center(child: Text('검색 결과가 없습니다')),
+                              )
+                            else
+                              SliverList.builder(
+                                itemCount: worldCupList.length,
+                                itemBuilder: (context, index) {
+                                  return _WorldCupSheetItem(
+                                    model: worldCupList[index],
+                                    onTap: () => showDialogBeforeGameStart(
+                                      context,
+                                      worldCupList[index],
+                                      refresh,
+                                    ),
+                                  );
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSheetHeader(double minSheetSize) {
+    return Semantics(
+      button: true,
+      label: '전체 월드컵 목록 열기',
+      child: InkWell(
+        onTap: () {
+          final isCollapsed = !_sheetController.isAttached ||
+              _sheetController.size <= minSheetSize + 0.05;
+          _sheetController.animateTo(
+            isCollapsed ? 0.92 : minSheetSize,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeOutCubic,
+          );
+        },
+        child: SizedBox(
+          width: double.infinity,
+          height: _sheetHeaderHeight,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _searchQuery.isEmpty
+                        ? '전체 목록 ($_totalCount)'
+                        : '검색 결과 ($_totalCount)',
+                  ),
+                ],
+              ),
+              Positioned(
+                right: 8,
+                child: IconButton(
+                  tooltip: _isSearchMode ? '검색 닫기' : '월드컵 검색',
+                  onPressed: _isSearchMode
+                      ? closeSearchMode
+                      : () => _openSearch(minSheetSize),
+                  icon: Icon(_isSearchMode ? Icons.close : Icons.search),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  Widget _buildSearchField() {
+    return ColoredBox(
+      color: Theme.of(context).colorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        child: TextField(
+          controller: _searchController,
+          focusNode: _searchFocusNode,
+          textInputAction: TextInputAction.search,
+          onChanged: _onSearchChanged,
+          decoration: InputDecoration(
+            hintText: '월드컵 제목 또는 설명 검색',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _searchQuery.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: '검색어 지우기',
+                    onPressed: () {
+                      _searchController.clear();
+                      _onSearchChanged('');
+                    },
+                    icon: const Icon(Icons.clear),
+                  ),
+            border: const OutlineInputBorder(),
+            isDense: true,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSearch(double minSheetSize) async {
+    _itemsBeforeSearch = List.of(worldCupList);
+    _countBeforeSearch = _totalCount;
+    setState(() => _isSearchMode = true);
+    if (_sheetController.isAttached &&
+        _sheetController.size <= minSheetSize + 0.05) {
+      await _sheetController.animateTo(
+        0.92,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+      );
+    }
+    if (mounted) _searchFocusNode.requestFocus();
+  }
+
+  bool closeSearchMode() {
+    if (!_isSearchMode) return false;
+    _searchDebounce?.cancel();
+    _queryGeneration++;
+    _searchFocusNode.unfocus();
+    _searchController.clear();
+    setState(() {
+      _isSearchMode = false;
+      _searchQuery = '';
+      _totalCount = _countBeforeSearch;
+      worldCupList = List.of(_itemsBeforeSearch);
+    });
+    return true;
+  }
+
+  bool handleBack() {
+    if (closeSearchMode()) return true;
+    if (!_sheetController.isAttached ||
+        _sheetController.size <= _collapsedSheetSize + 0.01) {
+      return false;
+    }
+    unawaited(
+      _sheetController.animateTo(
+        _collapsedSheetSize,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    return true;
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    setState(() => _searchQuery = value.trim());
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 300),
+      () => _loadFirstPageForQuery(_searchQuery),
+    );
+  }
+
   Future<void> refresh() async {
     final db = WorldCupDao();
-    final newList = await db.getWorldCupList();
+    final results = await Future.wait([
+      db.getWorldCupCount(),
+      db.getWorldCupPage(limit: _pageSize, offset: 0),
+    ]);
     if (!mounted) return;
-    setState(() => worldCupList = newList);
+    setState(() {
+      _allTotalCount = results[0] as int;
+      _totalCount = _allTotalCount;
+      worldCupList = results[1] as List<WorldCupModel>;
+      _searchController.clear();
+      _isSearchMode = false;
+      _searchQuery = '';
+    });
+  }
+
+  Future<void> _loadFirstPageForQuery(String query) async {
+    final generation = ++_queryGeneration;
+    final db = WorldCupDao();
+    final results = await Future.wait([
+      db.getWorldCupCount(searchQuery: query),
+      db.getWorldCupPage(
+        limit: _pageSize,
+        offset: 0,
+        searchQuery: query,
+      ),
+    ]);
+    if (!mounted || generation != _queryGeneration) return;
+    setState(() {
+      _totalCount = results[0] as int;
+      worldCupList = results[1] as List<WorldCupModel>;
+    });
+  }
+
+  Future<void> _loadNextPage() async {
+    if (_isLoadingPage || worldCupList.length >= _totalCount) return;
+    _isLoadingPage = true;
+    final generation = _queryGeneration;
+    final query = _searchQuery;
+    try {
+      final nextPage = await WorldCupDao().getWorldCupPage(
+        limit: _pageSize,
+        offset: worldCupList.length,
+        searchQuery: query,
+      );
+      if (mounted && generation == _queryGeneration && query == _searchQuery) {
+        setState(() => worldCupList.addAll(nextPage));
+      }
+    } finally {
+      _isLoadingPage = false;
+    }
+  }
+}
+
+class _SheetHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  final double extent;
+
+  const _SheetHeaderDelegate({required this.child, required this.extent});
+
+  @override
+  double get minExtent => extent;
+
+  @override
+  double get maxExtent => extent;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(covariant _SheetHeaderDelegate oldDelegate) =>
+      oldDelegate.child != child || oldDelegate.extent != extent;
+}
+
+class _WorldCupSheetItem extends StatelessWidget {
+  final WorldCupModel model;
+  final VoidCallback onTap;
+
+  const _WorldCupSheetItem({required this.model, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final image = model.titleImageSrc.isEmpty
+        ? Image.asset('assets/images/free_character.png', fit: BoxFit.cover)
+        : model.idx < 0
+            ? Image.asset(model.titleImageSrc, fit: BoxFit.cover)
+            : Image.file(File(model.titleImageSrc), fit: BoxFit.cover);
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      leading: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(width: 64, height: 64, child: image),
+      ),
+      title: Text(
+        model.idx < 0 ? '(샘플) ${model.title}' : model.title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text('최대 라운드 : ${makeMaxRound(model.maxRound)}강'),
+    );
   }
 }
 

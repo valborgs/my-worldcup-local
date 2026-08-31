@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -8,6 +9,7 @@ import 'package:my_worldcup_local/screens/main_worldcup_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dto/worldcup_dao.dart';
+import 'dev/test_worldcup_seeder.dart';
 import 'models/worldcup_model.dart';
 
 // 이 너비(dp) 이상을 '대화면'(폴더블 내부화면, 태블릿 등)으로 간주하여 회전을 허용한다.
@@ -36,8 +38,14 @@ Future<void> main() async {
   var dao = WorldCupDao();
   await dao.syncSampleWorldCup();
 
+  // 개발 중 페이징 확인용 데이터. 제거 시 이 호출과 import만 삭제하면 된다.
+  if (kDebugMode) await TestWorldCupSeeder.seed();
+
   // 첫 화면 진입 시 빈 목록이 잠깐 보였다가 바뀌는 깜빡임을 없애기 위해 미리 불러온다.
-  List<WorldCupModel> initialWorldCupList = await dao.getWorldCupList();
+  List<WorldCupModel> initialWorldCupList = await dao.getWorldCupPage(
+    limit: 10,
+    offset: 0,
+  );
 
   runApp(MyWorldCup(isAlreadyShownHelp, initialWorldCupList));
 }

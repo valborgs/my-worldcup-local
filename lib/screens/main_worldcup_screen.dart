@@ -36,10 +36,14 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
+        if (_worldCupListKey.currentState?.handleBack() == true) return;
         _showBackDialog();
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
+          scrolledUnderElevation: 0,
+          surfaceTintColor: Colors.transparent,
           leading: Semantics(
             label: "도움말 버튼",
             button: true,
