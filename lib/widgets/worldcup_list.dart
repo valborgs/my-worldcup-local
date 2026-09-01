@@ -11,8 +11,13 @@ import '../models/worldcup_model.dart';
 
 class WorldCupList extends StatefulWidget {
   final List<WorldCupModel>? initialWorldCupList;
+  final bool enableBottomSheetSelectionPagerTransition;
 
-  const WorldCupList({this.initialWorldCupList, super.key});
+  const WorldCupList({
+    this.initialWorldCupList,
+    required this.enableBottomSheetSelectionPagerTransition,
+    super.key,
+  });
 
   @override
   State<WorldCupList> createState() => WorldCupListState();
@@ -354,9 +359,14 @@ class WorldCupListState extends State<WorldCupList> {
   Future<void> _handleSheetItemTap(WorldCupModel model) async {
     if (_isHandlingSheetItemTap) return;
     _isHandlingSheetItemTap = true;
-    _searchFocusNode.unfocus();
 
     try {
+      if (!widget.enableBottomSheetSelectionPagerTransition) {
+        await showDialogBeforeGameStart(context, model, refresh);
+        return;
+      }
+
+      _searchFocusNode.unfocus();
       if (_sheetController.isAttached &&
           _sheetController.size > _collapsedSheetSize + 0.01) {
         await _sheetController.animateTo(

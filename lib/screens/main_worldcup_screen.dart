@@ -12,7 +12,13 @@ import 'add_worldcup_screen.dart';
 
 class MainWorldCupScreen extends StatefulWidget {
   final List<WorldCupModel>? initialWorldCupList;
-  const MainWorldCupScreen({this.initialWorldCupList, super.key});
+  final bool enableBottomSheetSelectionPagerTransition;
+
+  const MainWorldCupScreen({
+    this.initialWorldCupList,
+    required this.enableBottomSheetSelectionPagerTransition,
+    super.key,
+  });
 
   @override
   State<MainWorldCupScreen> createState() => _MainWorldCupScreenState();
@@ -53,7 +59,11 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const HelpScreen(false),
+                    builder: (context) => HelpScreen(
+                      false,
+                      enableBottomSheetSelectionPagerTransition:
+                          widget.enableBottomSheetSelectionPagerTransition,
+                    ),
                     fullscreenDialog: true,
                   ),
                 );
@@ -116,6 +126,8 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
               WorldCupList(
                 key: _worldCupListKey,
                 initialWorldCupList: widget.initialWorldCupList,
+                enableBottomSheetSelectionPagerTransition:
+                    widget.enableBottomSheetSelectionPagerTransition,
               ),
             ],
           ),

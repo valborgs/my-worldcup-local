@@ -6,7 +6,13 @@ import 'main_worldcup_screen.dart';
 
 class HelpScreen extends StatefulWidget {
   final bool isFirstShow;
-  const HelpScreen(this.isFirstShow, {super.key});
+  final bool enableBottomSheetSelectionPagerTransition;
+
+  const HelpScreen(
+    this.isFirstShow, {
+    required this.enableBottomSheetSelectionPagerTransition,
+    super.key,
+  });
 
   @override
   State<HelpScreen> createState() => _HelpScreenState();
@@ -80,7 +86,10 @@ class _HelpScreenState extends State<HelpScreen> {
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => const MainWorldCupScreen(),
+          builder: (context) => MainWorldCupScreen(
+            enableBottomSheetSelectionPagerTransition:
+                widget.enableBottomSheetSelectionPagerTransition,
+          ),
         ),
       );
     }else{
