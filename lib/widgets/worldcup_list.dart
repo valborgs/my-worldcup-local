@@ -23,19 +23,27 @@ class WorldCupListState extends State<WorldCupList> {
   static const _sheetHeaderHeight = 64.0;
 
   late List<WorldCupModel> worldCupList = widget.initialWorldCupList ?? [];
+  final _pagerKey = GlobalKey<_CoverFlowPagerState<WorldCupModel>>();
   final _sheetController = DraggableScrollableController();
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
   Timer? _searchDebounce;
   int _allTotalCount = 0;
-  int _totalCount = 0;
-  bool _isLoadingPage = false;
+  int _searchTotalCount = 0;
+  bool _isLoadingPagerPage = false;
+  bool _isLoadingSearchPage = false;
   bool _isSearchMode = false;
+  bool _isHandlingSheetItemTap = false;
   String _searchQuery = '';
   int _queryGeneration = 0;
-  List<WorldCupModel> _itemsBeforeSearch = [];
-  int _countBeforeSearch = 0;
+  List<WorldCupModel> _searchResults = [];
   double _collapsedSheetSize = 0.1;
+
+  List<WorldCupModel> get _sheetItems =>
+      _isSearchMode ? _searchResults : worldCupList;
+
+  int get _sheetTotalCount =>
+      _isSearchMode ? _searchTotalCount : _allTotalCount;
 
   @override
   void initState() {
@@ -59,6 +67,7 @@ class WorldCupListState extends State<WorldCupList> {
         _sheetController.size > _collapsedSheetSize + 0.02) {
       return;
     }
+    if (_isHandlingSheetItemTap) return;
     if (_isSearchMode) {
       closeSearchMode();
     } else if (_searchFocusNode.hasFocus) {
@@ -99,6 +108,7 @@ class WorldCupListState extends State<WorldCupList> {
                   hasSheet ? _sheetHeaderHeight + 16 : 32,
                 ),
                 child: CoverFlowPager<WorldCupModel>(
+                  key: _pagerKey,
                   items: worldCupList,
                   itemBuilder: (context, model, index) {
                     return Card(
@@ -115,14 +125,16 @@ class WorldCupListState extends State<WorldCupList> {
                     showDialogBeforeGameStart(context, model, refresh);
                   },
                   onPageChanged: (_, index) {
-                    if (index >= worldCupList.length - 3) _loadNextPage();
+                    if (index >= worldCupList.length - 3) {
+                      unawaited(_loadNextPagerPage());
+                    }
                   },
                   itemKey: (model) => model.idx,
                   semanticLabelBuilder: (model, index) {
                     final title =
                         model.idx < 0 ? '(샘플) ${model.title}' : model.title;
                     return '$title, 최대 라운드 ${makeMaxRound(model.maxRound)}강, '
-                        '${index + 1} / $_totalCount';
+                        '${index + 1} / $_allTotalCount';
                   },
                 ),
               ),
@@ -145,7 +157,7 @@ class WorldCupListState extends State<WorldCupList> {
                       child: NotificationListener<ScrollNotification>(
                         onNotification: (notification) {
                           if (notification.metrics.extentAfter < 240) {
-                            _loadNextPage();
+                            unawaited(_loadNextSheetPage());
                           }
                           return false;
                         },
@@ -173,21 +185,20 @@ class WorldCupListState extends State<WorldCupList> {
                                 ),
                               ),
                             ),
-                            if (worldCupList.isEmpty)
+                            if (_sheetItems.isEmpty)
                               const SliverFillRemaining(
                                 hasScrollBody: false,
                                 child: Center(child: Text('검색 결과가 없습니다')),
                               )
                             else
                               SliverList.builder(
-                                itemCount: worldCupList.length,
+                                itemCount: _sheetItems.length,
                                 itemBuilder: (context, index) {
+                                  final model = _sheetItems[index];
                                   return _WorldCupSheetItem(
-                                    model: worldCupList[index],
-                                    onTap: () => showDialogBeforeGameStart(
-                                      context,
-                                      worldCupList[index],
-                                      refresh,
+                                    model: model,
+                                    onTap: () => unawaited(
+                                      _handleSheetItemTap(model),
                                     ),
                                   );
                                 },
@@ -239,8 +250,8 @@ class WorldCupListState extends State<WorldCupList> {
                   const SizedBox(height: 8),
                   Text(
                     _searchQuery.isEmpty
-                        ? '전체 목록 ($_totalCount)'
-                        : '검색 결과 ($_totalCount)',
+                        ? '전체 목록 ($_sheetTotalCount)'
+                        : '검색 결과 ($_sheetTotalCount)',
                   ),
                 ],
               ),
@@ -293,9 +304,11 @@ class WorldCupListState extends State<WorldCupList> {
   }
 
   Future<void> _openSearch(double minSheetSize) async {
-    _itemsBeforeSearch = List.of(worldCupList);
-    _countBeforeSearch = _totalCount;
-    setState(() => _isSearchMode = true);
+    setState(() {
+      _isSearchMode = true;
+      _searchResults = List.of(worldCupList);
+      _searchTotalCount = _allTotalCount;
+    });
     if (_sheetController.isAttached &&
         _sheetController.size <= minSheetSize + 0.05) {
       await _sheetController.animateTo(
@@ -316,8 +329,8 @@ class WorldCupListState extends State<WorldCupList> {
     setState(() {
       _isSearchMode = false;
       _searchQuery = '';
-      _totalCount = _countBeforeSearch;
-      worldCupList = List.of(_itemsBeforeSearch);
+      _searchResults = [];
+      _searchTotalCount = 0;
     });
     return true;
   }
@@ -338,6 +351,64 @@ class WorldCupListState extends State<WorldCupList> {
     return true;
   }
 
+  Future<void> _handleSheetItemTap(WorldCupModel model) async {
+    if (_isHandlingSheetItemTap) return;
+    _isHandlingSheetItemTap = true;
+    _searchFocusNode.unfocus();
+
+    try {
+      if (_sheetController.isAttached &&
+          _sheetController.size > _collapsedSheetSize + 0.01) {
+        await _sheetController.animateTo(
+          _collapsedSheetSize,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+        );
+      }
+      if (!mounted) return;
+
+      final targetIndex = await _findOrLoadPagerIndex(model);
+      if (!mounted || targetIndex < 0) return;
+
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      final pagerState = _pagerKey.currentState;
+      if (pagerState == null) return;
+
+      await pagerState._scrollToPage(targetIndex);
+      if (!mounted) return;
+      await showDialogBeforeGameStart(context, model, refresh);
+    } finally {
+      _isHandlingSheetItemTap = false;
+    }
+  }
+
+  Future<int> _findOrLoadPagerIndex(WorldCupModel selectedModel) async {
+    closeSearchMode();
+    final pagerItems = List<WorldCupModel>.of(worldCupList);
+    var targetIndex = pagerItems.indexWhere(
+      (model) => model.idx == selectedModel.idx,
+    );
+
+    while (targetIndex < 0 && pagerItems.length < _allTotalCount) {
+      final nextPage = await WorldCupDao().getWorldCupPage(
+        limit: _pageSize,
+        offset: pagerItems.length,
+      );
+      if (nextPage.isEmpty) break;
+      pagerItems.addAll(nextPage);
+      targetIndex = pagerItems.indexWhere(
+        (model) => model.idx == selectedModel.idx,
+      );
+    }
+    if (!mounted) return -1;
+
+    if (pagerItems.length != worldCupList.length) {
+      setState(() => worldCupList = pagerItems);
+    }
+    return targetIndex;
+  }
+
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
     setState(() => _searchQuery = value.trim());
@@ -356,11 +427,12 @@ class WorldCupListState extends State<WorldCupList> {
     if (!mounted) return;
     setState(() {
       _allTotalCount = results[0] as int;
-      _totalCount = _allTotalCount;
       worldCupList = results[1] as List<WorldCupModel>;
       _searchController.clear();
       _isSearchMode = false;
       _searchQuery = '';
+      _searchResults = [];
+      _searchTotalCount = 0;
     });
   }
 
@@ -375,29 +447,58 @@ class WorldCupListState extends State<WorldCupList> {
         searchQuery: query,
       ),
     ]);
-    if (!mounted || generation != _queryGeneration) return;
+    if (!mounted || !_isSearchMode || generation != _queryGeneration) return;
     setState(() {
-      _totalCount = results[0] as int;
-      worldCupList = results[1] as List<WorldCupModel>;
+      _searchTotalCount = results[0] as int;
+      _searchResults = results[1] as List<WorldCupModel>;
     });
   }
 
-  Future<void> _loadNextPage() async {
-    if (_isLoadingPage || worldCupList.length >= _totalCount) return;
-    _isLoadingPage = true;
-    final generation = _queryGeneration;
-    final query = _searchQuery;
+  Future<void> _loadNextPagerPage() async {
+    if (_isLoadingPagerPage || worldCupList.length >= _allTotalCount) return;
+    _isLoadingPagerPage = true;
+    final offset = worldCupList.length;
     try {
       final nextPage = await WorldCupDao().getWorldCupPage(
         limit: _pageSize,
-        offset: worldCupList.length,
-        searchQuery: query,
+        offset: offset,
       );
-      if (mounted && generation == _queryGeneration && query == _searchQuery) {
+      if (mounted && worldCupList.length == offset) {
         setState(() => worldCupList.addAll(nextPage));
       }
     } finally {
-      _isLoadingPage = false;
+      _isLoadingPagerPage = false;
+    }
+  }
+
+  Future<void> _loadNextSheetPage() async {
+    if (!_isSearchMode) {
+      await _loadNextPagerPage();
+      return;
+    }
+    if (_isLoadingSearchPage || _searchResults.length >= _searchTotalCount) {
+      return;
+    }
+
+    _isLoadingSearchPage = true;
+    final generation = _queryGeneration;
+    final query = _searchQuery;
+    final offset = _searchResults.length;
+    try {
+      final nextPage = await WorldCupDao().getWorldCupPage(
+        limit: _pageSize,
+        offset: offset,
+        searchQuery: query,
+      );
+      if (mounted &&
+          _isSearchMode &&
+          generation == _queryGeneration &&
+          query == _searchQuery &&
+          _searchResults.length == offset) {
+        setState(() => _searchResults.addAll(nextPage));
+      }
+    } finally {
+      _isLoadingSearchPage = false;
     }
   }
 }
@@ -415,7 +516,8 @@ class _SheetHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => extent;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return child;
   }
 
@@ -523,9 +625,8 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
         ? (_pageController.page ?? _currentPageIndex.toDouble()).round()
         : _currentPageIndex;
     final keyedIndex = _indexOfKey(_currentItemKey);
-    final currentItemWasRemoved = widget.itemKey != null &&
-        _currentItemKey != null &&
-        keyedIndex < 0;
+    final currentItemWasRemoved =
+        widget.itemKey != null && _currentItemKey != null && keyedIndex < 0;
     final targetPage = keyedIndex >= 0
         ? keyedIndex
         : currentPage.clamp(0, widget.items.length - 1);
@@ -625,9 +726,8 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
         .clamp(0, widget.items.length - 1);
     final endIndex = (currentPage.ceil() + widget.visibleSideCount)
         .clamp(0, widget.items.length - 1);
-    final indexes = [for (var i = startIndex; i <= endIndex; i++) i]
-      ..sort((a, b) =>
-          (b - currentPage).abs().compareTo((a - currentPage).abs()));
+    final indexes = [for (var i = startIndex; i <= endIndex; i++) i]..sort(
+        (a, b) => (b - currentPage).abs().compareTo((a - currentPage).abs()));
 
     return indexes.map((index) {
       final geometry = _cardGeometry(
@@ -681,9 +781,8 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
         .clamp(0, widget.items.length - 1);
     final endIndex = (currentPage.ceil() + widget.visibleSideCount)
         .clamp(0, widget.items.length - 1);
-    final indexes = [for (var i = startIndex; i <= endIndex; i++) i]
-      ..sort((a, b) =>
-          (a - currentPage).abs().compareTo((b - currentPage).abs()));
+    final indexes = [for (var i = startIndex; i <= endIndex; i++) i]..sort(
+        (a, b) => (a - currentPage).abs().compareTo((b - currentPage).abs()));
     for (final index in indexes) {
       final geometry = _cardGeometry(
         index: index,
@@ -696,8 +795,7 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
   }
 
   Size _cardSize(double availableWidth, double availableHeight) {
-    final double widthFromViewport =
-        availableWidth * widget.cardWidthFactor;
+    final double widthFromViewport = availableWidth * widget.cardWidthFactor;
     final double widthFromHeight = availableHeight * widget.cardAspectRatio;
     final double cardWidth = widthFromViewport < widthFromHeight
         ? widthFromViewport
