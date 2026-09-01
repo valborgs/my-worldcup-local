@@ -36,11 +36,22 @@ Future<void> main() async {
     javaScriptAppKey: dotenv.env['kakao_javaScriptAppKey'],
   );
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  final enableBottomSheetSelectionPagerTransition =
-      await _loadBottomSheetSelectionPagerTransitionFlag();
+  var enableBottomSheetSelectionPagerTransition =
+      _bottomSheetSelectionPagerTransitionDefault;
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    enableBottomSheetSelectionPagerTransition =
+        await _loadBottomSheetSelectionPagerTransitionFlag();
+  } catch (error, stackTrace) {
+    log(
+      'Firebase 초기화에 실패해 앱 기본값으로 계속 실행합니다.',
+      error: error,
+      stackTrace: stackTrace,
+      name: 'main_firebase',
+    );
+  }
 
   // 구글 애드몹
   await MobileAds.instance.initialize();

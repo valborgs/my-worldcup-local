@@ -41,6 +41,15 @@ class WorldCupDao {
     return (result.first['count'] as num?)?.toInt() ?? 0;
   }
 
+  Future<int> getWorldCupIndex(int idx) async {
+    final db = await dbProvider.database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) AS itemIndex FROM $worldCupTable WHERE idx < ?',
+      [idx],
+    );
+    return (result.first['itemIndex'] as num?)?.toInt() ?? 0;
+  }
+
   Future<List<WorldCupModel>> getWorldCupPage({
     required int limit,
     required int offset,

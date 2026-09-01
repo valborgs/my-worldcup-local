@@ -38,6 +38,7 @@ class WorldCupListState extends State<WorldCupList> {
   bool _isLoadingPagerPage = false;
   bool _isLoadingSearchPage = false;
   bool _isSearchMode = false;
+  bool _isSearchCloseScheduled = false;
   bool _isHandlingSheetItemTap = false;
   String _searchQuery = '';
   int _queryGeneration = 0;
@@ -74,10 +75,24 @@ class WorldCupListState extends State<WorldCupList> {
     }
     if (_isHandlingSheetItemTap) return;
     if (_isSearchMode) {
-      closeSearchMode();
+      _scheduleCloseSearchMode();
     } else if (_searchFocusNode.hasFocus) {
       _searchFocusNode.unfocus();
     }
+  }
+
+  void _scheduleCloseSearchMode() {
+    if (_isSearchCloseScheduled) return;
+    _isSearchCloseScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _isSearchCloseScheduled = false;
+      if (!mounted || _isHandlingSheetItemTap || !_isSearchMode) return;
+      if (!_sheetController.isAttached ||
+          _sheetController.size > _collapsedSheetSize + 0.02) {
+        return;
+      }
+      closeSearchMode();
+    });
   }
 
   @override
@@ -326,7 +341,7 @@ class WorldCupListState extends State<WorldCupList> {
   }
 
   bool closeSearchMode() {
-    if (!_isSearchMode) return false;
+    if (!mounted || !_isSearchMode) return false;
     _searchDebounce?.cancel();
     _queryGeneration++;
     _searchFocusNode.unfocus();
@@ -400,18 +415,23 @@ class WorldCupListState extends State<WorldCupList> {
       (model) => model.idx == selectedModel.idx,
     );
 
-    while (targetIndex < 0 && pagerItems.length < _allTotalCount) {
-      final nextPage = await WorldCupDao().getWorldCupPage(
-        limit: _pageSize,
+    if (targetIndex < 0) {
+      final dao = WorldCupDao();
+      final resolvedIndex = await dao.getWorldCupIndex(selectedModel.idx);
+      final missingItemCount = resolvedIndex - pagerItems.length + 1;
+      if (!mounted || missingItemCount <= 0) return -1;
+
+      final missingItems = await dao.getWorldCupPage(
+        limit: missingItemCount,
         offset: pagerItems.length,
       );
-      if (nextPage.isEmpty) break;
-      pagerItems.addAll(nextPage);
+      if (!mounted) return -1;
+      pagerItems.addAll(missingItems);
       targetIndex = pagerItems.indexWhere(
         (model) => model.idx == selectedModel.idx,
       );
     }
-    if (!mounted) return -1;
+    if (!mounted || targetIndex < 0) return -1;
 
     if (pagerItems.length != worldCupList.length) {
       setState(() => worldCupList = pagerItems);
