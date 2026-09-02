@@ -16,9 +16,8 @@ void main() {
       4,
     );
 
-    // 본문의 최소 높이보다 작은 뷰포트로 스크롤을 결정적으로 유도한다.
-    // 특정 기기의 해상도나 글꼴의 렌더링 높이에는 의존하지 않는다.
-    await tester.binding.setSurfaceSize(const Size(400, 320));
+    // 긴 제목·설명과 고정된 하단 영역이 화면 높이를 넘는 조건을 만든다.
+    await tester.binding.setSurfaceSize(const Size(400, 520));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
@@ -37,15 +36,14 @@ void main() {
     );
     final title = tester.widget<Text>(titleFinder);
     final scrollViewFinder = find.byType(SingleChildScrollView);
+    final roundLabelFinder = find.text('- 라운드 수를 선택해주세요- ');
+    final roundDropdownFinder = find.byType(DropdownMenu<int>);
+    final startButtonFinder = find.widgetWithText(OutlinedButton, '시작');
     final shareButtonFinder = find.widgetWithText(OutlinedButton, '공유하기');
 
     expect(title.data, longTitle);
     expect(title.maxLines, isNull);
     expect(title.overflow, isNull);
-    expect(
-      tester.getSize(find.byKey(const Key('worldCupDialogContent'))).height,
-      greaterThanOrEqualTo(200),
-    );
     expect(scrollViewFinder, findsOneWidget);
     expect(
       find.descendant(of: scrollViewFinder, matching: titleFinder),
@@ -54,6 +52,18 @@ void main() {
     expect(
       find.descendant(of: scrollViewFinder, matching: descriptionFinder),
       findsOneWidget,
+    );
+    expect(
+      find.descendant(of: scrollViewFinder, matching: roundLabelFinder),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: scrollViewFinder, matching: roundDropdownFinder),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: scrollViewFinder, matching: startButtonFinder),
+      findsNothing,
     );
     final scrollableFinder = find.descendant(
       of: scrollViewFinder,
@@ -65,6 +75,12 @@ void main() {
             .position
             .maxScrollExtent,
         greaterThan(0));
+    final roundLabelCenter = tester.getCenter(roundLabelFinder);
+    final startButtonCenter = tester.getCenter(startButtonFinder);
+    await tester.drag(scrollViewFinder, const Offset(0, -100));
+    await tester.pump();
+    expect(tester.getCenter(roundLabelFinder), roundLabelCenter);
+    expect(tester.getCenter(startButtonFinder), startButtonCenter);
     expect(shareButtonFinder, findsOneWidget);
     expect(
       tester.getCenter(shareButtonFinder).dy,
@@ -94,5 +110,23 @@ void main() {
     );
 
     expect(find.widgetWithText(OutlinedButton, '공유하기'), findsNothing);
+    final descriptionFinder = find.byWidgetPredicate(
+      (widget) => widget is Text && widget.semanticsLabel == '월드컵 설명',
+    );
+    final scrollViewFinder = find.byType(SingleChildScrollView);
+    final scrollableFinder = find.descendant(
+      of: scrollViewFinder,
+      matching: find.byType(Scrollable),
+    );
+
+    expect(tester.getSize(descriptionFinder).height, lessThan(200));
+    expect(
+      tester
+          .state<ScrollableState>(scrollableFinder.first)
+          .position
+          .maxScrollExtent,
+      0,
+      reason: '짧은 제목과 설명은 남는 공간을 채우거나 스크롤되지 않아야 한다.',
+    );
   });
 }

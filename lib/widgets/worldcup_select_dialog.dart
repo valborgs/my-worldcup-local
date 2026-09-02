@@ -37,40 +37,38 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
         widget.model.title,
         semanticsLabel: "월드컵 제목",
       ),
-      content: ConstrainedBox(
-        key: const Key('worldCupDialogContent'),
-        constraints: const BoxConstraints(minHeight: 200),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Text(
-              widget.model.info,
-              semanticsLabel: "월드컵 설명",
-            ),
-            const SizedBox(height: 16),
-            const Text("- 라운드 수를 선택해주세요- "),
-            const SizedBox(height: 5),
-            DropdownMenu(
-              initialSelection: makeMaxRound(widget.model.maxRound),
-              menuStyle: const MenuStyle(
-                  padding: WidgetStatePropertyAll(EdgeInsets.all(0))),
-              dropdownMenuEntries: makeRoundList(widget.model.maxRound)
-                  .map<DropdownMenuEntry<int>>((int value) {
-                return DropdownMenuEntry<int>(value: value, label: '$value 강');
-              }).toList(),
-              onSelected: (value) {
-                if (value != null) _selectedRound = value;
-              },
-            ),
-          ],
-        ),
+      content: Text(
+        widget.model.info,
+        semanticsLabel: "월드컵 설명",
       ),
       actions: [
         Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const Text(
+              "- 라운드 수를 선택해주세요- ",
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 5),
+            Center(
+              child: DropdownMenu(
+                initialSelection: makeMaxRound(widget.model.maxRound),
+                menuStyle: const MenuStyle(
+                    padding: WidgetStatePropertyAll(EdgeInsets.all(0))),
+                dropdownMenuEntries: makeRoundList(widget.model.maxRound)
+                    .map<DropdownMenuEntry<int>>((int value) {
+                  return DropdownMenuEntry<int>(
+                    value: value,
+                    label: '$value 강',
+                  );
+                }).toList(),
+                onSelected: (value) {
+                  if (value != null) _selectedRound = value;
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
             Wrap(
               alignment: WrapAlignment.end,
               spacing: 8,
