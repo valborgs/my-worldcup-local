@@ -37,6 +37,7 @@ void main() {
     );
     final title = tester.widget<Text>(titleFinder);
     final scrollViewFinder = find.byType(SingleChildScrollView);
+    final shareButtonFinder = find.widgetWithText(OutlinedButton, '공유하기');
 
     expect(title.data, longTitle);
     expect(title.maxLines, isNull);
@@ -64,6 +65,34 @@ void main() {
             .position
             .maxScrollExtent,
         greaterThan(0));
+    expect(shareButtonFinder, findsOneWidget);
+    expect(
+      tester.getCenter(shareButtonFinder).dy,
+      greaterThan(
+          tester.getCenter(find.widgetWithText(OutlinedButton, '삭제')).dy),
+      reason: '실제 월드컵 공유 버튼은 다른 다이얼로그 작업 아래에 배치해야 한다.',
+    );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('샘플 월드컵에는 공유하기 버튼이 표시되지 않는다', (tester) async {
+    final sampleModel = WorldCupModel(
+      -1,
+      '샘플 월드컵',
+      '샘플 설명',
+      DateTime(2026),
+      'assets/sample/female/aespa_carina.jpg',
+      16,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: WorldCupSelectDialog(sampleModel, onChanged: () {}),
+        ),
+      ),
+    );
+
+    expect(find.widgetWithText(OutlinedButton, '공유하기'), findsNothing);
   });
 }

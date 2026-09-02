@@ -42,6 +42,8 @@ dependencies:
   expandable_page_view: ^1.0.17 # 뷰페이저
   image_picker: ^1.1.1 # 이미지피커
   file_picker: ^10.3.10 # 다중 파일 선택
+  share_plus: ^12.0.2 # 월드컵 패키지를 Quick Share/AirDrop 등으로 공유
+  archive: ^4.2.0 # 월드컵 정보와 이미지를 하나의 파일로 묶기
   dotted_border: ^2.1.0 # 점선 박스
   sqflite: ^2.3.3+1 # sqlite
   path: ^1.9.0 # 파일 경로
