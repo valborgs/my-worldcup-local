@@ -5,7 +5,7 @@ import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:my_worldcup_local/widgets/worldcup_select_dialog.dart';
 
 void main() {
-  testWidgets('게임 시작 다이얼로그는 내용에 따라 커지고 화면을 넘으면 전체 본문이 스크롤된다', (tester) async {
+  testWidgets('게임 시작 다이얼로그는 제한된 높이를 넘으면 전체 본문이 스크롤된다', (tester) async {
     final longTitle = List.filled(7, '가나다라마바사아자차카타파하').join();
     final model = WorldCupModel(
       1,
@@ -16,7 +16,9 @@ void main() {
       4,
     );
 
-    await tester.binding.setSurfaceSize(const Size(751, 469));
+    // 본문의 최소 높이보다 작은 뷰포트로 스크롤을 결정적으로 유도한다.
+    // 특정 기기의 해상도나 글꼴의 렌더링 높이에는 의존하지 않는다.
+    await tester.binding.setSurfaceSize(const Size(400, 320));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
@@ -39,7 +41,6 @@ void main() {
     expect(title.data, longTitle);
     expect(title.maxLines, isNull);
     expect(title.overflow, isNull);
-    expect(tester.getSize(titleFinder).height, greaterThan(50));
     expect(
       tester.getSize(find.byKey(const Key('worldCupDialogContent'))).height,
       greaterThanOrEqualTo(200),

@@ -44,7 +44,10 @@ class _PlayWorldCupScreenState extends State<PlayWorldCupScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: AutoScrollingText(widget.worldCupModel.title),
+          title: AutoScrollingText(
+            widget.worldCupModel.title,
+            semanticsLabel: '${widget.worldCupModel.title} 게임 화면',
+          ),
           systemOverlayStyle: SystemUiOverlayStyle.dark,
         ),
         body: ChangeNotifierProvider(
