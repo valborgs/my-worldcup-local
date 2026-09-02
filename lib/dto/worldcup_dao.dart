@@ -29,6 +29,45 @@ class WorldCupDao {
     return modelList;
   }
 
+  Future<int> getWorldCupCount({String searchQuery = ''}) async {
+    final db = await dbProvider.database;
+    final query = searchQuery.trim();
+    final whereClause = query.isEmpty ? '' : ' WHERE title LIKE ? OR info LIKE ?';
+    final whereArgs = query.isEmpty ? <Object?>[] : ['%$query%', '%$query%'];
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) AS count FROM $worldCupTable$whereClause',
+      whereArgs,
+    );
+    return (result.first['count'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<int> getWorldCupIndex(int idx) async {
+    final db = await dbProvider.database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) AS itemIndex FROM $worldCupTable WHERE idx < ?',
+      [idx],
+    );
+    return (result.first['itemIndex'] as num?)?.toInt() ?? 0;
+  }
+
+  Future<List<WorldCupModel>> getWorldCupPage({
+    required int limit,
+    required int offset,
+    String searchQuery = '',
+  }) async {
+    final db = await dbProvider.database;
+    final query = searchQuery.trim();
+    final dbList = await db.query(
+      worldCupTable,
+      where: query.isEmpty ? null : 'title LIKE ? OR info LIKE ?',
+      whereArgs: query.isEmpty ? null : ['%$query%', '%$query%'],
+      orderBy: 'idx ASC',
+      limit: limit,
+      offset: offset,
+    );
+    return dbList.map(WorldCupModel.fromDB).toList();
+  }
+
   Future<int> addWorldCupWithItems(
     WorldCupModel model,
     List<WorldCupItemModel> items,

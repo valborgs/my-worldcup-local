@@ -45,3 +45,4 @@ app.*.map.json
 /.env
 *.lock
 pubspec.lock
+/android/app/google-services.json

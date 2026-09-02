@@ -12,7 +12,13 @@ import 'add_worldcup_screen.dart';
 
 class MainWorldCupScreen extends StatefulWidget {
   final List<WorldCupModel>? initialWorldCupList;
-  const MainWorldCupScreen({this.initialWorldCupList, super.key});
+  final bool enableBottomSheetSelectionPagerTransition;
+
+  const MainWorldCupScreen({
+    this.initialWorldCupList,
+    required this.enableBottomSheetSelectionPagerTransition,
+    super.key,
+  });
 
   @override
   State<MainWorldCupScreen> createState() => _MainWorldCupScreenState();
@@ -36,10 +42,14 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
+        if (_worldCupListKey.currentState?.handleBack() == true) return;
         _showBackDialog();
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
+          scrolledUnderElevation: 0,
+          surfaceTintColor: Colors.transparent,
           leading: Semantics(
             label: "도움말 버튼",
             button: true,
@@ -49,7 +59,11 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const HelpScreen(false),
+                    builder: (context) => HelpScreen(
+                      false,
+                      enableBottomSheetSelectionPagerTransition:
+                          widget.enableBottomSheetSelectionPagerTransition,
+                    ),
                     fullscreenDialog: true,
                   ),
                 );
@@ -112,6 +126,8 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
               WorldCupList(
                 key: _worldCupListKey,
                 initialWorldCupList: widget.initialWorldCupList,
+                enableBottomSheetSelectionPagerTransition:
+                    widget.enableBottomSheetSelectionPagerTransition,
               ),
             ],
           ),
