@@ -10,6 +10,7 @@ import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 import '../ad/ad_helper.dart';
 import '../models/worldcup_model.dart';
 import '../services/worldcup_package_service.dart';
+import '../widgets/worldcup_action_menu_button.dart';
 import '../widgets/worldcup_list.dart';
 import 'add_worldcup_screen.dart';
 import 'nearby_worldcup_transfer_screen.dart';
@@ -89,62 +90,11 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
             semanticsLabel: "내가 만든 월드컵 화면",
           ),
           actions: [
-            Semantics(
-              button: true,
-              label: '월드컵 받기',
-              child: IconButton(
-                tooltip: '월드컵 받기',
-                onPressed: _receiveWorldCup,
-                icon: const Icon(
-                  Icons.devices_other,
-                  semanticLabel: '월드컵 받기',
-                  size: 28,
-                ),
-              ),
-            ),
-            Semantics(
-              button: true,
-              enabled: !_isImporting,
-              label: "공유받은 월드컵 가져오기",
-              child: IconButton(
-                tooltip: "월드컵 가져오기",
-                onPressed: _isImporting ? null : _importWorldCup,
-                icon: _isImporting
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(
-                        Icons.file_download_outlined,
-                        semanticLabel: "가져오기",
-                        size: 28,
-                      ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: Semantics(
-                button: true,
-                enabled: true,
-                label: "Add WorldCup Button",
-                child: IconButton(
-                  onPressed: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const AddWorldCupScreen(),
-                        fullscreenDialog: true,
-                      ),
-                    );
-                    _worldCupListKey.currentState?.refresh();
-                  },
-                  icon: const Icon(
-                    Icons.add,
-                    semanticLabel: "추가",
-                    size: 32,
-                  ),
-                ),
-              ),
+            WorldCupActionMenuButton(
+              isBusy: _isImporting,
+              onCreate: _addWorldCup,
+              onReceiveNearby: _receiveWorldCup,
+              onImportFile: _importWorldCup,
             ),
           ],
         ),
@@ -210,6 +160,17 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
         );
       },
     );
+  }
+
+  Future<void> _addWorldCup() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => const AddWorldCupScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+    if (!mounted) return;
+    await _worldCupListKey.currentState?.refresh();
   }
 
   Future<void> _importWorldCup() async {
