@@ -13,10 +13,12 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
+import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.AdvertisingOptions
 import com.google.android.gms.nearby.connection.ConnectionInfo
@@ -54,6 +56,7 @@ class WorldcupNearbyTransferPlugin :
         private const val PROTOCOL_VERSION = 1
         private const val METHODS = "org.comon.my_worldcup_local/nearby_transfer/methods"
         private const val EVENTS = "org.comon.my_worldcup_local/nearby_transfer/events"
+        private const val TAG = "WorldcupNearby"
         private const val PERMISSION_REQUEST = 7461
         private val STRATEGY = Strategy.P2P_POINT_TO_POINT
     }
@@ -736,6 +739,24 @@ class WorldcupNearbyTransferPlugin :
         message: String,
         error: Throwable,
     ) {
-        result.error(code, message, error.localizedMessage)
+        val apiException = error as? ApiException
+        val nativeStatusCode = apiException?.statusCode
+        val nativeStatus = nativeStatusCode?.let {
+            ConnectionsStatusCodes.getStatusCodeString(it)
+        }
+        Log.w(
+            TAG,
+            "$message code=$code nativeStatusCode=$nativeStatusCode nativeStatus=$nativeStatus",
+            error,
+        )
+        result.error(
+            code,
+            message,
+            mapOf(
+                "nativeStatusCode" to nativeStatusCode,
+                "nativeStatus" to nativeStatus,
+                "nativeMessage" to error.localizedMessage,
+            ),
+        )
     }
 }

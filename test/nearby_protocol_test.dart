@@ -106,4 +106,35 @@ void main() {
     expect(ios, contains('incomingMetadata[payloadID] = metadata'));
     expect(ios, contains('finalizeIncoming(payloadID: payloadID)'));
   });
+
+  test('Android 16에서도 Wi-Fi 상태 권한을 유지하고 상세 오류는 로그에만 기록한다', () {
+    final manifest = File(
+      'packages/worldcup_nearby_transfer/android/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
+    final android = File(
+      'packages/worldcup_nearby_transfer/android/src/main/kotlin/'
+      'org/comon/worldcup_nearby_transfer/WorldcupNearbyTransferPlugin.kt',
+    ).readAsStringSync();
+
+    expect(
+      manifest,
+      contains(
+        '<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />',
+      ),
+    );
+    expect(
+      manifest,
+      contains(
+        '<uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />',
+      ),
+    );
+    expect(
+      manifest,
+      isNot(contains('ACCESS_WIFI_STATE" android:maxSdkVersion')),
+    );
+    expect(android, contains('ConnectionsStatusCodes.getStatusCodeString'));
+    expect(android, contains('Log.w('));
+    expect(android,
+        contains('result.error(\n            code,\n            message,'));
+  });
 }

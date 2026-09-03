@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui';
-
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:my_worldcup_local/services/nearby_worldcup_transfer_controller.dart';
@@ -200,6 +199,32 @@ void main() {
     await _flush();
     expect(disconnectGateway.disposeCalls, greaterThanOrEqualTo(1));
   });
+
+  test('검색 실패의 네이티브 상세 정보는 사용자 메시지에 노출하지 않는다', () async {
+    final gateway = _FakeNearbyGateway()
+      ..startDiscoveryError = PlatformException(
+        code: 'unavailable',
+        message: '주변 기기 검색을 시작할 수 없습니다.',
+        details: const {
+          'nativeStatusCode': 8032,
+          'nativeStatus': 'MISSING_PERMISSION_ACCESS_WIFI_STATE',
+        },
+      );
+    final controller = NearbyWorldCupTransferController.sender(
+      gateway: gateway,
+      packageGateway: _FakePackageGateway(temporaryDirectory),
+      worldCup: _worldCup,
+      displayNameProvider: () => '보내는 기기',
+    );
+    addTearDown(controller.dispose);
+
+    await controller.start();
+
+    expect(controller.phase, NearbyTransferPhase.error);
+    expect(controller.message, '주변 기기 검색을 시작할 수 없습니다.');
+    expect(controller.message, isNot(contains('8032')));
+    expect(controller.message, isNot(contains('MISSING_PERMISSION')));
+  });
 }
 
 final _worldCup = WorldCupModel(1, '전송 테스트', '', DateTime(2026), '', 4);
@@ -214,6 +239,7 @@ class _FakeNearbyGateway implements NearbyTransferGateway {
   int sendCalls = 0;
   int cancelCalls = 0;
   int disposeCalls = 0;
+  Object? startDiscoveryError;
 
   void add(NearbyEvent event) => _events.add(event);
 
@@ -263,7 +289,10 @@ class _FakeNearbyGateway implements NearbyTransferGateway {
   Future<void> startAdvertising({required String displayName}) async {}
 
   @override
-  Future<void> startDiscovery({required String displayName}) async {}
+  Future<void> startDiscovery({required String displayName}) async {
+    final error = startDiscoveryError;
+    if (error != null) throw error;
+  }
 
   @override
   Future<void> stopAdvertising() async {}
