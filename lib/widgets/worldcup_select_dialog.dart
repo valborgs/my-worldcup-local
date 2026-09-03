@@ -23,31 +23,25 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
     int selectedRound = makeMaxRound(widget.model.maxRound);
 
     return AlertDialog(
-      title: Container(
-        constraints: const BoxConstraints(maxHeight: 50),
-        child: SingleChildScrollView(
-            child: Text(
-          widget.model.title,
-          semanticsLabel: "월드컵 제목",
-        )),
+      scrollable: true,
+      title: Text(
+        widget.model.title,
+        semanticsLabel: "월드컵 제목",
       ),
-      content: SizedBox(
-        height: 200,
+      content: ConstrainedBox(
+        key: const Key('worldCupDialogContent'),
+        constraints: const BoxConstraints(minHeight: 200),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            const Spacer(),
-            Container(
-              constraints: const BoxConstraints(maxHeight: 100),
-              child: SingleChildScrollView(
-                  child: Text(
-                widget.model.info,
-                semanticsLabel: "월드컵 설명",
-              )),
+            Text(
+              widget.model.info,
+              semanticsLabel: "월드컵 설명",
             ),
-            const Spacer(),
-            const Padding(padding: EdgeInsets.only(top: 5)),
+            const SizedBox(height: 16),
             const Text("- 라운드 수를 선택해주세요- "),
-            const Padding(padding: EdgeInsets.only(top: 5)),
+            const SizedBox(height: 5),
             DropdownMenu(
               initialSelection: makeMaxRound(widget.model.maxRound),
               menuStyle: const MenuStyle(
@@ -60,7 +54,6 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
                 selectedRound = value as int;
               },
             ),
-            const Spacer(),
           ],
         ),
       ),

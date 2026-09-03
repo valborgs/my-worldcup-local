@@ -6,6 +6,7 @@ import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:provider/provider.dart';
 
 import '../provider/worldcup_select_provider.dart';
+import '../widgets/auto_scrolling_text.dart';
 import '../widgets/worldcup_game.dart';
 
 class PlayWorldCupScreen extends StatefulWidget {
@@ -43,7 +44,10 @@ class _PlayWorldCupScreenState extends State<PlayWorldCupScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.worldCupModel.title),
+          title: AutoScrollingText(
+            widget.worldCupModel.title,
+            semanticsLabel: '${widget.worldCupModel.title} 게임 화면',
+          ),
           systemOverlayStyle: SystemUiOverlayStyle.dark,
         ),
         body: ChangeNotifierProvider(

@@ -16,6 +16,7 @@ import '../models/worldcup_item_model.dart';
 import '../models/worldcup_model.dart';
 import '../tools/asset_to_file.dart';
 import '../tools/make_binary_file.dart';
+import '../widgets/auto_scrolling_text.dart';
 
 class ResultWorldCupScreen extends StatefulWidget {
   final WorldCupModel worldCupModel;
@@ -121,7 +122,7 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          title: Text(
+          title: AutoScrollingText(
             "${widget.worldCupModel.title} 우승자",
             semanticsLabel: "월드컵 우승자 화면",
           ),
