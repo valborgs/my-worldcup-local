@@ -129,4 +129,29 @@ void main() {
       reason: '짧은 제목과 설명은 남는 공간을 채우거나 스크롤되지 않아야 한다.',
     );
   });
+
+  testWidgets('사용자 월드컵은 Nearby 공유와 기존 앱 공유를 선택할 수 있다', (tester) async {
+    final model = WorldCupModel(
+      5,
+      '공유 월드컵',
+      '설명',
+      DateTime(2026),
+      '',
+      4,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: WorldCupSelectDialog(model, onChanged: () {}),
+        ),
+      ),
+    );
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '공유하기'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('주변 기기로 보내기'), findsOneWidget);
+    expect(find.text('다른 앱으로 공유하기'), findsOneWidget);
+  });
 }

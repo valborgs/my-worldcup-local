@@ -1,11 +1,13 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 
 import '../dto/worldcup_dao.dart';
 import '../models/worldcup_model.dart';
 import '../screens/play_worldcup_screen.dart';
 import '../screens/add_worldcup_screen.dart';
+import '../screens/nearby_worldcup_transfer_screen.dart';
 import '../services/worldcup_package_service.dart';
 import '../tools/make_round.dart';
 import 'outlined_icon_button.dart';
@@ -13,7 +15,16 @@ import 'outlined_icon_button.dart';
 class WorldCupSelectDialog extends StatefulWidget {
   final WorldCupModel model;
   final VoidCallback onChanged;
-  const WorldCupSelectDialog(this.model, {required this.onChanged, super.key});
+  final WorldCupPackageGateway? packageGateway;
+  final NearbyTransferGateway Function()? nearbyGatewayFactory;
+
+  const WorldCupSelectDialog(
+    this.model, {
+    required this.onChanged,
+    this.packageGateway,
+    this.nearbyGatewayFactory,
+    super.key,
+  });
 
   @override
   State<WorldCupSelectDialog> createState() => _WorldCupSelectDialogState();
@@ -146,7 +157,7 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
                         "공유하기",
                         Icons.share,
                         Colors.blue,
-                        onPressed: () => _shareWorldCup(buttonContext),
+                        onPressed: () => _showShareOptions(buttonContext),
                       ),
               ),
           ],
@@ -155,15 +166,61 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
     );
   }
 
-  Future<void> _shareWorldCup(BuildContext buttonContext) async {
+  Future<void> _showShareOptions(BuildContext buttonContext) async {
     final renderObject = buttonContext.findRenderObject();
     final sharePositionOrigin = renderObject is RenderBox
         ? renderObject.localToGlobal(Offset.zero) & renderObject.size
         : null;
+    final choice = await showModalBottomSheet<_ShareChoice>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('공유 방법 선택', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.devices_other),
+                title: const Text('주변 기기로 보내기'),
+                subtitle: const Text('인터넷 없이 Nearby Connections로 직접 전송'),
+                onTap: () => Navigator.pop(context, _ShareChoice.nearby),
+              ),
+              ListTile(
+                leading: const Icon(Icons.ios_share),
+                title: const Text('다른 앱으로 공유하기'),
+                subtitle: const Text('Quick Share, AirDrop 또는 설치된 앱 사용'),
+                onTap: () => Navigator.pop(context, _ShareChoice.otherApp),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    if (choice == _ShareChoice.nearby) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => NearbyWorldCupSendScreen(
+            worldCup: widget.model,
+            gateway: widget.nearbyGatewayFactory?.call(),
+            packageGateway: widget.packageGateway,
+          ),
+          fullscreenDialog: true,
+        ),
+      );
+      return;
+    }
+    await _shareWorldCup(sharePositionOrigin);
+  }
 
+  Future<void> _shareWorldCup(Rect? sharePositionOrigin) async {
     setState(() => _isSharing = true);
     try {
-      await WorldCupPackageService().shareWorldCup(
+      await (widget.packageGateway ?? WorldCupPackageService()).shareWorldCup(
         widget.model,
         sharePositionOrigin: sharePositionOrigin,
       );
@@ -186,6 +243,8 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
     }
   }
 }
+
+enum _ShareChoice { nearby, otherApp }
 
 // 월드컵 삭제
 Future<void> deleteWorldCup(

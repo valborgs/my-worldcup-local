@@ -27,9 +27,20 @@ class ImportedWorldCup {
   const ImportedWorldCup({required this.idx, required this.title});
 }
 
+abstract interface class WorldCupPackageGateway {
+  Future<void> shareWorldCup(
+    WorldCupModel model, {
+    Rect? sharePositionOrigin,
+  });
+
+  Future<File> createPackage(WorldCupModel model);
+
+  Future<ImportedWorldCup> importPackage(String packagePath);
+}
+
 /// 월드컵 메타데이터와 이미지를 하나의 `.myworldcup`(ZIP) 파일로
 /// 내보내거나, 공유받은 파일을 앱 저장공간으로 가져온다.
-class WorldCupPackageService {
+class WorldCupPackageService implements WorldCupPackageGateway {
   static const String fileExtension = 'myworldcup';
   static const String mimeType = 'application/vnd.org.comon.my-worldcup+zip';
 
@@ -56,6 +67,7 @@ class WorldCupPackageService {
         _documentsDirectoryProvider =
             documentsDirectoryProvider ?? getApplicationDocumentsDirectory;
 
+  @override
   Future<void> shareWorldCup(
     WorldCupModel model, {
     Rect? sharePositionOrigin,
@@ -71,6 +83,7 @@ class WorldCupPackageService {
     );
   }
 
+  @override
   Future<File> createPackage(WorldCupModel model) async {
     final items = await _dao.getWorldCupItemList(model.idx);
     if (items.length < 4) {
@@ -197,6 +210,7 @@ class WorldCupPackageService {
     }
   }
 
+  @override
   Future<ImportedWorldCup> importPackage(String packagePath) async {
     final packageFile = File(packagePath);
     if (!await packageFile.exists()) {

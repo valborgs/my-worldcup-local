@@ -26,6 +26,14 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>주변 기기와 월드컵 파일을 직접 주고받기 위해 Bluetooth를 사용합니다.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>인터넷 없이 주변 기기와 월드컵 파일을 직접 전송하기 위해 로컬 네트워크를 사용합니다.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_D0D7E2C1A414781E73C5F15B._tcp</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

@@ -5,20 +5,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:my_worldcup_local/screens/help_screen.dart';
+import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 
 import '../ad/ad_helper.dart';
 import '../models/worldcup_model.dart';
 import '../services/worldcup_package_service.dart';
 import '../widgets/worldcup_list.dart';
 import 'add_worldcup_screen.dart';
+import 'nearby_worldcup_transfer_screen.dart';
 
 class MainWorldCupScreen extends StatefulWidget {
   final List<WorldCupModel>? initialWorldCupList;
   final bool enableBottomSheetSelectionPagerTransition;
+  final NearbyTransferGateway Function()? nearbyGatewayFactory;
+  final WorldCupPackageGateway? packageGateway;
 
   const MainWorldCupScreen({
     this.initialWorldCupList,
     required this.enableBottomSheetSelectionPagerTransition,
+    this.nearbyGatewayFactory,
+    this.packageGateway,
     super.key,
   });
 
@@ -83,6 +89,19 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
             semanticsLabel: "내가 만든 월드컵 화면",
           ),
           actions: [
+            Semantics(
+              button: true,
+              label: '월드컵 받기',
+              child: IconButton(
+                tooltip: '월드컵 받기',
+                onPressed: _receiveWorldCup,
+                icon: const Icon(
+                  Icons.devices_other,
+                  semanticLabel: '월드컵 받기',
+                  size: 28,
+                ),
+              ),
+            ),
             Semantics(
               button: true,
               enabled: !_isImporting,
@@ -236,6 +255,21 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
     } finally {
       if (mounted) setState(() => _isImporting = false);
     }
+  }
+
+  Future<void> _receiveWorldCup() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => NearbyWorldCupReceiveScreen(
+          gateway: widget.nearbyGatewayFactory?.call(),
+          packageGateway: widget.packageGateway,
+          onImported: (_) async {
+            await _worldCupListKey.currentState?.refresh();
+          },
+        ),
+        fullscreenDialog: true,
+      ),
+    );
   }
 
   void setAdmob() async {
