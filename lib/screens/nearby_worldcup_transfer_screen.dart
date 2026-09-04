@@ -345,7 +345,7 @@ class _ConnectionDecision extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final code = controller.verificationCode;
+    final code = controller.verificationCode!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -359,29 +359,25 @@ class _ConnectionDecision extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            if (code == null)
-              const Text('이 기기의 연결 요청을 수락하시겠습니까?')
-            else ...[
-              const Text('양쪽 기기에 아래 인증 코드가 동일하게 표시되는지 확인하세요.'),
-              const SizedBox(height: 16),
-              Semantics(
-                label: '인증 코드 $code',
-                readOnly: true,
-                child: SelectableText(
-                  code,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        letterSpacing: 4,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '코드가 다르면 연결하지 마세요.',
+            const Text('양쪽 기기에 아래 인증 코드가 동일하게 표시되는지 확인하세요.'),
+            const SizedBox(height: 16),
+            Semantics(
+              label: '인증 코드 $code',
+              readOnly: true,
+              child: SelectableText(
+                code,
                 textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      letterSpacing: 4,
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
-            ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              '코드가 다르면 연결하지 마세요.',
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
             Wrap(
               alignment: WrapAlignment.end,
@@ -396,7 +392,7 @@ class _ConnectionDecision extends StatelessWidget {
                 FilledButton(
                   onPressed:
                       controller.busy ? null : controller.acceptConnection,
-                  child: Text(code == null ? '연결 요청 수락' : '코드 일치 · 수락'),
+                  child: const Text('코드 일치 · 수락'),
                 ),
               ],
             ),

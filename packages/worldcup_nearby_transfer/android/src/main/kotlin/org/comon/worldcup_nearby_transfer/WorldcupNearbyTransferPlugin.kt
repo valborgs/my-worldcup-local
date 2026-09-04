@@ -209,6 +209,8 @@ class WorldcupNearbyTransferPlugin :
 
     private fun requiredPermissions(): Array<String> {
         val permissions = mutableListOf<String>()
+        // Keep these API boundaries aligned with Google's Nearby Connections table:
+        // FINE_LOCATION ends at 31; NEARBY_WIFI_DEVICES is declared from 32 and requested on 33+.
         if (Build.VERSION.SDK_INT <= 28) {
             permissions += Manifest.permission.ACCESS_COARSE_LOCATION
         } else if (Build.VERSION.SDK_INT <= 31) {
@@ -222,6 +224,8 @@ class WorldcupNearbyTransferPlugin :
         if (Build.VERSION.SDK_INT >= 33) {
             permissions += Manifest.permission.NEARBY_WIFI_DEVICES
         }
+        // Android 17/API 37 requires this for apps targeting 37+ when Nearby uses WIFI_LAN.
+        // https://developers.google.com/nearby/connections/android/get-started#request_permissions
         if (Build.VERSION.SDK_INT >= 37 && context.applicationInfo.targetSdkVersion >= 37) {
             permissions += "android.permission.ACCESS_LOCAL_NETWORK"
         }
@@ -249,15 +253,24 @@ class WorldcupNearbyTransferPlugin :
         val supported = GoogleApiAvailability.getInstance()
             .isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS
         val bluetoothState = try {
-            val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-            if (manager.adapter?.isEnabled == true) "enabled" else "disabled"
+            val manager = context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+            val adapter = manager?.adapter
+            when {
+                adapter == null -> "unavailable"
+                adapter.isEnabled -> "enabled"
+                else -> "disabled"
+            }
         } catch (_: SecurityException) {
             "unknown"
         }
         val wifiState = try {
             val manager = context.applicationContext
-                .getSystemService(Context.WIFI_SERVICE) as WifiManager
-            if (manager.isWifiEnabled) "enabled" else "disabled"
+                .getSystemService(Context.WIFI_SERVICE) as? WifiManager
+            when {
+                manager == null -> "unavailable"
+                manager.isWifiEnabled -> "enabled"
+                else -> "disabled"
+            }
         } catch (_: SecurityException) {
             "unknown"
         }
@@ -583,6 +596,10 @@ class WorldcupNearbyTransferPlugin :
                 Payload.Type.FILE -> {
                     incomingFiles[payload.id] = payload
                     tryFinalizeIncoming(endpointId, payload.id)
+                }
+                else -> {
+                    client.cancelPayload(payload.id)
+                    emitError("protocol", "지원하지 않는 스트림 payload입니다.", false)
                 }
             }
         }

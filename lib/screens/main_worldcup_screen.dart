@@ -191,8 +191,8 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
 
     setState(() => _isImporting = true);
     try {
-      final imported =
-          await WorldCupPackageService().importPackage(packagePath);
+      final imported = await (widget.packageGateway ?? WorldCupPackageService())
+          .importPackage(packagePath);
       if (!mounted) return;
       await _worldCupListKey.currentState?.refresh();
       if (!mounted) return;

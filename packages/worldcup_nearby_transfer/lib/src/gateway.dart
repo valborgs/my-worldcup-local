@@ -55,13 +55,11 @@ class MethodChannelNearbyTransferGateway implements NearbyTransferGateway {
             eventChannel ?? const EventChannel(NearbyProtocol.eventChannel);
 
   @override
-  Stream<NearbyEvent> get events => _events ??= _eventChannel
-      .receiveBroadcastStream(<String, Object>{
+  Stream<NearbyEvent> get events =>
+      _events ??= _eventChannel.receiveBroadcastStream(<String, Object>{
         'version': NearbyProtocol.version,
         'serviceId': NearbyProtocol.serviceId,
-      })
-      .map(NearbyEvent.fromMap)
-      .asBroadcastStream();
+      }).map(NearbyEvent.fromMap);
 
   Map<String, Object> _arguments([Map<String, Object>? values]) =>
       <String, Object>{

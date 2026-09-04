@@ -11,6 +11,20 @@ does not depend on a community Nearby Flutter plugin.
 - Service ID: supplied by `NearbyProtocol.serviceId` on every native request
 - iOS minimum: 13.0, required by the official Swift package
 
+The iOS implementation is Swift Package Manager-only and intentionally has no
+CocoaPods podspec because Google Nearby Connections for Swift is distributed as
+a Swift package. Flutter 3.44 and later enable Swift Package Manager by default.
+On older supported Flutter releases, enable it before building on macOS:
+
+```shell
+flutter config --enable-swift-package-manager
+flutter pub get
+```
+
+The committed Runner Xcode project and scheme contain the generated Flutter
+Swift package integration. A CocoaPods-only build is not supported by this
+project-local plugin.
+
 The received platform file is copied into an app-owned temporary directory
 before its real path is emitted to Dart. Canceling, leaving the transfer screen,
 or detaching the host activity stops discovery/advertising, disconnects peers,

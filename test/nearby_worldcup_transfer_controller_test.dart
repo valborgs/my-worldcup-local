@@ -98,7 +98,18 @@ void main() {
       incoming: true,
     ));
     await _flush();
-    expect(controller.phase, NearbyTransferPhase.connectionRequest);
+    expect(controller.phase, NearbyTransferPhase.connecting);
+    expect(controller.needsConnectionDecision, isFalse,
+        reason: '인증 코드 없이 연결을 수락할 수 없어야 한다.');
+
+    gateway.add(const NearbyVerificationCode(
+      endpointId: 'sender',
+      endpointName: 'Pixel',
+      code: '5678',
+    ));
+    await _flush();
+    expect(controller.phase, NearbyTransferPhase.verifying);
+    expect(controller.needsConnectionDecision, isTrue);
     expect(controller.peer?.name, 'Pixel');
 
     await controller.rejectConnection();
@@ -108,7 +119,9 @@ void main() {
   });
 
   test('수신 파일 완료 후 자동 import와 목록 갱신 콜백을 호출한다', () async {
-    final file = File('${temporaryDirectory.path}/received.myworldcup');
+    final nativeDirectory = Directory('${temporaryDirectory.path}/native')
+      ..createSync();
+    final file = File('${nativeDirectory.path}/received.myworldcup');
     await file.writeAsBytes([1, 2, 3, 4], flush: true);
     final gateway = _FakeNearbyGateway();
     final packageGateway = _FakePackageGateway(temporaryDirectory);
@@ -117,6 +130,7 @@ void main() {
       gateway: gateway,
       packageGateway: packageGateway,
       displayNameProvider: () => '받는 기기',
+      temporaryDirectoryProvider: () async => temporaryDirectory,
       onImported: (_) async => refreshCalls++,
     );
     addTearDown(controller.dispose);
@@ -140,7 +154,9 @@ void main() {
   });
 
   test('가져오기 실패 시 임시 파일을 지우고 원인을 표시한다', () async {
-    final file = File('${temporaryDirectory.path}/broken.myworldcup');
+    final nativeDirectory = Directory('${temporaryDirectory.path}/native')
+      ..createSync();
+    final file = File('${nativeDirectory.path}/broken.myworldcup');
     await file.writeAsBytes([1, 2], flush: true);
     final gateway = _FakeNearbyGateway();
     final packageGateway = _FakePackageGateway(temporaryDirectory)
@@ -149,6 +165,7 @@ void main() {
       gateway: gateway,
       packageGateway: packageGateway,
       displayNameProvider: () => '받는 기기',
+      temporaryDirectoryProvider: () async => temporaryDirectory,
     );
     addTearDown(controller.dispose);
     await controller.start();
@@ -224,6 +241,188 @@ void main() {
     expect(controller.message, '주변 기기 검색을 시작할 수 없습니다.');
     expect(controller.message, isNot(contains('8032')));
     expect(controller.message, isNot(contains('MISSING_PERMISSION')));
+
+    await controller.cancel();
+    expect(controller.phase, NearbyTransferPhase.error,
+        reason: '설정 화면 이동으로 lifecycle pause가 발생해도 기존 오류를 보존해야 한다.');
+    expect(gateway.cancelCalls, 0);
+  });
+
+  test('수신 완료 뒤 연결이 끊겨도 파일 소유권 이전과 import를 끝낸다', () async {
+    final nativeDirectory = Directory('${temporaryDirectory.path}/native')
+      ..createSync();
+    final file = File('${nativeDirectory.path}/received.myworldcup');
+    await file.writeAsBytes([1, 2, 3, 4], flush: true);
+    final gateway = _FakeNearbyGateway();
+    final packageGateway = _FakePackageGateway(temporaryDirectory)
+      ..importCompleter = Completer<ImportedWorldCup>();
+    final controller = NearbyWorldCupTransferController.receiver(
+      gateway: gateway,
+      packageGateway: packageGateway,
+      displayNameProvider: () => '받는 기기',
+      temporaryDirectoryProvider: () async => temporaryDirectory,
+    );
+    addTearDown(controller.dispose);
+    await controller.start();
+
+    gateway.add(const NearbyTransferProgress(
+      endpointId: 'sender',
+      payloadId: '10',
+      direction: NearbyTransferDirection.receiving,
+      status: NearbyTransferStatus.success,
+      bytesTransferred: 4,
+      totalBytes: 4,
+    ));
+    gateway.add(const NearbyConnectionChanged(
+      endpointId: 'sender',
+      state: NearbyConnectionState.disconnected,
+    ));
+    await _flush();
+
+    expect(controller.phase, NearbyTransferPhase.transferring);
+    expect(gateway.disposeCalls, 0);
+
+    gateway.add(NearbyFileReceived(
+      endpointId: 'sender',
+      payloadId: '10',
+      path: file.path,
+      name: 'received.myworldcup',
+      size: 4,
+    ));
+    await _flush();
+    expect(controller.phase, NearbyTransferPhase.importing);
+    expect(await file.exists(), isFalse,
+        reason: 'import 전에 네이티브 정리와 분리된 앱 임시 경로로 이동해야 한다.');
+
+    await controller.cancel();
+    expect(controller.phase, NearbyTransferPhase.importing,
+        reason: '앱 lifecycle pause가 import를 취소해서는 안 된다.');
+
+    gateway.add(const NearbyConnectionChanged(
+      endpointId: 'sender',
+      state: NearbyConnectionState.disconnected,
+    ));
+    await _flush();
+    expect(controller.phase, NearbyTransferPhase.importing);
+    expect(gateway.disposeCalls, 0);
+
+    packageGateway.importCompleter!.complete(
+      const ImportedWorldCup(idx: 99, title: '레이스 방지'),
+    );
+    await _flush();
+    await _flush();
+
+    expect(controller.phase, NearbyTransferPhase.success);
+    expect(gateway.disposeCalls, 1);
+  });
+
+  test('패키지 생성 중 취소하면 생성 완료 후 전송을 다시 시작하지 않는다', () async {
+    final gateway = _FakeNearbyGateway();
+    final packageGateway = _FakePackageGateway(temporaryDirectory)
+      ..createCompleter = Completer<File>();
+    final controller = NearbyWorldCupTransferController.sender(
+      gateway: gateway,
+      packageGateway: packageGateway,
+      worldCup: _worldCup,
+      displayNameProvider: () => '보내는 기기',
+    );
+    addTearDown(controller.dispose);
+    await controller.start();
+    gateway.add(
+      const NearbyEndpointFound(NearbyEndpoint(id: 'peer', name: '받는 기기')),
+    );
+    await _flush();
+    await controller.connect(controller.endpoints.single);
+    gateway.add(const NearbyConnectionChanged(
+      endpointId: 'peer',
+      state: NearbyConnectionState.connected,
+    ));
+    await _flush();
+    expect(controller.phase, NearbyTransferPhase.preparing);
+
+    await controller.cancel();
+    final package = File('${temporaryDirectory.path}/late.myworldcup');
+    await package.writeAsBytes([1, 2, 3], flush: true);
+    packageGateway.createCompleter!.complete(package);
+    await _flush();
+
+    expect(controller.phase, NearbyTransferPhase.canceled);
+    expect(gateway.sendCalls, 0);
+    expect(await package.exists(), isFalse);
+  });
+
+  test('주변 기기 검색에는 무한 대기를 막는 timeout이 적용된다', () async {
+    final gateway = _FakeNearbyGateway();
+    final controller = NearbyWorldCupTransferController.sender(
+      gateway: gateway,
+      packageGateway: _FakePackageGateway(temporaryDirectory),
+      worldCup: _worldCup,
+      displayNameProvider: () => '보내는 기기',
+      timeouts: const NearbyTransferTimeouts(
+        discovery: Duration(milliseconds: 30),
+      ),
+    );
+    addTearDown(controller.dispose);
+
+    await controller.start();
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+
+    expect(controller.phase, NearbyTransferPhase.error);
+    expect(controller.message, contains('주변 기기를 찾지 못했습니다'));
+    expect(gateway.disposeCalls, 1);
+  });
+
+  test('payload 완료 후 파일 이벤트가 오지 않으면 timeout으로 정리한다', () async {
+    final gateway = _FakeNearbyGateway();
+    final controller = NearbyWorldCupTransferController.receiver(
+      gateway: gateway,
+      packageGateway: _FakePackageGateway(temporaryDirectory),
+      displayNameProvider: () => '받는 기기',
+      timeouts: const NearbyTransferTimeouts(
+        finalization: Duration(milliseconds: 30),
+      ),
+    );
+    addTearDown(controller.dispose);
+    await controller.start();
+    gateway.add(const NearbyConnectionChanged(
+      endpointId: 'sender',
+      state: NearbyConnectionState.connected,
+    ));
+    gateway.add(const NearbyTransferProgress(
+      endpointId: 'sender',
+      payloadId: 'missing-metadata',
+      direction: NearbyTransferDirection.receiving,
+      status: NearbyTransferStatus.success,
+      bytesTransferred: 4,
+      totalBytes: 4,
+    ));
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+
+    expect(controller.phase, NearbyTransferPhase.error);
+    expect(controller.message, contains('수신 파일 확인 시간이 초과되었습니다'));
+    expect(gateway.cancelCalls, 1);
+    expect(gateway.disposeCalls, 1);
+  });
+
+  test('기본 표시 이름은 개인정보 대신 한 세션 동안 동일한 익명 별칭을 사용한다', () async {
+    final gateway = _FakeNearbyGateway();
+    final controller = NearbyWorldCupTransferController.sender(
+      gateway: gateway,
+      packageGateway: _FakePackageGateway(temporaryDirectory),
+      worldCup: _worldCup,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.start();
+    gateway.add(
+      const NearbyEndpointFound(NearbyEndpoint(id: 'peer', name: '받는 기기')),
+    );
+    await _flush();
+    await controller.connect(controller.endpoints.single);
+
+    expect(gateway.discoveryDisplayName, matches(RegExp(r'^월드컵 기기 \d{4}$')));
+    expect(gateway.connectionDisplayName, gateway.discoveryDisplayName);
+    expect(gateway.discoveryDisplayName, isNot('localhost'));
   });
 }
 
@@ -240,6 +439,8 @@ class _FakeNearbyGateway implements NearbyTransferGateway {
   int cancelCalls = 0;
   int disposeCalls = 0;
   Object? startDiscoveryError;
+  String? discoveryDisplayName;
+  String? connectionDisplayName;
 
   void add(NearbyEvent event) => _events.add(event);
 
@@ -271,8 +472,10 @@ class _FakeNearbyGateway implements NearbyTransferGateway {
   Future<void> requestConnection({
     required String endpointId,
     required String displayName,
-  }) async =>
-      connectionRequests++;
+  }) async {
+    connectionRequests++;
+    connectionDisplayName = displayName;
+  }
 
   @override
   Future<NearbyAvailability> requestPermissions() async => _availability;
@@ -290,6 +493,7 @@ class _FakeNearbyGateway implements NearbyTransferGateway {
 
   @override
   Future<void> startDiscovery({required String displayName}) async {
+    discoveryDisplayName = displayName;
     final error = startDiscoveryError;
     if (error != null) throw error;
   }
@@ -314,12 +518,16 @@ class _FakePackageGateway implements WorldCupPackageGateway {
   int createCalls = 0;
   int importCalls = 0;
   Object? importError;
+  Completer<File>? createCompleter;
+  Completer<ImportedWorldCup>? importCompleter;
 
   _FakePackageGateway(this.directory);
 
   @override
   Future<File> createPackage(WorldCupModel model) async {
     createCalls++;
+    final completer = createCompleter;
+    if (completer != null) return completer.future;
     return File('${directory.path}/send.myworldcup')
       ..writeAsBytesSync([1, 2, 3]);
   }
@@ -327,6 +535,8 @@ class _FakePackageGateway implements WorldCupPackageGateway {
   @override
   Future<ImportedWorldCup> importPackage(String packagePath) async {
     importCalls++;
+    final completer = importCompleter;
+    if (completer != null) return completer.future;
     final error = importError;
     if (error != null) throw error;
     return const ImportedWorldCup(idx: 88, title: '받은 월드컵');

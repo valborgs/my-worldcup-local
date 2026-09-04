@@ -47,10 +47,10 @@ class WorldCupPackageService implements WorldCupPackageGateway {
   static const String _format = 'my-worldcup';
   static const int _formatVersion = 1;
   static const String _manifestName = 'manifest.json';
-  static const int _maxPackageBytes = 512 * 1024 * 1024;
+  static const int _maxPackageBytes = 130 * 1024 * 1024;
   static const int _maxManifestBytes = 1024 * 1024;
   static const int _maxImageBytes = 64 * 1024 * 1024;
-  static const int _maxTotalImageBytes = 512 * 1024 * 1024;
+  static const int _maxTotalImageBytes = 128 * 1024 * 1024;
   static const int _maxItemCount = 512;
 
   final WorldCupDao _dao;
@@ -262,11 +262,17 @@ class WorldCupPackageService implements WorldCupPackageGateway {
         jsonDecode(utf8.decode(manifestBytes)),
       );
 
-      var totalImageBytes = 0;
+      var declaredTotalImageBytes = 0;
+      final imagePaths = <String>{};
       for (final item in manifest.items) {
         if (!_isSafeImageEntry(item.image)) {
           throw const WorldCupPackageException(
             '안전하지 않은 리소스 경로가 포함되었습니다.',
+          );
+        }
+        if (!imagePaths.add(item.image)) {
+          throw const WorldCupPackageException(
+            '중복된 이미지 리소스 경로가 포함되었습니다.',
           );
         }
         final imageEntry = entries[item.image];
@@ -277,8 +283,8 @@ class WorldCupPackageService implements WorldCupPackageGateway {
             '이미지 리소스가 없거나 손상되었습니다.',
           );
         }
-        totalImageBytes += imageEntry.size;
-        if (totalImageBytes > _maxTotalImageBytes) {
+        declaredTotalImageBytes += imageEntry.size;
+        if (declaredTotalImageBytes > _maxTotalImageBytes) {
           throw const WorldCupPackageException(
             '이미지 리소스의 크기가 너무 큽니다.',
           );
@@ -299,6 +305,7 @@ class WorldCupPackageService implements WorldCupPackageGateway {
       await importDirectory.create();
 
       final importedImagePaths = <String>[];
+      var extractedTotalImageBytes = 0;
       for (var index = 0; index < manifest.items.length; index++) {
         final item = manifest.items[index];
         final imageEntry = entries[item.image]!;
@@ -306,6 +313,12 @@ class WorldCupPackageService implements WorldCupPackageGateway {
         if (bytes == null || bytes.isEmpty || bytes.length > _maxImageBytes) {
           throw const WorldCupPackageException(
             '이미지 리소스를 읽을 수 없습니다.',
+          );
+        }
+        extractedTotalImageBytes += bytes.length;
+        if (extractedTotalImageBytes > _maxTotalImageBytes) {
+          throw const WorldCupPackageException(
+            '이미지 리소스의 크기가 너무 큽니다.',
           );
         }
         final extension = _safeImageExtension(item.image);
@@ -326,7 +339,7 @@ class WorldCupPackageService implements WorldCupPackageGateway {
         manifest.info,
         manifest.createdAt,
         importedImagePaths[manifest.titleImageIndex],
-        manifest.items.length,
+        manifest.maxRound,
       );
       final items = <WorldCupItemModel>[
         for (var index = 0; index < manifest.items.length; index++)
@@ -398,6 +411,7 @@ class _PackageManifest {
   final String title;
   final String info;
   final DateTime createdAt;
+  final int maxRound;
   final int titleImageIndex;
   final List<_PackageItem> items;
 
@@ -405,6 +419,7 @@ class _PackageManifest {
     required this.title,
     required this.info,
     required this.createdAt,
+    required this.maxRound,
     required this.titleImageIndex,
     required this.items,
   });
@@ -421,6 +436,7 @@ class _PackageManifest {
     final title = json['title'];
     final info = json['info'];
     final createdAt = json['createdAt'];
+    final maxRound = json['maxRound'];
     final titleImageIndex = json['titleImageIndex'];
     final rawItems = json['items'];
     if (title is! String ||
@@ -429,6 +445,7 @@ class _PackageManifest {
         info is! String ||
         info.length > 5000 ||
         createdAt is! String ||
+        maxRound is! int ||
         titleImageIndex is! int ||
         rawItems is! List ||
         rawItems.length < 4 ||
@@ -440,6 +457,7 @@ class _PackageManifest {
 
     final parsedDate = DateTime.tryParse(createdAt);
     if (parsedDate == null ||
+        maxRound != rawItems.length ||
         titleImageIndex < 0 ||
         titleImageIndex >= rawItems.length) {
       throw const WorldCupPackageException(
@@ -470,6 +488,7 @@ class _PackageManifest {
       title: title,
       info: info,
       createdAt: parsedDate,
+      maxRound: maxRound,
       titleImageIndex: titleImageIndex,
       items: items,
     );

@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:archive/archive_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_worldcup_local/dto/worldcup_dao.dart';
 import 'package:my_worldcup_local/models/worldcup_item_model.dart';
@@ -82,6 +84,108 @@ void main() {
       expect(await File(item.imagePath).length(), greaterThan(0));
     }
   });
+
+  test('manifest의 maxRound가 항목 수와 다르면 가져오기를 거부한다', () async {
+    final testDirectory =
+        await Directory.systemTemp.createTemp('my_worldcup_manifest_test_');
+    addTearDown(() async {
+      if (await testDirectory.exists()) {
+        await testDirectory.delete(recursive: true);
+      }
+    });
+    final service = _importService(testDirectory);
+    final package = await _writePackage(
+      testDirectory,
+      images: const [
+        'images/0000.jpg',
+        'images/0001.jpg',
+        'images/0002.jpg',
+        'images/0003.jpg',
+      ],
+      maxRound: 8,
+    );
+
+    await expectLater(
+      service.importPackage(package.path),
+      throwsA(
+        isA<WorldCupPackageException>().having(
+          (error) => error.message,
+          'message',
+          '월드컵 정보가 손상되었습니다.',
+        ),
+      ),
+    );
+  });
+
+  test('여러 항목이 같은 이미지 archive 경로를 참조하면 명시적으로 거부한다', () async {
+    final testDirectory =
+        await Directory.systemTemp.createTemp('my_worldcup_duplicate_test_');
+    addTearDown(() async {
+      if (await testDirectory.exists()) {
+        await testDirectory.delete(recursive: true);
+      }
+    });
+    final service = _importService(testDirectory);
+    final package = await _writePackage(
+      testDirectory,
+      images: const [
+        'images/shared.jpg',
+        'images/shared.jpg',
+        'images/0002.jpg',
+        'images/0003.jpg',
+      ],
+      maxRound: 4,
+    );
+
+    await expectLater(
+      service.importPackage(package.path),
+      throwsA(
+        isA<WorldCupPackageException>().having(
+          (error) => error.message,
+          'message',
+          '중복된 이미지 리소스 경로가 포함되었습니다.',
+        ),
+      ),
+    );
+  });
+}
+
+WorldCupPackageService _importService(Directory directory) {
+  return WorldCupPackageService(
+    dao: _FakeWorldCupDao(const []),
+    temporaryDirectoryProvider: () async => directory,
+    documentsDirectoryProvider: () async => directory,
+  );
+}
+
+Future<File> _writePackage(
+  Directory directory, {
+  required List<String> images,
+  required int maxRound,
+}) async {
+  final manifest = <String, Object>{
+    'format': 'my-worldcup',
+    'version': 1,
+    'title': '검증 테스트',
+    'info': '',
+    'createdAt': DateTime(2026).toIso8601String(),
+    'maxRound': maxRound,
+    'titleImageIndex': 0,
+    'items': [
+      for (final image in images) <String, String>{'image': image, 'info': ''},
+    ],
+  };
+  final archive = Archive()
+    ..addFile(ArchiveFile.string('manifest.json', jsonEncode(manifest)));
+  for (final image in images.toSet()) {
+    archive.addFile(ArchiveFile.string(image, 'image'));
+  }
+  final encoded = ZipEncoder().encode(archive);
+  final package = File(
+    '${directory.path}/validation_${DateTime.now().microsecondsSinceEpoch}.myworldcup',
+  );
+  await package.writeAsBytes(encoded, flush: true);
+  return package;
 }
 
 class _FakeWorldCupDao extends WorldCupDao {
