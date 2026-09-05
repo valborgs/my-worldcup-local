@@ -79,10 +79,9 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     required this.worldCup,
     String Function()? displayNameProvider,
     Future<Directory> Function()? temporaryDirectoryProvider,
-    NearbyTransferTimeouts timeouts = const NearbyTransferTimeouts(),
+    this._timeouts = const NearbyTransferTimeouts(),
   })  : mode = NearbyTransferMode.send,
         onImported = null,
-        _timeouts = timeouts,
         _temporaryDirectoryProvider =
             temporaryDirectoryProvider ?? getTemporaryDirectory,
         _displayName = (displayNameProvider ?? _defaultDisplayName)();
@@ -93,10 +92,9 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     this.onImported,
     String Function()? displayNameProvider,
     Future<Directory> Function()? temporaryDirectoryProvider,
-    NearbyTransferTimeouts timeouts = const NearbyTransferTimeouts(),
+    this._timeouts = const NearbyTransferTimeouts(),
   })  : mode = NearbyTransferMode.receive,
         worldCup = null,
-        _timeouts = timeouts,
         _temporaryDirectoryProvider =
             temporaryDirectoryProvider ?? getTemporaryDirectory,
         _displayName = (displayNameProvider ?? _defaultDisplayName)();

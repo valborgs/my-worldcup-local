@@ -1,0 +1,26 @@
+name: feature_worldcup_share
+description: My World Cup "share" feature module.
+version: 1.0.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: '>=3.24.0'
+
+# feature 패키지는 다른 feature 패키지에 의존하지 않는다.
+# 화면 간 이동은 worldcup_core의 AppRoutes 계약을 통해서만 한다.
+dependencies:
+  flutter:
+    sdk: flutter
+  worldcup_core:
+    path: ../worldcup_core
+  worldcup_domain:
+    path: ../worldcup_domain
+  worldcup_ui_kit:
+    path: ../worldcup_ui_kit
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0

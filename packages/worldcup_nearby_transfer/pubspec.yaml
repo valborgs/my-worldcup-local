@@ -2,9 +2,10 @@ name: worldcup_nearby_transfer
 description: Project-local Google Nearby Connections transport for My World Cup.
 version: 1.0.0
 publish_to: none
+resolution: workspace
 
 environment:
-  sdk: '>=3.4.1 <4.0.0'
+  sdk: ^3.13.0
   flutter: '>=3.24.0'
 
 dependencies:

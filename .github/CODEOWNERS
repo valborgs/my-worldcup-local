@@ -1,0 +1,29 @@
+# 패키지별 담당자. PR 리뷰가 자동 배정되고 소유권이 명확해진다.
+#
+# TODO: 아래 @valborgs 자리를 실제 담당자 GitHub 핸들로 교체할 것.
+#       한 패키지에 여러 명을 적으면 전원에게 리뷰가 요청된다.
+
+# 기본 소유자
+*                                   @valborgs
+
+# 공유 계약 — 변경이 모든 feature에 파급되므로 리뷰를 좁게 유지한다.
+/packages/worldcup_core/            @valborgs
+/packages/worldcup_domain/          @valborgs
+
+# 인프라 레이어
+/packages/worldcup_data/            @valborgs
+/packages/worldcup_nearby_transfer/ @valborgs
+
+# 디자인 시스템
+/packages/worldcup_ui_kit/          @valborgs
+
+# 기능 모듈 — 담당자를 나눠 가지면 브랜치가 서로 겹치지 않는다.
+/packages/feature_worldcup_list/    @valborgs
+/packages/feature_worldcup_play/    @valborgs
+/packages/feature_worldcup_editor/  @valborgs
+/packages/feature_worldcup_share/   @valborgs
+
+# 앱 셸 (부트스트랩 / DI / 라우터) — 조립 지점이라 변경 시 주의
+/lib/                               @valborgs
+/pubspec.yaml                       @valborgs
+/.github/                           @valborgs

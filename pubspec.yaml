@@ -16,10 +16,24 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.13+28
+version: 1.1.0+29
 
 environment:
-  sdk: '>=3.4.1 <4.0.0'
+  sdk: ^3.13.0
+
+# pub workspace: 하위 패키지를 한 번의 `flutter pub get`으로 함께 해결한다.
+# 단일 pubspec.lock을 공유하므로 패키지 간 버전 스큐가 생기지 않는다.
+# 여기에 나열된 패키지는 각자 pubspec에 `resolution: workspace`를 선언해야 한다.
+workspace:
+  - packages/worldcup_core
+  - packages/worldcup_domain
+  - packages/worldcup_data
+  - packages/worldcup_ui_kit
+  - packages/worldcup_nearby_transfer
+  - packages/feature_worldcup_list
+  - packages/feature_worldcup_play
+  - packages/feature_worldcup_editor
+  - packages/feature_worldcup_share
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions

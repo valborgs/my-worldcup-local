@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.1
+          channel: stable
+          cache: true
+
+      # pub workspace라서 루트에서 한 번만 받으면 전체 패키지가 해결된다.
+      - name: Install dependencies
+        run: flutter pub get
+
+      # .env는 저장소에 커밋하지 않으므로, 분석/테스트가 통과하도록 빈 값으로 만든다.
+      - name: Create placeholder .env
+        run: |
+          cat > .env <<'ENV'
+          kakao_nativeAppKey=
+          kakao_javaScriptAppKey=
+          imgbb_apiKey=
+          ENV
+
+      # 포맷 검사는 새 패키지에만 적용한다.
+      # 기존 lib/의 32개 파일이 미포맷 상태인데, 지금 일괄 포맷하면
+      # churn 상위 파일이 전부 바뀌어 진행 중인 브랜치와 전부 충돌한다.
+      # 각 Phase에서 파일을 옮길 때 함께 포맷하고, Phase 8에서 이 목록을
+      # `lib packages`로 넓힌다.
+      - name: Check formatting (new packages)
+        run: |
+          dart format --output=none --set-exit-if-changed             packages/worldcup_core             packages/worldcup_domain             packages/worldcup_data             packages/worldcup_ui_kit             packages/feature_worldcup_list             packages/feature_worldcup_play             packages/feature_worldcup_editor             packages/feature_worldcup_share
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+  # 아키텍처 경계를 CI에서 강제한다.
+  # 대부분의 경계는 pub 의존성 그래프가 컴파일 타임에 막아주지만,
+  # 아래 두 가지는 pubspec만으로는 막히지 않으므로 별도로 검사한다.
+  boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # worldcup_core와 worldcup_domain은 순수 Dart여야 한다.
+      # (dev_dependencies의 flutter_test를 통해 flutter가 transitively 보이므로
+      #  pubspec만으로는 막을 수 없다)
+      - name: Domain layer must stay pure Dart
+        run: |
+          if grep -rn "package:flutter/" \
+              packages/worldcup_core/lib packages/worldcup_domain/lib; then
+            echo "::error::worldcup_core / worldcup_domain은 Flutter에 의존할 수 없습니다."
+            exit 1
+          fi
+
+      # feature 패키지끼리 서로 의존하면 브랜치 독립성이 깨진다.
+      # 화면 간 이동은 worldcup_core의 AppRoutes 계약으로만 한다.
+      - name: Feature packages must not depend on each other
+        run: |
+          status=0
+          for dir in packages/feature_*/; do
+            self="$(basename "$dir")"
+            hits="$(grep -n "feature_worldcup_" "$dir/pubspec.yaml" \
+                    | grep -v "^[0-9]*:name: $self\$" \
+                    | grep -v "description:" || true)"
+            if [ -n "$hits" ]; then
+              echo "::error file=$dir/pubspec.yaml::$self 가 다른 feature 패키지에 의존합니다:"
+              echo "$hits"
+              status=1
+            fi
+          done
+          exit $status
