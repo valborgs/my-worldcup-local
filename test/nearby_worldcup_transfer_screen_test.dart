@@ -33,6 +33,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.textContaining('이 기기의 이름: 받는 기기'), findsOneWidget);
+
     gateway.add(const NearbyConnectionRequest(
       endpoint: NearbyEndpoint(
         id: 'sender',

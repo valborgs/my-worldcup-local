@@ -136,7 +136,8 @@ class _NearbyWorldCupReceiveScreenState
     return _NearbyTransferScaffold(
       title: '월드컵 받기',
       controller: _controller,
-      introduction: 'Bluetooth와 Wi-Fi를 켜주세요. 같은 Wi-Fi 공유기나 인터넷 연결은 필요하지 않습니다.',
+      introduction: '이 기기의 이름: ${_controller.displayName}\n\n'
+          'Bluetooth와 Wi-Fi를 켜주세요. 같은 Wi-Fi 공유기나 인터넷 연결은 필요하지 않습니다.',
     );
   }
 }
@@ -154,6 +155,7 @@ class _NearbyTransferScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final verificationCode = controller.verificationCode;
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
@@ -185,9 +187,13 @@ class _NearbyTransferScaffold extends StatelessWidget {
               const SizedBox(height: 24),
               _EndpointList(controller: controller),
             ],
-            if (controller.needsConnectionDecision) ...[
+            if (controller.needsConnectionDecision &&
+                verificationCode != null) ...[
               const SizedBox(height: 24),
-              _ConnectionDecision(controller: controller),
+              _ConnectionDecision(
+                controller: controller,
+                verificationCode: verificationCode,
+              ),
             ],
             if (controller.canOpenSettings &&
                 controller.phase == NearbyTransferPhase.error) ...[
@@ -340,12 +346,15 @@ class _EndpointList extends StatelessWidget {
 
 class _ConnectionDecision extends StatelessWidget {
   final NearbyWorldCupTransferController controller;
+  final String verificationCode;
 
-  const _ConnectionDecision({required this.controller});
+  const _ConnectionDecision({
+    required this.controller,
+    required this.verificationCode,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final code = controller.verificationCode!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -362,10 +371,10 @@ class _ConnectionDecision extends StatelessWidget {
             const Text('양쪽 기기에 아래 인증 코드가 동일하게 표시되는지 확인하세요.'),
             const SizedBox(height: 16),
             Semantics(
-              label: '인증 코드 $code',
+              label: '인증 코드 $verificationCode',
               readOnly: true,
               child: SelectableText(
-                code,
+                verificationCode,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       letterSpacing: 4,

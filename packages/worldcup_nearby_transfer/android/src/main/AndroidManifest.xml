@@ -5,11 +5,12 @@
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="28" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:minSdkVersion="29" android:maxSdkVersion="31" />
+    <!-- Android 12L and lower use location permission for nearby Wi-Fi discovery. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:minSdkVersion="29" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" android:minSdkVersion="31" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" android:minSdkVersion="31" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:minSdkVersion="31" android:usesPermissionFlags="neverForLocation" />
-    <!-- Keep minSdk 32 to match Google's current Nearby Connections permission table. -->
+    <!-- Nearby Connections documents minSdk 32; the runtime permission exists from API 33. -->
     <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" android:minSdkVersion="32" android:usesPermissionFlags="neverForLocation" />
     <!-- Android 17/API 37+, when targeting 37: developers.google.com/nearby/connections/android/get-started -->
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" android:minSdkVersion="37" />

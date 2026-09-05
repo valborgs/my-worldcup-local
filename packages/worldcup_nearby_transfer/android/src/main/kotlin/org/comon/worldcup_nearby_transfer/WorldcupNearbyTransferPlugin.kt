@@ -209,11 +209,11 @@ class WorldcupNearbyTransferPlugin :
 
     private fun requiredPermissions(): Array<String> {
         val permissions = mutableListOf<String>()
-        // Keep these API boundaries aligned with Google's Nearby Connections table:
-        // FINE_LOCATION ends at 31; NEARBY_WIFI_DEVICES is declared from 32 and requested on 33+.
+        // Android 12L and lower use location permission for nearby Wi-Fi discovery;
+        // NEARBY_WIFI_DEVICES is available and requested from Android 13/API 33.
         if (Build.VERSION.SDK_INT <= 28) {
             permissions += Manifest.permission.ACCESS_COARSE_LOCATION
-        } else if (Build.VERSION.SDK_INT <= 31) {
+        } else if (Build.VERSION.SDK_INT <= 32) {
             permissions += Manifest.permission.ACCESS_FINE_LOCATION
         }
         if (Build.VERSION.SDK_INT >= 31) {

@@ -39,7 +39,7 @@ class NearbyTransferTimeouts {
     this.connection = const Duration(seconds: 45),
     this.preparation = const Duration(minutes: 2),
     this.transferIdle = const Duration(seconds: 60),
-    this.finalization = const Duration(seconds: 30),
+    this.finalization = const Duration(seconds: 60),
   });
 }
 
@@ -104,6 +104,8 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
   List<NearbyEndpoint> get endpoints =>
       _endpoints.values.toList(growable: false)
         ..sort((a, b) => a.name.compareTo(b.name));
+
+  String get displayName => _displayName;
 
   bool get busy =>
       _connectionActionInFlight ||
@@ -502,7 +504,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
       return error.message!;
     }
     return importFailure
-        ? '받은 월드컵을 등록하지 못했습니다. 파일을 확인해주세요.'
+        ? '받은 월드컵을 등록하지 못했습니다. 보내는 기기에서 다시 보내주세요.'
         : '주변 기기 전송 중 오류가 발생했습니다. 다시 시도해주세요.';
   }
 
@@ -584,7 +586,11 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
-  static String _defaultDisplayName() {
+  static final String _anonymousDisplayName = _createAnonymousDisplayName();
+
+  static String _defaultDisplayName() => _anonymousDisplayName;
+
+  static String _createAnonymousDisplayName() {
     final suffix = 1000 + math.Random.secure().nextInt(9000);
     return '월드컵 기기 $suffix';
   }

@@ -186,6 +186,42 @@ void main() {
     expect(gateway.disposeCalls, 1);
   });
 
+  test('알 수 없는 가져오기 실패는 재전송 가능한 안내를 표시한다', () async {
+    final nativeDirectory = Directory('${temporaryDirectory.path}/native')
+      ..createSync();
+    final file = File('${nativeDirectory.path}/unknown.myworldcup');
+    await file.writeAsBytes([1, 2], flush: true);
+    final gateway = _FakeNearbyGateway();
+    final packageGateway = _FakePackageGateway(temporaryDirectory)
+      ..importError = StateError('internal import detail');
+    final controller = NearbyWorldCupTransferController.receiver(
+      gateway: gateway,
+      packageGateway: packageGateway,
+      displayNameProvider: () => '받는 기기',
+      temporaryDirectoryProvider: () async => temporaryDirectory,
+    );
+    addTearDown(controller.dispose);
+    await controller.start();
+
+    gateway.add(NearbyFileReceived(
+      endpointId: 'sender',
+      payloadId: 'unknown-error',
+      path: file.path,
+      name: 'unknown.myworldcup',
+      size: 2,
+    ));
+    await _flush();
+    await _flush();
+
+    expect(controller.phase, NearbyTransferPhase.error);
+    expect(
+      controller.message,
+      '받은 월드컵을 등록하지 못했습니다. 보내는 기기에서 다시 보내주세요.',
+    );
+    expect(controller.message, isNot(contains('파일을 확인')));
+    expect(await file.exists(), isFalse);
+  });
+
   test('취소, 연결 끊김, dispose에서 네이티브 정리를 호출한다', () async {
     final cancelGateway = _FakeNearbyGateway();
     final cancelController = NearbyWorldCupTransferController.receiver(
@@ -421,8 +457,17 @@ void main() {
     await controller.connect(controller.endpoints.single);
 
     expect(gateway.discoveryDisplayName, matches(RegExp(r'^월드컵 기기 \d{4}$')));
+    expect(controller.displayName, gateway.discoveryDisplayName);
     expect(gateway.connectionDisplayName, gateway.discoveryDisplayName);
     expect(gateway.discoveryDisplayName, isNot('localhost'));
+
+    final nextController = NearbyWorldCupTransferController.receiver(
+      gateway: _FakeNearbyGateway(),
+      packageGateway: _FakePackageGateway(temporaryDirectory),
+    );
+    addTearDown(nextController.dispose);
+    expect(nextController.displayName, controller.displayName,
+        reason: '화면을 다시 열어도 앱 실행 중에는 같은 익명 별칭을 사용해야 한다.');
   });
 }
 
