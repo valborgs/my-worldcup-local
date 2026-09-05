@@ -2,6 +2,8 @@ import 'dart:ui' show SemanticsAction;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:my_worldcup_local/dto/worldcup_dao.dart';
+import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:my_worldcup_local/widgets/worldcup_list.dart';
 
 void main() {
@@ -36,8 +38,7 @@ void main() {
     expect(find.byType(PageView), findsNothing);
   });
 
-  testWidgets('옆 카드는 중앙으로 이동하고 중앙 카드는 콜백을 실행한다',
-      (tester) async {
+  testWidgets('옆 카드는 중앙으로 이동하고 중앙 카드는 콜백을 실행한다', (tester) async {
     var currentPage = 0;
     int? tappedIndex;
     await tester.pumpWidget(
@@ -60,8 +61,7 @@ void main() {
     expect(tappedIndex, 1);
   });
 
-  testWidgets('현재 항목의 식별자를 유지하며 삭제 후 페이지를 보정한다',
-      (tester) async {
+  testWidgets('현재 항목의 식별자를 유지하며 삭제 후 페이지를 보정한다', (tester) async {
     final hostKey = GlobalKey<_MutablePagerHostState>();
     await tester.pumpWidget(_MutablePagerHost(key: hostKey));
     expect(find.bySemanticsLabel('월드컵 2 / 3'), findsOneWidget);
@@ -72,8 +72,7 @@ void main() {
     expect(find.bySemanticsLabel('월드컵 1 / 2'), findsOneWidget);
   });
 
-  testWidgets('현재 마지막 항목 삭제 후 남은 카드를 중앙에 표시한다',
-      (tester) async {
+  testWidgets('현재 마지막 항목 삭제 후 남은 카드를 중앙에 표시한다', (tester) async {
     final hostKey = GlobalKey<_MutablePagerHostState>();
     await tester.pumpWidget(
       _MutablePagerHost(
@@ -104,6 +103,115 @@ void main() {
 
     handle.dispose();
   });
+
+  testWidgets('추가 후 새로고침해도 현재 페이지와 다음 항목을 유지한다', (tester) async {
+    final dao = _FakeWorldCupDao(_models(20));
+    final listKey = GlobalKey<WorldCupListState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              WorldCupList(
+                key: listKey,
+                dao: dao,
+                enableBottomSheetSelectionPagerTransition: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    for (var index = 0; index < 9; index++) {
+      await tester.drag(
+        find.byKey(const ValueKey('worldCupPager')),
+        const Offset(-500, 0),
+      );
+      await tester.pumpAndSettle();
+    }
+    expect(
+        find.bySemanticsLabel('Game 10, 최대 라운드 4강, 10 / 20'), findsOneWidget);
+
+    dao.items = _models(21);
+    await listKey.currentState!.refresh();
+    await tester.pumpAndSettle();
+
+    expect(
+        find.bySemanticsLabel('Game 10, 최대 라운드 4강, 10 / 21'), findsOneWidget);
+    await tester.drag(
+      find.byKey(const ValueKey('worldCupPager')),
+      const Offset(-500, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(
+        find.bySemanticsLabel('Game 11, 최대 라운드 4강, 11 / 21'), findsOneWidget);
+  });
+
+  testWidgets('추가된 월드컵이 현재 로드 범위 밖이어도 해당 페이지로 이동한다', (tester) async {
+    final dao = _FakeWorldCupDao(_models(20));
+    final listKey = GlobalKey<WorldCupListState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              WorldCupList(
+                key: listKey,
+                dao: dao,
+                enableBottomSheetSelectionPagerTransition: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    dao.items = _models(21);
+    await listKey.currentState!.refreshAndScrollTo(21);
+    await tester.pumpAndSettle();
+
+    expect(listKey.currentState!.worldCupList, hasLength(21));
+    final pageView = tester.widget<PageView>(find.byType(PageView));
+    expect(pageView.controller!.page, 20);
+    expect(
+        find.bySemanticsLabel('Game 21, 최대 라운드 4강, 21 / 21'), findsOneWidget);
+  });
+}
+
+List<WorldCupModel> _models(int count) => List.generate(
+      count,
+      (index) => WorldCupModel(
+        index + 1,
+        'Game ${index + 1}',
+        '',
+        DateTime(2026),
+        '',
+        4,
+      ),
+    );
+
+class _FakeWorldCupDao extends WorldCupDao {
+  List<WorldCupModel> items;
+
+  _FakeWorldCupDao(this.items);
+
+  @override
+  Future<int> getWorldCupCount({String searchQuery = ''}) async => items.length;
+
+  @override
+  Future<List<WorldCupModel>> getWorldCupPage({
+    required int limit,
+    required int offset,
+    String searchQuery = '',
+  }) async =>
+      items.skip(offset).take(limit).toList();
+
+  @override
+  Future<int> getWorldCupIndex(int idx) async =>
+      items.indexWhere((item) => item.idx == idx);
 }
 
 class _MutablePagerHost extends StatefulWidget {

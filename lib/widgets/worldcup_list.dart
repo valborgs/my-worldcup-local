@@ -12,10 +12,12 @@ import '../models/worldcup_model.dart';
 class WorldCupList extends StatefulWidget {
   final List<WorldCupModel>? initialWorldCupList;
   final bool enableBottomSheetSelectionPagerTransition;
+  final WorldCupDao? dao;
 
   const WorldCupList({
     this.initialWorldCupList,
     required this.enableBottomSheetSelectionPagerTransition,
+    this.dao,
     super.key,
   });
 
@@ -37,13 +39,18 @@ class WorldCupListState extends State<WorldCupList> {
   int _searchTotalCount = 0;
   bool _isLoadingPagerPage = false;
   bool _isLoadingSearchPage = false;
+  bool _hasRefreshed = false;
   bool _isSearchMode = false;
   bool _isSearchCloseScheduled = false;
   bool _isHandlingSheetItemTap = false;
   String _searchQuery = '';
   int _queryGeneration = 0;
+  int _pagerNavigationRequest = 0;
+  int? _pagerTargetPage;
   List<WorldCupModel> _searchResults = [];
   double _collapsedSheetSize = 0.1;
+
+  WorldCupDao get _dao => widget.dao ?? WorldCupDao();
 
   List<WorldCupModel> get _sheetItems =>
       _isSearchMode ? _searchResults : worldCupList;
@@ -150,6 +157,8 @@ class WorldCupListState extends State<WorldCupList> {
                     }
                   },
                   itemKey: (model) => model.idx,
+                  targetPage: _pagerTargetPage,
+                  navigationRequest: _pagerNavigationRequest,
                   semanticLabelBuilder: (model, index) {
                     final title =
                         model.idx < 0 ? '(샘플) ${model.title}' : model.title;
@@ -408,27 +417,29 @@ class WorldCupListState extends State<WorldCupList> {
     }
   }
 
-  Future<int> _findOrLoadPagerIndex(WorldCupModel selectedModel) async {
+  Future<int> _findOrLoadPagerIndex(WorldCupModel selectedModel) =>
+      _findOrLoadPagerIndexById(selectedModel.idx);
+
+  Future<int> _findOrLoadPagerIndexById(int worldCupIdx) async {
     closeSearchMode();
     final pagerItems = List<WorldCupModel>.of(worldCupList);
     var targetIndex = pagerItems.indexWhere(
-      (model) => model.idx == selectedModel.idx,
+      (model) => model.idx == worldCupIdx,
     );
 
     if (targetIndex < 0) {
-      final dao = WorldCupDao();
-      final resolvedIndex = await dao.getWorldCupIndex(selectedModel.idx);
+      final resolvedIndex = await _dao.getWorldCupIndex(worldCupIdx);
       final missingItemCount = resolvedIndex - pagerItems.length + 1;
       if (!mounted || missingItemCount <= 0) return -1;
 
-      final missingItems = await dao.getWorldCupPage(
+      final missingItems = await _dao.getWorldCupPage(
         limit: missingItemCount,
         offset: pagerItems.length,
       );
       if (!mounted) return -1;
       pagerItems.addAll(missingItems);
       targetIndex = pagerItems.indexWhere(
-        (model) => model.idx == selectedModel.idx,
+        (model) => model.idx == worldCupIdx,
       );
     }
     if (!mounted || targetIndex < 0) return -1;
@@ -437,6 +448,19 @@ class WorldCupListState extends State<WorldCupList> {
       setState(() => worldCupList = pagerItems);
     }
     return targetIndex;
+  }
+
+  Future<void> refreshAndScrollTo(int worldCupIdx) async {
+    await refresh();
+    if (!mounted) return;
+
+    final targetIndex = await _findOrLoadPagerIndexById(worldCupIdx);
+    if (!mounted || targetIndex < 0) return;
+
+    setState(() {
+      _pagerTargetPage = targetIndex;
+      _pagerNavigationRequest++;
+    });
   }
 
   void _onSearchChanged(String value) {
@@ -449,15 +473,20 @@ class WorldCupListState extends State<WorldCupList> {
   }
 
   Future<void> refresh() async {
-    final db = WorldCupDao();
+    // A refresh used to replace every loaded page with only the first page.
+    // If the pager was on or beyond that boundary, its current item vanished
+    // and there was no page-change event left to request the next page.
+    final refreshLimit =
+        _hasRefreshed ? worldCupList.length + _pageSize : _pageSize;
     final results = await Future.wait([
-      db.getWorldCupCount(),
-      db.getWorldCupPage(limit: _pageSize, offset: 0),
+      _dao.getWorldCupCount(),
+      _dao.getWorldCupPage(limit: refreshLimit, offset: 0),
     ]);
     if (!mounted) return;
     setState(() {
       _allTotalCount = results[0] as int;
       worldCupList = results[1] as List<WorldCupModel>;
+      _hasRefreshed = true;
       _searchController.clear();
       _isSearchMode = false;
       _searchQuery = '';
@@ -468,10 +497,9 @@ class WorldCupListState extends State<WorldCupList> {
 
   Future<void> _loadFirstPageForQuery(String query) async {
     final generation = ++_queryGeneration;
-    final db = WorldCupDao();
     final results = await Future.wait([
-      db.getWorldCupCount(searchQuery: query),
-      db.getWorldCupPage(
+      _dao.getWorldCupCount(searchQuery: query),
+      _dao.getWorldCupPage(
         limit: _pageSize,
         offset: 0,
         searchQuery: query,
@@ -489,7 +517,7 @@ class WorldCupListState extends State<WorldCupList> {
     _isLoadingPagerPage = true;
     final offset = worldCupList.length;
     try {
-      final nextPage = await WorldCupDao().getWorldCupPage(
+      final nextPage = await _dao.getWorldCupPage(
         limit: _pageSize,
         offset: offset,
       );
@@ -515,7 +543,7 @@ class WorldCupListState extends State<WorldCupList> {
     final query = _searchQuery;
     final offset = _searchResults.length;
     try {
-      final nextPage = await WorldCupDao().getWorldCupPage(
+      final nextPage = await _dao.getWorldCupPage(
         limit: _pageSize,
         offset: offset,
         searchQuery: query,
@@ -595,6 +623,8 @@ class CoverFlowPager<T> extends StatefulWidget {
   final Object Function(T item)? itemKey;
   final String Function(T item, int index)? semanticLabelBuilder;
   final int initialPage;
+  final int? targetPage;
+  final int navigationRequest;
   final double cardAspectRatio;
   final double cardWidthFactor;
   final double horizontalSpacingFactor;
@@ -613,6 +643,8 @@ class CoverFlowPager<T> extends StatefulWidget {
     this.itemKey,
     this.semanticLabelBuilder,
     this.initialPage = 0,
+    this.targetPage,
+    this.navigationRequest = 0,
     this.cardAspectRatio = 3 / 4,
     this.cardWidthFactor = 0.72,
     this.horizontalSpacingFactor = 0.56,
@@ -657,12 +689,19 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
     final keyedIndex = _indexOfKey(_currentItemKey);
     final currentItemWasRemoved =
         widget.itemKey != null && _currentItemKey != null && keyedIndex < 0;
-    final targetPage = keyedIndex >= 0
-        ? keyedIndex
-        : currentPage.clamp(0, widget.items.length - 1);
+    final hasNavigationRequest =
+        widget.navigationRequest != oldWidget.navigationRequest &&
+            widget.targetPage != null;
+    final targetPage = hasNavigationRequest
+        ? widget.targetPage!.clamp(0, widget.items.length - 1)
+        : keyedIndex >= 0
+            ? keyedIndex
+            : currentPage.clamp(0, widget.items.length - 1);
     _currentPageIndex = targetPage;
     _currentItemKey = _keyAt(targetPage);
-    if (currentItemWasRemoved || targetPage != currentPage) {
+    if (hasNavigationRequest ||
+        currentItemWasRemoved ||
+        targetPage != currentPage) {
       final previousController = _pageController;
       _pageController = PageController(
         initialPage: targetPage,
@@ -710,28 +749,31 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
             ),
             ScrollConfiguration(
               behavior: const _CoverFlowScrollBehavior(),
-              child: PageView.builder(
-                key: const ValueKey('worldCupPager'),
-                controller: _pageController,
-                itemCount: widget.items.length,
-                physics: const PageScrollPhysics(),
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPageIndex = index;
-                    _currentItemKey = _keyAt(index);
-                  });
-                  widget.onPageChanged?.call(widget.items[index], index);
-                },
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTapUp: (details) => _handleTap(
-                      context,
-                      _viewportPosition(details.globalPosition),
-                    ),
-                    child: const SizedBox.expand(),
-                  );
-                },
+              child: KeyedSubtree(
+                key: ValueKey(widget.navigationRequest),
+                child: PageView.builder(
+                  key: const ValueKey('worldCupPager'),
+                  controller: _pageController,
+                  itemCount: widget.items.length,
+                  physics: const PageScrollPhysics(),
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentPageIndex = index;
+                      _currentItemKey = _keyAt(index);
+                    });
+                    widget.onPageChanged?.call(widget.items[index], index);
+                  },
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTapUp: (details) => _handleTap(
+                        context,
+                        _viewportPosition(details.globalPosition),
+                      ),
+                      child: const SizedBox.expand(),
+                    );
+                  },
+                ),
               ),
             ),
             _buildAccessibilityControls(context),
