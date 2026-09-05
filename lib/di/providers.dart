@@ -1,8 +1,8 @@
-/// 앱의 유일한 조립 지점.
+/// 도메인 포트를 데이터 레이어 구현에 묶는 유일한 곳.
 ///
-/// 도메인 포트를 데이터 레이어 구현에 묶는 일은 여기서만 한다. 화면과 위젯은
-/// 구현체를 직접 만들지 않고 이 provider들을 통해 받는다. 테스트는
-/// `ProviderScope(overrides: [...])`로 원하는 구현을 끼운다.
+/// 포트 provider의 **선언**은 worldcup_domain에 있다. feature 패키지가
+/// 앱 패키지를 import 하지 않고도 의존성을 받으려면 선언이 공통 계층에
+/// 있어야 하기 때문이다. 여기서는 그 선언들을 실제 구현으로 override 한다.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -26,16 +26,6 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return database;
 });
 
-final worldCupRepositoryProvider = Provider<WorldCupRepository>((ref) {
-  return SqliteWorldCupRepository(ref.watch(appDatabaseProvider));
-});
-
-final worldCupPackageProvider = Provider<WorldCupPackagePort>((ref) {
-  return WorldCupPackageRepository(
-    repository: ref.watch(worldCupRepositoryProvider),
-  );
-});
-
 final sampleWorldCupSeederProvider = Provider<SampleWorldCupSeeder>((ref) {
   return SampleWorldCupSeeder(
     database: ref.watch(appDatabaseProvider),
@@ -48,32 +38,45 @@ final testWorldCupSeederProvider = Provider<TestWorldCupSeeder>((ref) {
   return TestWorldCupSeeder(ref.watch(appDatabaseProvider));
 });
 
-final imageUploadProvider = Provider<ImageUploadPort>((ref) {
-  return ImgbbImageUploader(apiKey: dotenv.env['imgbb_apiKey'] ?? '');
-});
+/// 도메인 포트 -> 데이터 레이어 구현 바인딩.
+///
+/// `ProviderScope`(또는 `ProviderContainer`)의 `overrides`에 그대로 넘긴다.
+///
+/// 반환 타입을 적지 않고 추론에 맡긴다. Riverpod 3은 `Override` 타입을
+/// 공개 export 하지 않아 이름으로 쓸 수 없다.
+final portOverrides = [
+  worldCupRepositoryProvider.overrideWith(
+    (ref) => SqliteWorldCupRepository(ref.watch(appDatabaseProvider)),
+  ),
+  worldCupPackageProvider.overrideWith(
+    (ref) => WorldCupPackageRepository(
+      repository: ref.watch(worldCupRepositoryProvider),
+    ),
+  ),
+  imageUploadProvider.overrideWith(
+    (ref) => ImgbbImageUploader(apiKey: dotenv.env['imgbb_apiKey'] ?? ''),
+  ),
+  socialShareProvider.overrideWith(
+    (ref) => KakaoShareAdapter(linkUrl: dotenv.env['playstore_url'] ?? ''),
+  ),
+  adUnitProvider.overrideWith(
+    (ref) => AdMobAdUnits.resolve(
+      isAndroid: defaultTargetPlatform == TargetPlatform.android,
+      isRelease: kReleaseMode,
+      config: (key) => dotenv.env[key],
+    ),
+  ),
+  featureFlagProvider.overrideWith(
+    (ref) => FirebaseFeatureFlags(
+      // 디버그에서는 플래그 변경을 빨리 확인할 수 있게 간격을 줄인다.
+      minimumFetchInterval: kDebugMode
+          ? const Duration(minutes: 5)
+          : const Duration(hours: 12),
+    ),
+  ),
+];
 
-final socialShareProvider = Provider<SocialSharePort>((ref) {
-  return const KakaoShareAdapter();
-});
-
-final adUnitProvider = Provider<AdUnitPort>((ref) {
-  return AdMobAdUnits.resolve(
-    isAndroid: defaultTargetPlatform == TargetPlatform.android,
-    isRelease: kReleaseMode,
-    config: (key) => dotenv.env[key],
-  );
-});
-
+/// 원격 기능 플래그. 앱 부팅에서만 쓰이므로 앱 계층에 둔다.
 final featureFlagProvider = Provider<FeatureFlagPort>((ref) {
-  return FirebaseFeatureFlags(
-    // 디버그에서는 플래그 변경을 빨리 확인할 수 있게 간격을 줄인다.
-    minimumFetchInterval: kDebugMode
-        ? const Duration(minutes: 5)
-        : const Duration(hours: 12),
-  );
-});
-
-/// 결과 화면에서 공유 링크로 쓰는 플레이스토어 주소.
-final playStoreUrlProvider = Provider<String>((ref) {
-  return dotenv.env['playstore_url'] ?? '';
+  throw UnimplementedError('buildPortOverrides()로 override 해야 합니다.');
 });

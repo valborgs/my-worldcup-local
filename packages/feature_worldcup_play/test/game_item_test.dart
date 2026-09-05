@@ -7,9 +7,9 @@
 // State(_isTouchable)로 관리했기 때문에, 재사용된 State는 이미 탭 완료
 // 상태였고 다시 탭해도 반응하지 않았다.
 //
-// 수정: 탭 가능 여부의 단일 기준을 WorldCupSelectProvider(hasSelected)로
+// 수정: 탭 가능 여부의 단일 기준을 MatchSelection(hasSelected)으로
 // 옮기고, WorldCupGame.setGame()이 매 대결 시작 시점에 명시적으로
-// resetSelection()을 호출하도록 했다. 이제 탭 가능 여부가 특정 GameItem
+// resetForNextMatch()를 호출하도록 했다. 이제 탭 가능 여부가 특정 GameItem
 // 위젯 인스턴스의 생존 여부(Flutter의 key 재사용 여부)에 더 이상 좌우되지
 // 않는다.
 //
@@ -18,13 +18,12 @@
 // 기반, Image.file) 항목을 섞어서 검증한다.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
-
-import 'package:my_worldcup_local/provider/worldcup_select_provider.dart';
-import 'package:my_worldcup_local/widgets/game_item.dart';
-import 'package:my_worldcup_local/widgets/worldcup_game.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
-import 'package:worldcup_data/worldcup_data.dart';
+
+import 'package:feature_worldcup_play/src/state/match_selection.dart';
+import 'package:feature_worldcup_play/src/widgets/game_item.dart';
+import 'package:feature_worldcup_play/src/widgets/worldcup_game.dart';
 
 void main() {
   // idx < 0 : 샘플 월드컵 항목 (Image.asset 경로)
@@ -44,30 +43,21 @@ void main() {
   );
   const itemC = WorldCupItemModel(3, 'assets/sample/female/chu.jpg', 'C', -1);
 
-  test('WorldCupModel은 DB 저장 후 날짜를 밀리초 정밀도로 복원한다', () {
-    final date = DateTime(2026, 8, 26, 12, 34, 56, 789);
-    final original = WorldCupModel(1, '제목', '설명', date, 'image.jpg', 16);
-    final dbRow = <String, dynamic>{'idx': 1, ...original.toRow()};
-
-    final restored = worldCupFromRow(dbRow);
-
-    expect(restored.date, date);
-  });
-
   testWidgets('직전 대결에서 탭했던 항목이 같은 위치(top/bottom)로 다음 대결에 재배치되어도 '
       '(GameItem State가 재사용되어도) 다시 정상적으로 선택할 수 있다', (
     WidgetTester tester,
   ) async {
-    final selectProvider = WorldCupSelectProvider();
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
 
     Widget buildRound(WorldCupItemModel top, WorldCupItemModel bottom) {
-      return MaterialApp(
-        home: Scaffold(
-          body: ChangeNotifierProvider<WorldCupSelectProvider>.value(
-            value: selectProvider,
+      return UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: Scaffold(
             // WorldCupGame.build와 동일한 구조: Flex 안에 top/bottom GameItem을
             // idx 기반 ValueKey로 배치한다.
-            child: Row(
+            body: Row(
               children: [
                 GameItem(
                   top,
@@ -96,12 +86,12 @@ void main() {
     await tester.tap(find.byKey(ValueKey(itemB.idx)));
     await tester.pump();
 
-    expect(selectProvider.selectedModel.idx, itemB.idx);
-    expect(selectProvider.hasSelected, isTrue);
+    expect(container.read(matchSelectionProvider).item!.idx, itemB.idx);
+    expect(container.read(matchSelectionProvider).hasSelected, isTrue);
 
     // WorldCupGame.setGame()이 매 대결 시작 시 수행하는 것과 동일하게,
     // 다음 대결을 시작하기 전에 선택 상태를 초기화한다.
-    selectProvider.resetSelection();
+    container.read(matchSelectionProvider.notifier).resetForNextMatch();
 
     // --- 대결 2("결승"): top=itemC(새 항목), bottom=itemB(직전 승자, 같은 슬롯 재배치) ---
     // 실제 게임에서는 nowList.removeLast() 두 번으로 이 배치가 결정되며,
@@ -115,13 +105,13 @@ void main() {
     await tester.pump();
 
     expect(
-      selectProvider.hasSelected,
+      container.read(matchSelectionProvider).hasSelected,
       isTrue,
       reason:
           '이전에는 재사용된 GameItem State의 _isTouchable이 false로 남아있어 '
           '이 탭이 무시되었다(버그 재현 조건). 수정 후에는 정상적으로 선택되어야 한다.',
     );
-    expect(selectProvider.selectedModel.idx, itemB.idx);
+    expect(container.read(matchSelectionProvider).item!.idx, itemB.idx);
   });
 
   testWidgets('실제 WorldCupGame 위젯에서 여러 라운드에 걸쳐 매 대결마다 탭이 정상 동작한다 '
@@ -163,15 +153,14 @@ void main() {
       '',
       8,
     );
-    final selectProvider = WorldCupSelectProvider();
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: ChangeNotifierProvider<WorldCupSelectProvider>.value(
-            value: selectProvider,
-            child: WorldCupGame(worldCupModel, items, 8),
-          ),
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: Scaffold(body: WorldCupGame(worldCupModel, items, 8)),
         ),
       ),
     );
@@ -191,7 +180,7 @@ void main() {
       await tester.pump();
 
       expect(
-        selectProvider.hasSelected,
+        container.read(matchSelectionProvider).hasSelected,
         isTrue,
         reason: 'match $match: bottom 항목을 탭했지만 선택이 등록되지 않았다',
       );

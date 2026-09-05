@@ -50,7 +50,6 @@ dependencies:
   flutter_dotenv: ^5.1.0 # api key 보관을 위한 패키지
   http: ^1.2.1 # api 사용을 위한 http 통신 패키지
   kakao_flutter_sdk_share: ^1.10.0 # 카카오톡 공유 API 패키지
-  provider: ^6.1.2 # 프로바이더
   confetti: ^0.7.0 # 팡파레 효과
   smooth_page_indicator: ^1.1.0 # 로딩 인디케이터
   expandable_page_view: ^1.0.17 # 뷰페이저
@@ -72,6 +71,8 @@ dependencies:
     path: packages/worldcup_data
   worldcup_ui_kit:
     path: packages/worldcup_ui_kit
+  feature_worldcup_play:
+    path: packages/feature_worldcup_play
   flutter_riverpod: ^3.0.0 # DI + 상태관리
   flutter:
     sdk: flutter

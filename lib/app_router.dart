@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:worldcup_core/worldcup_core.dart';
+import 'package:feature_worldcup_play/feature_worldcup_play.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
 import 'screens/add_worldcup_screen.dart';
 import 'screens/help_screen.dart';
 import 'screens/main_worldcup_screen.dart';
 import 'screens/nearby_worldcup_transfer_screen.dart';
-import 'screens/play_worldcup_screen.dart';
 
 /// 라우트 이름을 실제 화면에 묶는 유일한 곳.
 ///

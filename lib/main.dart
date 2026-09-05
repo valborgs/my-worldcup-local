@@ -36,7 +36,7 @@ Future<void> main() async {
   // 위젯 트리 밖에서도 같은 의존성을 쓰기 위해 컨테이너를 직접 만든다.
   // 이 컨테이너를 그대로 UncontrolledProviderScope에 넘기므로, 부팅 중에
   // 연 DB 연결을 앱이 그대로 물려받는다.
-  final container = ProviderContainer();
+  final container = ProviderContainer(overrides: portOverrides);
 
   var enableBottomSheetSelectionPagerTransition =
       FeatureFlags.bottomSheetSelectionPagerTransitionDefault;

@@ -13,7 +13,6 @@ import '../widgets/worldcup_list.dart';
 import 'package:worldcup_core/worldcup_core.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
-import '../di/providers.dart';
 
 class MainWorldCupScreen extends ConsumerStatefulWidget {
   final List<WorldCupModel>? initialWorldCupList;

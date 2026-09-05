@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_worldcup_local/widgets/worldcup_list_item.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../di/providers.dart';
 
 class _PagerTarget {
   final int index;

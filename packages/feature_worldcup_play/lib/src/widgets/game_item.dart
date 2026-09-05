@@ -1,15 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../provider/worldcup_select_provider.dart';
+import '../state/match_selection.dart';
 
 // 게임 화면에서 대결하는 항목 하나를 표시하는 위젯.
 // 기존 ItemTop / ItemBottom을 통합한 것으로, position으로 위/아래(또는 좌/우) 역할을,
 // axis로 배치 방향(세로: 위/아래, 가로: 좌/우)을 구분한다.
-class GameItem extends StatefulWidget {
+class GameItem extends ConsumerStatefulWidget {
   final WorldCupItemModel itemModel;
   final SelectedItemPosition position;
   final Axis axis;
@@ -24,22 +24,24 @@ class GameItem extends StatefulWidget {
   });
 
   @override
-  State<GameItem> createState() => _GameItemState();
+  ConsumerState<GameItem> createState() => _GameItemState();
 }
 
-class _GameItemState extends State<GameItem> with TickerProviderStateMixin {
+class _GameItemState extends ConsumerState<GameItem>
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Tween<Offset> _tween;
   late Animation<Offset> _animation;
 
-  late WorldCupSelectProvider _selectProvider;
-
   void _initializeAnimation() {
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(seconds: 1));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
     _tween = Tween<Offset>(begin: const Offset(0, 0), end: const Offset(0, 0));
     _animation = _tween.animate(
-        CurvedAnimation(parent: _controller, curve: Curves.decelerate));
+      CurvedAnimation(parent: _controller, curve: Curves.decelerate),
+    );
   }
 
   @override
@@ -47,9 +49,12 @@ class _GameItemState extends State<GameItem> with TickerProviderStateMixin {
     super.initState();
     _initializeAnimation();
 
-    _selectProvider =
-        Provider.of<WorldCupSelectProvider>(context, listen: false);
-    _selectProvider.addListener(_onSelectionChanged);
+    // 선택 변화에 애니메이션으로만 반응한다. 위젯을 다시 그리지는 않으므로
+    // watch가 아니라 명령형 구독을 쓴다. 구독은 dispose에서 자동 해제된다.
+    ref.listenManual<MatchSelection>(
+      matchSelectionProvider,
+      (previous, next) => _onSelectionChanged(next),
+    );
   }
 
   @override
@@ -64,22 +69,27 @@ class _GameItemState extends State<GameItem> with TickerProviderStateMixin {
     }
   }
 
-  void _onSelectionChanged() {
+  void _onSelectionChanged(MatchSelection selection) {
+    // 다음 대결을 위한 초기화 알림은 무시한다. 여기서 반응하면 두 항목 모두
+    // "선택되지 않음"으로 보여 화면 밖으로 밀려나는 애니메이션이 잘못
+    // 재생된다.
+    if (!selection.hasSelected) return;
+
     // position 기준 부호: top(위/좌) 방향이 양수, bottom(아래/우) 방향이 음수
     final sign = (widget.position == SelectedItemPosition.top) ? 1.0 : -1.0;
     // 자신이 선택되었으면 살짝 안쪽으로, 아니면 화면 밖으로 밀려난다.
-    final value = (_selectProvider.selectedItemPosition == widget.position)
+    final value = (selection.position == widget.position)
         ? 0.5 * sign
         : -1.1 * sign;
 
-    _tween.end =
-        (widget.axis == Axis.vertical) ? Offset(0, value) : Offset(value, 0);
+    _tween.end = (widget.axis == Axis.vertical)
+        ? Offset(0, value)
+        : Offset(value, 0);
     _controller.forward();
   }
 
   @override
   void dispose() {
-    _selectProvider.removeListener(_onSelectionChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -93,10 +103,11 @@ class _GameItemState extends State<GameItem> with TickerProviderStateMixin {
           onTap: () {
             // 중복 탭 방지 (한 대결에 한 번만 선택 가능).
             // 탭 가능 여부는 라운드 전환 시점에 WorldCupGame.setGame()이
-            // 초기화하는 Provider 상태를 기준으로 판단한다.
-            if (!_selectProvider.hasSelected) {
-              _selectProvider.setSelectedItem(
-                  widget.position, widget.itemModel);
+            // 초기화하는 선택 상태를 기준으로 판단한다.
+            if (!ref.read(matchSelectionProvider).hasSelected) {
+              ref
+                  .read(matchSelectionProvider.notifier)
+                  .select(widget.position, widget.itemModel);
             }
           },
           child: Container(
@@ -108,9 +119,10 @@ class _GameItemState extends State<GameItem> with TickerProviderStateMixin {
                 final bottomInset = shortestSide * 0.08;
                 // BoxFit.contain 기준으로 가로/세로 중 어느 쪽이 제약이 될지 알 수 없으므로
                 // 박스의 긴 변을 기준으로 캐시 크기를 잡아 화질 저하 없이 상한만 둔다.
-                final cacheDimension = (constraints.biggest.longestSide *
-                        MediaQuery.of(context).devicePixelRatio)
-                    .round();
+                final cacheDimension =
+                    (constraints.biggest.longestSide *
+                            MediaQuery.of(context).devicePixelRatio)
+                        .round();
 
                 return Stack(
                   alignment: Alignment.center,
@@ -130,7 +142,10 @@ class _GameItemState extends State<GameItem> with TickerProviderStateMixin {
                       alignment: Alignment.bottomCenter,
                       child: Padding(
                         padding: EdgeInsets.only(
-                            bottom: bottomInset, left: 12, right: 12),
+                          bottom: bottomInset,
+                          left: 12,
+                          right: 12,
+                        ),
                         child: Text(
                           widget.itemModel.imageInfo,
                           textAlign: TextAlign.center,

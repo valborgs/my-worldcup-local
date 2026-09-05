@@ -4,6 +4,7 @@
 /// 의존하지 않는다.
 library;
 
+export 'src/di/port_providers.dart';
 export 'src/entities/selected_item_position.dart';
 export 'src/entities/worldcup_item_model.dart';
 export 'src/entities/worldcup_model.dart';

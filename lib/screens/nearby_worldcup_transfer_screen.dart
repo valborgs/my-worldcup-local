@@ -6,7 +6,6 @@ import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:worldcup_data/worldcup_data.dart';
 
-import '../di/providers.dart';
 
 class NearbyWorldCupSendScreen extends ConsumerStatefulWidget {
   /// 보낼 월드컵의 id.

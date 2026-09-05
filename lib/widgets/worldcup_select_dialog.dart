@@ -9,7 +9,6 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:worldcup_core/worldcup_core.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
-import '../di/providers.dart';
 
 class WorldCupSelectDialog extends ConsumerStatefulWidget {
   final WorldCupModel model;

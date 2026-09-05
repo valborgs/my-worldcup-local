@@ -1,25 +1,29 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:my_worldcup_local/screens/result_worldcup_screen.dart';
-import 'package:my_worldcup_local/widgets/game_item.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../provider/worldcup_select_provider.dart';
+import '../screens/result_worldcup_screen.dart';
+import '../state/match_selection.dart';
+import 'game_item.dart';
 
-class WorldCupGame extends StatefulWidget {
+class WorldCupGame extends ConsumerStatefulWidget {
   final WorldCupModel worldCupModel;
   final List<WorldCupItemModel> itemList;
   final int selectedRound;
-  const WorldCupGame(this.worldCupModel, this.itemList, this.selectedRound,
-      {super.key});
+  const WorldCupGame(
+    this.worldCupModel,
+    this.itemList,
+    this.selectedRound, {
+    super.key,
+  });
 
   @override
-  State<WorldCupGame> createState() => _WorldCupGameState();
+  ConsumerState<WorldCupGame> createState() => _WorldCupGameState();
 }
 
-class _WorldCupGameState extends State<WorldCupGame> {
+class _WorldCupGameState extends ConsumerState<WorldCupGame> {
   // 진행 용어는 '강' 과 '라운드'로 구분한다.
   // '강' : 128강, 64강, 32강 등 모든 대결 항목이 한 번씩 게임을 진행하는 큰 횟수
   // '라운드' : '강' 안에서 항목끼리 대결할때 진행되는 횟수
@@ -41,8 +45,6 @@ class _WorldCupGameState extends State<WorldCupGame> {
   // 아래에 있는 선택 항목
   late WorldCupItemModel bottomItem;
 
-  late WorldCupSelectProvider selectProvider;
-
   // 게임 시작 시 초기 셋팅
   @override
   void initState() {
@@ -63,37 +65,40 @@ class _WorldCupGameState extends State<WorldCupGame> {
     // 최대 라운드
     maxRound = nowList.length ~/ 2;
 
-    selectProvider =
-        Provider.of<WorldCupSelectProvider>(context, listen: false);
     // nowList에서 2개 항목을 꺼내 위아래 화면에 배치한다.
-    setGame();
+    // 첫 대결에서는 선택 상태를 건드리지 않는다. Riverpod는 initState에서
+    // provider를 바꾸는 것을 금지한다. 게임 시작 시점의 초기화는
+    // PlayWorldCupScreen이 항목을 다 불러온 뒤에 이미 해준다.
+    setGame(resetSelection: false);
 
-    // 항목이 선택될때마다 nextList에 해당 항목을 추가
-    selectProvider.addListener(_onItemSelected);
+    // 항목이 선택될때마다 nextList에 해당 항목을 추가.
+    // 구독은 위젯이 사라질 때 자동으로 해제된다.
+    ref.listenManual<MatchSelection>(
+      matchSelectionProvider,
+      (previous, next) => _onItemSelected(next),
+    );
   }
 
-  void _onItemSelected() {
-    if (!selectProvider.hasSelected || _isTransitioning) return;
+  void _onItemSelected(MatchSelection selection) {
+    // 다음 대결을 위한 초기화 알림이면 진행하지 않는다.
+    final item = selection.item;
+    if (!selection.hasSelected || item == null || _isTransitioning) return;
     setState(() => _isTransitioning = true);
-    nextList.add(selectProvider.selectedModel);
+    nextList.add(item);
     showNext();
   }
 
-  @override
-  void dispose() {
-    selectProvider.removeListener(_onItemSelected);
-    super.dispose();
-  }
-
   // 매 라운드가 시작할 때마다 nowList에서 항목 2개를 각각 topItem, bottomItem에 넣는다.
-  void setGame() {
+  void setGame({bool resetSelection = true}) {
     // 직전 대결의 선택 상태를 초기화한다.
     // GameItem은 항목의 idx를 key로 사용하는데, 직전 대결에서 이긴 항목이
     // 다음 대결에서도 같은 위치(top/bottom)에 다시 배치되면 Flutter가
     // 이전 위젯의 State를 그대로 재사용한다. 탭 가능 여부를 GameItem의
     // 로컬 State가 아닌 이 Provider가 단일 기준으로 관리해야
     // "직전에 탭했던 항목이 다음 대결에서 탭이 안 먹는" 문제가 생기지 않는다.
-    selectProvider.resetSelection();
+    if (resetSelection) {
+      ref.read(matchSelectionProvider.notifier).resetForNextMatch();
+    }
     _matchId++;
     topItem = nowList.removeLast();
     bottomItem = nowList.removeLast();
@@ -107,7 +112,8 @@ class _WorldCupGameState extends State<WorldCupGame> {
       // 결승전이었을 경우
       if (maxRound == 1) {
         // 우승 항목
-        var winnerModel = selectProvider.selectedModel;
+        final winnerModel = ref.read(matchSelectionProvider).item;
+        if (winnerModel == null) return;
         // 뒤로가기 확인 다이얼로그 등이 열려 있으면 먼저 닫는다.
         // 열어둔 채로 pushReplacement를 호출하면 게임 화면이 아니라
         // 다이얼로그 라우트가 결과 화면으로 교체되어, 게임 화면이
@@ -117,7 +123,10 @@ class _WorldCupGameState extends State<WorldCupGame> {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => ResultWorldCupScreen(
-                widget.worldCupModel, winnerModel, widget.selectedRound),
+              widget.worldCupModel,
+              winnerModel,
+              widget.selectedRound,
+            ),
           ),
         );
       } else {
@@ -183,12 +192,15 @@ class _WorldCupGameState extends State<WorldCupGame> {
                 alignment: Alignment.topCenter,
                 child: Padding(
                   padding: const EdgeInsets.only(top: 10),
-                  child: Text((maxRound == 1) ? "결승" : "$round / $maxRound",
-                      style: const TextStyle(
-                          fontSize: 24,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          backgroundColor: Colors.grey)),
+                  child: Text(
+                    (maxRound == 1) ? "결승" : "$round / $maxRound",
+                    style: const TextStyle(
+                      fontSize: 24,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      backgroundColor: Colors.grey,
+                    ),
+                  ),
                 ),
               ),
             ],

@@ -9,9 +9,13 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 class KakaoShareAdapter implements SocialSharePort {
   static const String _buttonTitle = '내가 만든 월드컵 게임 체험하기';
 
+  /// 공유 카드와 버튼이 여는 주소. 보통 스토어 링크다.
+  final String linkUrl;
+
   final AppLogger _logger;
 
   const KakaoShareAdapter({
+    required this.linkUrl,
     this._logger = const DeveloperLogger('kakao_share'),
   });
 
@@ -20,7 +24,6 @@ class KakaoShareAdapter implements SocialSharePort {
     required String title,
     required String description,
     required String imageUrl,
-    required String linkUrl,
   }) async {
     final link = Link(
       webUrl: Uri.parse(linkUrl),

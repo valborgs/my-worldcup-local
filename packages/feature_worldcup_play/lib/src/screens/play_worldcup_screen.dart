@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
-import '../provider/worldcup_select_provider.dart';
 import '../widgets/worldcup_game.dart';
-import '../di/providers.dart';
+import '../state/match_selection.dart';
 
 class PlayWorldCupScreen extends ConsumerStatefulWidget {
   /// 진행할 월드컵의 id.
@@ -41,6 +39,12 @@ class _PlayWorldCupScreenState extends ConsumerState<PlayWorldCupScreen> {
     final model = await dao.findById(widget.worldCupId);
     final value = await dao.items(widget.worldCupId);
     if (!mounted) return;
+
+    // 새 게임은 항상 선택되지 않은 상태에서 시작해야 한다. 직전 게임의
+    // 우승 항목이 provider에 남아 있을 수 있기 때문이다.
+    // 비동기 콜백이라 위젯 빌드 중이 아니므로 여기서 바꿔도 안전하다.
+    ref.read(matchSelectionProvider.notifier).resetForNextMatch();
+
     setState(() {
       worldCupModel = model;
       itemList = value;
@@ -63,12 +67,9 @@ class _PlayWorldCupScreenState extends ConsumerState<PlayWorldCupScreen> {
           ),
           systemOverlayStyle: SystemUiOverlayStyle.dark,
         ),
-        body: ChangeNotifierProvider(
-          create: (context) => WorldCupSelectProvider(),
-          child: (itemList != null && worldCupModel != null)
-              ? WorldCupGame(worldCupModel!, itemList!, widget.selectedRound)
-              : const ColoredBox(color: Colors.black),
-        ),
+        body: (itemList != null && worldCupModel != null)
+            ? WorldCupGame(worldCupModel!, itemList!, widget.selectedRound)
+            : const ColoredBox(color: Colors.black),
       ),
     );
   }

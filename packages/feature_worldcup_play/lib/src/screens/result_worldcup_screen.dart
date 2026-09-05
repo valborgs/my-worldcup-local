@@ -11,8 +11,6 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 import 'package:worldcup_core/worldcup_core.dart';
 
-import '../di/providers.dart';
-
 class ResultWorldCupScreen extends ConsumerStatefulWidget {
   final WorldCupModel worldCupModel;
   final WorldCupItemModel winnerModel;
@@ -303,12 +301,7 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
           '${widget.worldCupModel.title} 우승자 : ${widget.winnerModel.imageInfo}';
       final didOpenShare = await ref
           .read(socialShareProvider)
-          .shareFeed(
-            title: title,
-            description: description,
-            imageUrl: imgUrl,
-            linkUrl: ref.read(playStoreUrlProvider),
-          );
+          .shareFeed(title: title, description: description, imageUrl: imgUrl);
       if (!didOpenShare) {
         throw StateError('Kakao share UI could not be opened.');
       }

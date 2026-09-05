@@ -8,7 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../widgets/worldcup_add_picutre_dialog.dart';
-import '../di/providers.dart';
 
 class AddWorldCupScreen extends ConsumerStatefulWidget {
   /// 수정할 월드컵의 id. `null`이면 새로 만드는 화면이다.

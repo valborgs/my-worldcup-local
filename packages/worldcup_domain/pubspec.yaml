@@ -11,6 +11,10 @@ environment:
 dependencies:
   worldcup_core:
     path: ../worldcup_core
+  # 순수 Dart 버전의 riverpod. flutter_riverpod가 아니므로 도메인은 여전히
+  # Flutter에 의존하지 않는다. 포트를 가리키는 provider를 여기서 선언해야
+  # feature 패키지가 앱 패키지를 import 하지 않고도 의존성을 받을 수 있다.
+  riverpod: ^3.0.0
 
 dev_dependencies:
   flutter_test:
