@@ -46,8 +46,19 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      # `flutter test`는 실행한 패키지의 test/만 돈다. 워크스페이스 멤버의
+      # 테스트가 조용히 빠지지 않도록 앱과 각 패키지를 모두 돌린다.
       - name: Test
-        run: flutter test
+        run: |
+          set -e
+          flutter test
+          for dir in packages/*/; do
+            if [ -n "$(ls -A "$dir/test" 2>/dev/null)" ]; then
+              echo "::group::$dir"
+              flutter test "$dir"
+              echo "::endgroup::"
+            fi
+          done
 
   # 아키텍처 경계를 CI에서 강제한다.
   # 대부분의 경계는 pub 의존성 그래프가 컴파일 타임에 막아주지만,

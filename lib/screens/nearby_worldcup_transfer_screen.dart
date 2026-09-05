@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../models/worldcup_model.dart';
 import '../services/nearby_worldcup_transfer_controller.dart';
 import '../services/worldcup_package_service.dart';
 

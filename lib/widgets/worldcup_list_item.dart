@@ -1,9 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:my_worldcup_local/models/worldcup_model.dart';
-import 'package:my_worldcup_local/tools/make_round.dart';
 import 'package:my_worldcup_local/widgets/worldcup_select_dialog.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 class WorldCupListItem extends StatelessWidget {
   final WorldCupModel worldCupModel;
@@ -48,7 +47,7 @@ class WorldCupListItem extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '최대 라운드 : ${makeMaxRound(worldCupModel.maxRound)}강',
+                '최대 라운드 : ${TournamentRounds.defaultRound(worldCupModel.maxRound)}강',
                 style: Theme.of(context).textTheme.bodyMedium,
                 semanticsLabel: '월드컵 최대 라운드',
               ),

@@ -8,12 +8,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:my_worldcup_local/screens/play_worldcup_screen.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../ad/ad_helper.dart';
 import '../api/imgbb_upload.dart';
 import '../api/kakaotalk_feed.dart';
-import '../models/worldcup_item_model.dart';
-import '../models/worldcup_model.dart';
 import '../tools/asset_to_file.dart';
 import '../tools/make_binary_file.dart';
 import '../widgets/auto_scrolling_text.dart';

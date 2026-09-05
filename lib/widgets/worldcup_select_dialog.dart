@@ -2,14 +2,13 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../dto/worldcup_dao.dart';
-import '../models/worldcup_model.dart';
 import '../screens/play_worldcup_screen.dart';
 import '../screens/add_worldcup_screen.dart';
 import '../screens/nearby_worldcup_transfer_screen.dart';
 import '../services/worldcup_package_service.dart';
-import '../tools/make_round.dart';
 import 'outlined_icon_button.dart';
 
 class WorldCupSelectDialog extends StatefulWidget {
@@ -37,7 +36,7 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
   @override
   void initState() {
     super.initState();
-    _selectedRound = makeMaxRound(widget.model.maxRound);
+    _selectedRound = TournamentRounds.defaultRound(widget.model.maxRound);
   }
 
   @override
@@ -64,10 +63,10 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
             const SizedBox(height: 5),
             Center(
               child: DropdownMenu(
-                initialSelection: makeMaxRound(widget.model.maxRound),
+                initialSelection: TournamentRounds.defaultRound(widget.model.maxRound),
                 menuStyle: const MenuStyle(
                     padding: WidgetStatePropertyAll(EdgeInsets.all(0))),
-                dropdownMenuEntries: makeRoundList(widget.model.maxRound)
+                dropdownMenuEntries: TournamentRounds.available(widget.model.maxRound)
                     .map<DropdownMenuEntry<int>>((int value) {
                   return DropdownMenuEntry<int>(
                     value: value,

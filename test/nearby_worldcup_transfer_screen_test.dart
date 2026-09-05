@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:my_worldcup_local/screens/nearby_worldcup_transfer_screen.dart';
 import 'package:my_worldcup_local/services/nearby_worldcup_transfer_controller.dart';
 import 'package:my_worldcup_local/services/worldcup_package_service.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 void main() {
   testWidgets('받기 화면은 상대 이름, 인증 코드, 수락/거절과 진행률을 표시하고 dispose한다',

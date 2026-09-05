@@ -1,7 +1,7 @@
-import 'package:my_worldcup_local/models/worldcup_item_model.dart';
-import 'package:my_worldcup_local/models/worldcup_model.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../db/sqlite.dart';
+import 'worldcup_row.dart';
 
 class WorldCupDao {
   final dbProvider = SqliteProvider();
@@ -19,7 +19,7 @@ class WorldCupDao {
 
       if (dbList.isNotEmpty) {
         for (Map<String, dynamic> item in dbList) {
-          modelList.add(WorldCupModel.fromDB(item));
+          modelList.add(worldCupFromRow(item));
         }
       }
     } catch (e) {
@@ -65,7 +65,7 @@ class WorldCupDao {
       limit: limit,
       offset: offset,
     );
-    return dbList.map(WorldCupModel.fromDB).toList();
+    return dbList.map(worldCupFromRow).toList();
   }
 
   Future<int> addWorldCupWithItems(
@@ -74,10 +74,10 @@ class WorldCupDao {
   ) async {
     final db = await dbProvider.database;
     return db.transaction((txn) async {
-      final worldCupIdx = await txn.insert(worldCupTable, model.toMap());
+      final worldCupIdx = await txn.insert(worldCupTable, model.toRow());
       final batch = txn.batch();
       for (final item in items) {
-        final itemMap = item.toMap()..['worldCupIdx'] = worldCupIdx;
+        final itemMap = item.toRow()..['worldCupIdx'] = worldCupIdx;
         batch.insert(worldCupItemTable, itemMap);
       }
       await batch.commit(noResult: true);
@@ -93,7 +93,7 @@ class WorldCupDao {
     await db.transaction((txn) async {
       await txn.update(
         worldCupTable,
-        model.toMap(),
+        model.toRow(),
         where: 'idx = ?',
         whereArgs: [model.idx],
       );
@@ -104,7 +104,7 @@ class WorldCupDao {
       );
       final batch = txn.batch();
       for (final item in items) {
-        batch.insert(worldCupItemTable, item.toMap());
+        batch.insert(worldCupItemTable, item.toRow());
       }
       await batch.commit(noResult: true);
     });
@@ -193,13 +193,13 @@ class WorldCupDao {
 
         // 최신 샘플 월드컵 데이터를 다시 저장한다.
         for (int i = 0; i < newList.length; i++) {
-          await txn.insert(worldCupTable, newList[i].toMap());
+          await txn.insert(worldCupTable, newList[i].toRow());
         }
 
         // 최신 샘플 월드컵 아이템 데이터를 다시 저장한다.
         for (int i = 0; i < itemList1.length; i++) {
-          await txn.insert(worldCupItemTable, itemList1[i].toMap());
-          await txn.insert(worldCupItemTable, itemList2[i].toMap());
+          await txn.insert(worldCupItemTable, itemList1[i].toRow());
+          await txn.insert(worldCupItemTable, itemList2[i].toRow());
         }
       });
     } catch (e) {
@@ -219,7 +219,7 @@ class WorldCupDao {
 
       if (dbList.isNotEmpty) {
         for (Map<String, dynamic> item in dbList) {
-          itemList.add(WorldCupItemModel.fromDB(item));
+          itemList.add(worldCupItemFromRow(item));
         }
       }
     } catch (e) {

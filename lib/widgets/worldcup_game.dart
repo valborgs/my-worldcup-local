@@ -1,12 +1,11 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:my_worldcup_local/screens/result_worldcup_screen.dart';
 import 'package:my_worldcup_local/widgets/game_item.dart';
 import 'package:provider/provider.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../models/worldcup_item_model.dart';
 import '../provider/worldcup_select_provider.dart';
 
 class WorldCupGame extends StatefulWidget {
@@ -198,10 +197,4 @@ class _WorldCupGameState extends State<WorldCupGame> {
       ),
     );
   }
-}
-
-enum SelectedItemPosition {
-  top,
-  bottom,
-  none,
 }

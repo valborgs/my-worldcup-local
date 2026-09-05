@@ -6,9 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:my_worldcup_local/screens/help_screen.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../ad/ad_helper.dart';
-import '../models/worldcup_model.dart';
 import '../services/worldcup_package_service.dart';
 import '../widgets/worldcup_action_menu_button.dart';
 import '../widgets/worldcup_list.dart';

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:my_worldcup_local/widgets/worldcup_select_dialog.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 void main() {
   testWidgets('게임 시작 다이얼로그는 제한된 높이를 넘으면 전체 본문이 스크롤된다', (tester) async {

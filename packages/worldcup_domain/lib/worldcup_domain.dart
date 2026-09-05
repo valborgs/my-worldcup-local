@@ -1,5 +1,11 @@
-/// worldcup_domain 공개 API 배럴 파일.
+/// worldcup_domain 공개 API.
 ///
-/// 이 패키지 밖에서는 이 파일을 통해서만 import 한다.
-/// 구현 세부는 lib/src/ 아래에 두고, 여기서 명시적으로 export 한 것만 공개한다.
+/// 엔티티 / 포트 / 도메인 계산만 담는다. 순수 Dart이며 Flutter와 저장소 구현에
+/// 의존하지 않는다.
 library;
+
+export 'src/entities/selected_item_position.dart';
+export 'src/entities/worldcup_item_model.dart';
+export 'src/entities/worldcup_model.dart';
+export 'src/repositories/worldcup_repository.dart';
+export 'src/tournament/tournament_rounds.dart';

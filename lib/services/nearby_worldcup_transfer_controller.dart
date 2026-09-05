@@ -7,8 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../models/worldcup_model.dart';
 import 'worldcup_package_service.dart';
 
 enum NearbyTransferMode { send, receive }

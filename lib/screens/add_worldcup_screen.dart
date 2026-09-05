@@ -4,8 +4,7 @@ import 'dart:io';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:my_worldcup_local/models/worldcup_item_model.dart';
-import 'package:my_worldcup_local/models/worldcup_model.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../dto/worldcup_dao.dart';
 import '../widgets/worldcup_add_picutre_dialog.dart';

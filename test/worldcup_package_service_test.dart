@@ -4,9 +4,8 @@ import 'dart:io';
 import 'package:archive/archive_io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_worldcup_local/dto/worldcup_dao.dart';
-import 'package:my_worldcup_local/models/worldcup_item_model.dart';
-import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:my_worldcup_local/services/worldcup_package_service.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -21,25 +20,25 @@ void main() {
     });
 
     final sourceItems = <WorldCupItemModel>[
-      WorldCupItemModel(
+      const WorldCupItemModel(
         1,
         'assets/sample/female/aespa_carina.jpg',
         '카리나',
         10,
       ),
-      WorldCupItemModel(
+      const WorldCupItemModel(
         2,
         'assets/sample/female/babymon_ahyun.jpg',
         '아현',
         10,
       ),
-      WorldCupItemModel(
+      const WorldCupItemModel(
         3,
         'assets/sample/female/chu.jpg',
         '츄',
         10,
       ),
-      WorldCupItemModel(
+      const WorldCupItemModel(
         4,
         'assets/sample/female/idle_miyeon.jpg',
         '미연',

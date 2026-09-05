@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../models/worldcup_item_model.dart';
-import '../widgets/worldcup_game.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 class WorldCupSelectProvider extends ChangeNotifier{
 
@@ -11,7 +9,7 @@ class WorldCupSelectProvider extends ChangeNotifier{
   SelectedItemPosition get selectedItemPosition => _selectedItemPosition;
 
   // 선택한 아이템 id
-  WorldCupItemModel _selectedModel = WorldCupItemModel(-1, "", "", -1);
+  WorldCupItemModel _selectedModel = const WorldCupItemModel(-1, "", "", -1);
 
   WorldCupItemModel get selectedModel => _selectedModel;
 

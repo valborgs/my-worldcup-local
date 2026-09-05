@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:my_worldcup_local/services/nearby_worldcup_transfer_controller.dart';
 import 'package:my_worldcup_local/services/worldcup_package_service.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 void main() {
   late Directory temporaryDirectory;

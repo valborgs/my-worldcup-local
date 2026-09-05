@@ -3,8 +3,8 @@ import 'dart:ui' show SemanticsAction;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_worldcup_local/dto/worldcup_dao.dart';
-import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:my_worldcup_local/widgets/worldcup_list.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 void main() {
   Widget buildPager({

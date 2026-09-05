@@ -20,28 +20,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:my_worldcup_local/models/worldcup_item_model.dart';
-import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:my_worldcup_local/provider/worldcup_select_provider.dart';
 import 'package:my_worldcup_local/widgets/game_item.dart';
 import 'package:my_worldcup_local/widgets/worldcup_game.dart';
+import 'package:my_worldcup_local/dto/worldcup_row.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 void main() {
   // idx < 0 : 샘플 월드컵 항목 (Image.asset 경로)
   // idx >= 0 : 사용자가 직접 추가한(실제) 월드컵 항목 (Image.file 경로).
   // 테스트는 저장소 루트에서 실행되므로 아래 상대경로의 실제 파일이 존재한다.
-  final itemA =
+  const itemA =
       WorldCupItemModel(1, 'assets/sample/female/aespa_carina.jpg', 'A', -1);
-  final itemB =
+  const itemB =
       WorldCupItemModel(2, 'assets/sample/female/babymon_ahyun.jpg', 'B', 101);
-  final itemC = WorldCupItemModel(3, 'assets/sample/female/chu.jpg', 'C', -1);
+  const itemC = WorldCupItemModel(3, 'assets/sample/female/chu.jpg', 'C', -1);
 
   test('WorldCupModel은 DB 저장 후 날짜를 밀리초 정밀도로 복원한다', () {
     final date = DateTime(2026, 8, 26, 12, 34, 56, 789);
     final original = WorldCupModel(1, '제목', '설명', date, 'image.jpg', 16);
-    final dbRow = <String, dynamic>{'idx': 1, ...original.toMap()};
+    final dbRow = <String, dynamic>{'idx': 1, ...original.toRow()};
 
-    final restored = WorldCupModel.fromDB(dbRow);
+    final restored = worldCupFromRow(dbRow);
 
     expect(restored.date, date);
   });
@@ -124,11 +124,11 @@ void main() {
         itemA,
         itemB,
         itemC,
-        WorldCupItemModel(4, 'assets/sample/male/and2ble_yujin.jpg', 'D', 102),
-        WorldCupItemModel(5, 'assets/sample/male/astro_cha.jpg', 'E', -1),
-        WorldCupItemModel(6, 'assets/sample/male/bnd_myung.jpg', 'F', 103),
-        WorldCupItemModel(7, 'assets/sample/female/aespa_carina.jpg', 'G', -1),
-        WorldCupItemModel(
+        const WorldCupItemModel(4, 'assets/sample/male/and2ble_yujin.jpg', 'D', 102),
+        const WorldCupItemModel(5, 'assets/sample/male/astro_cha.jpg', 'E', -1),
+        const WorldCupItemModel(6, 'assets/sample/male/bnd_myung.jpg', 'F', 103),
+        const WorldCupItemModel(7, 'assets/sample/female/aespa_carina.jpg', 'G', -1),
+        const WorldCupItemModel(
             8, 'assets/sample/female/babymon_ahyun.jpg', 'H', 104),
       ];
       final worldCupModel =

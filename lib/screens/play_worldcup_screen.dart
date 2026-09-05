@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:my_worldcup_local/dto/worldcup_dao.dart';
-import 'package:my_worldcup_local/models/worldcup_item_model.dart';
-import 'package:my_worldcup_local/models/worldcup_model.dart';
 import 'package:provider/provider.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../provider/worldcup_select_provider.dart';
 import '../widgets/auto_scrolling_text.dart';

@@ -6,10 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../dto/worldcup_dao.dart';
-import '../models/worldcup_item_model.dart';
-import '../models/worldcup_model.dart';
 
 class WorldCupPackageException implements Exception {
   final String message;

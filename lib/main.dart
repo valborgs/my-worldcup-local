@@ -15,7 +15,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dto/worldcup_dao.dart';
 import 'dev/test_worldcup_seeder.dart';
 import 'firebase_options.dart';
-import 'models/worldcup_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 // 이 너비(dp) 이상을 '대화면'(폴더블 내부화면, 태블릿 등)으로 간주하여 회전을 허용한다.
 const double _kLargeScreenWidth = 600.0;
@@ -74,11 +75,15 @@ Future<void> main() async {
   );
 
   runApp(
-    MyWorldCup(
-      isAlreadyShownHelp,
-      initialWorldCupList,
-      enableBottomSheetSelectionPagerTransition:
-          enableBottomSheetSelectionPagerTransition,
+    // Riverpod 도입 1단계: 스코프만 씌운다. 실제 provider는 각 레이어를
+    // 옮기면서 붙이고, 기존 package:provider는 그때까지 공존한다.
+    ProviderScope(
+      child: MyWorldCup(
+        isAlreadyShownHelp,
+        initialWorldCupList,
+        enableBottomSheetSelectionPagerTransition:
+            enableBottomSheetSelectionPagerTransition,
+      ),
     ),
   );
 }

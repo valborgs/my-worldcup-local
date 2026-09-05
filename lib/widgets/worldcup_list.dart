@@ -4,10 +4,8 @@ import 'dart:io';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:my_worldcup_local/dto/worldcup_dao.dart';
-import 'package:my_worldcup_local/tools/make_round.dart';
 import 'package:my_worldcup_local/widgets/worldcup_list_item.dart';
-
-import '../models/worldcup_model.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
 class _PagerTarget {
   final int index;
@@ -174,7 +172,7 @@ class WorldCupListState extends State<WorldCupList> {
                   semanticLabelBuilder: (model, index) {
                     final title =
                         model.idx < 0 ? '(샘플) ${model.title}' : model.title;
-                    return '$title, 최대 라운드 ${makeMaxRound(model.maxRound)}강, '
+                    return '$title, 최대 라운드 ${TournamentRounds.defaultRound(model.maxRound)}강, '
                         '${_pagerOffset + index + 1} / $_allTotalCount';
                   },
                 ),
@@ -722,7 +720,7 @@ class _WorldCupSheetItem extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text('최대 라운드 : ${makeMaxRound(model.maxRound)}강'),
+      subtitle: Text('최대 라운드 : ${TournamentRounds.defaultRound(model.maxRound)}강'),
     );
   }
 }

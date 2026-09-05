@@ -2,10 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../models/worldcup_item_model.dart';
 import '../provider/worldcup_select_provider.dart';
-import 'worldcup_game.dart';
 
 // 게임 화면에서 대결하는 항목 하나를 표시하는 위젯.
 // 기존 ItemTop / ItemBottom을 통합한 것으로, position으로 위/아래(또는 좌/우) 역할을,
