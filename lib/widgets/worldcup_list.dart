@@ -9,6 +9,13 @@ import 'package:my_worldcup_local/widgets/worldcup_list_item.dart';
 
 import '../models/worldcup_model.dart';
 
+class _PagerTarget {
+  final int index;
+  final bool replacedWindow;
+
+  const _PagerTarget(this.index, {required this.replacedWindow});
+}
+
 class WorldCupList extends StatefulWidget {
   final List<WorldCupModel>? initialWorldCupList;
   final bool enableBottomSheetSelectionPagerTransition;
@@ -409,11 +416,13 @@ class WorldCupListState extends State<WorldCupList> {
       }
       if (!mounted) return;
 
-      final targetIndex = await _findOrLoadPagerIndex(model);
-      if (!mounted || targetIndex < 0) return;
+      final target = await _findOrLoadPagerIndex(model);
+      if (!mounted || target == null) return;
 
-      _movePagerToPage(targetIndex);
-      await WidgetsBinding.instance.endOfFrame;
+      await _navigateToPagerTarget(target);
+      if (target.replacedWindow) {
+        await WidgetsBinding.instance.endOfFrame;
+      }
       if (!mounted) return;
       await showDialogBeforeGameStart(context, model, refresh);
     } finally {
@@ -421,10 +430,10 @@ class WorldCupListState extends State<WorldCupList> {
     }
   }
 
-  Future<int> _findOrLoadPagerIndex(WorldCupModel selectedModel) =>
+  Future<_PagerTarget?> _findOrLoadPagerIndex(WorldCupModel selectedModel) =>
       _findOrLoadPagerIndexById(selectedModel.idx);
 
-  Future<int> _findOrLoadPagerIndexById(int worldCupIdx) async {
+  Future<_PagerTarget?> _findOrLoadPagerIndexById(int worldCupIdx) async {
     closeSearchMode();
     var targetIndex = worldCupList.indexWhere(
       (model) => model.idx == worldCupIdx,
@@ -432,7 +441,7 @@ class WorldCupListState extends State<WorldCupList> {
 
     if (targetIndex < 0) {
       final resolvedIndex = await _dao.getWorldCupIndex(worldCupIdx);
-      if (!mounted || resolvedIndex < 0) return -1;
+      if (!mounted) return null;
 
       final maxTargetWindowOffset =
           _allTotalCount > _pageSize ? _allTotalCount - _pageSize : 0;
@@ -442,30 +451,42 @@ class WorldCupListState extends State<WorldCupList> {
         limit: _pageSize,
         offset: targetWindowOffset,
       );
-      if (!mounted) return -1;
+      if (!mounted) return null;
       targetIndex = targetWindow.indexWhere(
         (model) => model.idx == worldCupIdx,
       );
-      if (targetIndex < 0) return -1;
+      if (targetIndex < 0) return null;
 
       setState(() {
         _pagerOffset = targetWindowOffset;
         worldCupList = targetWindow;
       });
-      return targetIndex;
+      return _PagerTarget(targetIndex, replacedWindow: true);
     }
-    if (!mounted || targetIndex < 0) return -1;
-    return targetIndex;
+    return _PagerTarget(targetIndex, replacedWindow: false);
   }
 
   Future<void> refreshAndScrollTo(int worldCupIdx) async {
     await refresh();
     if (!mounted) return;
 
-    final targetIndex = await _findOrLoadPagerIndexById(worldCupIdx);
-    if (!mounted || targetIndex < 0) return;
+    final target = await _findOrLoadPagerIndexById(worldCupIdx);
+    if (!mounted || target == null) return;
 
-    _movePagerToPage(targetIndex);
+    await _navigateToPagerTarget(target);
+  }
+
+  Future<void> _navigateToPagerTarget(_PagerTarget target) async {
+    if (target.replacedWindow) {
+      _movePagerToPage(target.index);
+      return;
+    }
+
+    // A refresh may have rebuilt the existing window with a newly added item.
+    // Wait until the pager sees that item before starting the transition.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    await _pagerKey.currentState?._scrollToPage(target.index);
   }
 
   void _movePagerToPage(int targetIndex) {
@@ -489,22 +510,26 @@ class WorldCupListState extends State<WorldCupList> {
     final sheetLimit = _sheetWorldCupList.length < _pageSize
         ? _pageSize
         : _sheetWorldCupList.length;
+    final pagerLimit =
+        worldCupList.length < _pageSize ? _pageSize : worldCupList.length;
+    final firstPageLimit = _pagerOffset == 0 && pagerLimit > sheetLimit
+        ? pagerLimit
+        : sheetLimit;
     final results = await Future.wait([
       _dao.getWorldCupCount(),
-      _dao.getWorldCupPage(limit: sheetLimit, offset: 0),
+      _dao.getWorldCupPage(limit: firstPageLimit, offset: 0),
     ]);
     if (!mounted) return;
 
     final totalCount = results[0] as int;
-    final refreshedSheetItems = results[1] as List<WorldCupModel>;
-    final pagerLimit =
-        worldCupList.length < _pageSize ? _pageSize : worldCupList.length;
+    final firstPageItems = results[1] as List<WorldCupModel>;
+    final refreshedSheetItems = firstPageItems.take(sheetLimit).toList();
     final maxPagerOffset =
         totalCount > pagerLimit ? totalCount - pagerLimit : 0;
     final refreshedPagerOffset = _pagerOffset.clamp(0, maxPagerOffset);
     final refreshedPagerItems =
-        refreshedPagerOffset == 0 && pagerLimit == sheetLimit
-            ? List<WorldCupModel>.of(refreshedSheetItems)
+        refreshedPagerOffset == 0 && firstPageLimit >= pagerLimit
+            ? firstPageItems.take(pagerLimit).toList()
             : await _dao.getWorldCupPage(
                 limit: pagerLimit,
                 offset: refreshedPagerOffset,

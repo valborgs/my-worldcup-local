@@ -189,6 +189,72 @@ void main() {
         find.bySemanticsLabel('Game 20, 최대 라운드 4강, 20 / 21'), findsOneWidget);
   });
 
+  testWidgets('현재 로드 범위의 월드컵으로 이동할 때 애니메이션을 유지한다', (tester) async {
+    final dao = _FakeWorldCupDao(_models(10));
+    final listKey = GlobalKey<WorldCupListState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              WorldCupList(
+                key: listKey,
+                dao: dao,
+                enableBottomSheetSelectionPagerTransition: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final navigation = listKey.currentState!.refreshAndScrollTo(4);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final pageView = tester.widget<PageView>(find.byType(PageView));
+    expect(pageView.controller!.page, greaterThan(0));
+    expect(pageView.controller!.page, lessThan(3));
+
+    await tester.pumpAndSettle();
+    await navigation;
+    expect(pageView.controller!.page, 3);
+  });
+
+  testWidgets('첫 페이지를 공유하는 새로고침은 가장 큰 범위를 한 번만 조회한다',
+      (tester) async {
+    final dao = _FakeWorldCupDao(_models(30));
+    final listKey = GlobalKey<WorldCupListState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              WorldCupList(
+                key: listKey,
+                dao: dao,
+                enableBottomSheetSelectionPagerTransition: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    listKey.currentState!.worldCupList = _models(30);
+    dao.requestedLimits.clear();
+    dao.requestedOffsets.clear();
+    await listKey.currentState!.refresh();
+    await tester.pumpAndSettle();
+
+    expect(dao.requestedLimits, [30]);
+    expect(dao.requestedOffsets, [0]);
+  });
+
   testWidgets('반복 새로고침해도 페이저 로드 범위가 계속 늘어나지 않는다', (tester) async {
     final dao = _FakeWorldCupDao(_models(200));
     final listKey = GlobalKey<WorldCupListState>();
@@ -276,6 +342,7 @@ List<WorldCupModel> _models(int count) => List.generate(
 class _FakeWorldCupDao extends WorldCupDao {
   List<WorldCupModel> items;
   final List<int> requestedLimits = [];
+  final List<int> requestedOffsets = [];
 
   _FakeWorldCupDao(this.items);
 
@@ -289,6 +356,7 @@ class _FakeWorldCupDao extends WorldCupDao {
     String searchQuery = '',
   }) async {
     requestedLimits.add(limit);
+    requestedOffsets.add(offset);
     return items.skip(offset).take(limit).toList();
   }
 
