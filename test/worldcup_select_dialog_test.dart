@@ -16,9 +16,8 @@ void main() {
       4,
     );
 
-    // 본문의 최소 높이보다 작은 뷰포트로 스크롤을 결정적으로 유도한다.
-    // 특정 기기의 해상도나 글꼴의 렌더링 높이에는 의존하지 않는다.
-    await tester.binding.setSurfaceSize(const Size(400, 320));
+    // 긴 제목·설명과 고정된 하단 영역이 화면 높이를 넘는 조건을 만든다.
+    await tester.binding.setSurfaceSize(const Size(400, 520));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
@@ -37,14 +36,14 @@ void main() {
     );
     final title = tester.widget<Text>(titleFinder);
     final scrollViewFinder = find.byType(SingleChildScrollView);
+    final roundLabelFinder = find.text('- 라운드 수를 선택해주세요- ');
+    final roundDropdownFinder = find.byType(DropdownMenu<int>);
+    final startButtonFinder = find.widgetWithText(OutlinedButton, '시작');
+    final shareButtonFinder = find.widgetWithText(OutlinedButton, '공유하기');
 
     expect(title.data, longTitle);
     expect(title.maxLines, isNull);
     expect(title.overflow, isNull);
-    expect(
-      tester.getSize(find.byKey(const Key('worldCupDialogContent'))).height,
-      greaterThanOrEqualTo(200),
-    );
     expect(scrollViewFinder, findsOneWidget);
     expect(
       find.descendant(of: scrollViewFinder, matching: titleFinder),
@@ -53,6 +52,18 @@ void main() {
     expect(
       find.descendant(of: scrollViewFinder, matching: descriptionFinder),
       findsOneWidget,
+    );
+    expect(
+      find.descendant(of: scrollViewFinder, matching: roundLabelFinder),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: scrollViewFinder, matching: roundDropdownFinder),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: scrollViewFinder, matching: startButtonFinder),
+      findsNothing,
     );
     final scrollableFinder = find.descendant(
       of: scrollViewFinder,
@@ -64,6 +75,83 @@ void main() {
             .position
             .maxScrollExtent,
         greaterThan(0));
+    final roundLabelCenter = tester.getCenter(roundLabelFinder);
+    final startButtonCenter = tester.getCenter(startButtonFinder);
+    await tester.drag(scrollViewFinder, const Offset(0, -100));
+    await tester.pump();
+    expect(tester.getCenter(roundLabelFinder), roundLabelCenter);
+    expect(tester.getCenter(startButtonFinder), startButtonCenter);
+    expect(shareButtonFinder, findsOneWidget);
+    expect(
+      tester.getCenter(shareButtonFinder).dy,
+      greaterThan(
+          tester.getCenter(find.widgetWithText(OutlinedButton, '삭제')).dy),
+      reason: '실제 월드컵 공유 버튼은 다른 다이얼로그 작업 아래에 배치해야 한다.',
+    );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('샘플 월드컵에는 공유하기 버튼이 표시되지 않는다', (tester) async {
+    final sampleModel = WorldCupModel(
+      -1,
+      '샘플 월드컵',
+      '샘플 설명',
+      DateTime(2026),
+      'assets/sample/female/aespa_carina.jpg',
+      16,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: WorldCupSelectDialog(sampleModel, onChanged: () {}),
+        ),
+      ),
+    );
+
+    expect(find.widgetWithText(OutlinedButton, '공유하기'), findsNothing);
+    final descriptionFinder = find.byWidgetPredicate(
+      (widget) => widget is Text && widget.semanticsLabel == '월드컵 설명',
+    );
+    final scrollViewFinder = find.byType(SingleChildScrollView);
+    final scrollableFinder = find.descendant(
+      of: scrollViewFinder,
+      matching: find.byType(Scrollable),
+    );
+
+    expect(tester.getSize(descriptionFinder).height, lessThan(200));
+    expect(
+      tester
+          .state<ScrollableState>(scrollableFinder.first)
+          .position
+          .maxScrollExtent,
+      0,
+      reason: '짧은 제목과 설명은 남는 공간을 채우거나 스크롤되지 않아야 한다.',
+    );
+  });
+
+  testWidgets('사용자 월드컵은 Nearby 공유와 기존 앱 공유를 선택할 수 있다', (tester) async {
+    final model = WorldCupModel(
+      5,
+      '공유 월드컵',
+      '설명',
+      DateTime(2026),
+      '',
+      4,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: WorldCupSelectDialog(model, onChanged: () {}),
+        ),
+      ),
+    );
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '공유하기'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('주변 기기로 보내기'), findsOneWidget);
+    expect(find.text('다른 앱으로 공유하기'), findsOneWidget);
   });
 }

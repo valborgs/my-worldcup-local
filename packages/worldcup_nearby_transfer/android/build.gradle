@@ -1,0 +1,30 @@
+plugins {
+    id 'com.android.library'
+}
+
+group = 'org.comon.worldcup_nearby_transfer'
+version = '1.0.0'
+
+android {
+    namespace 'org.comon.worldcup_nearby_transfer'
+    compileSdk 36
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        minSdk 23
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.android.gms:play-services-nearby:19.5.0'
+}

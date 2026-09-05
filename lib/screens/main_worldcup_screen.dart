@@ -1,22 +1,31 @@
 import 'dart:developer';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:my_worldcup_local/screens/help_screen.dart';
+import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 
 import '../ad/ad_helper.dart';
 import '../models/worldcup_model.dart';
+import '../services/worldcup_package_service.dart';
+import '../widgets/worldcup_action_menu_button.dart';
 import '../widgets/worldcup_list.dart';
 import 'add_worldcup_screen.dart';
+import 'nearby_worldcup_transfer_screen.dart';
 
 class MainWorldCupScreen extends StatefulWidget {
   final List<WorldCupModel>? initialWorldCupList;
   final bool enableBottomSheetSelectionPagerTransition;
+  final NearbyTransferGateway Function()? nearbyGatewayFactory;
+  final WorldCupPackageGateway? packageGateway;
 
   const MainWorldCupScreen({
     this.initialWorldCupList,
     required this.enableBottomSheetSelectionPagerTransition,
+    this.nearbyGatewayFactory,
+    this.packageGateway,
     super.key,
   });
 
@@ -28,6 +37,7 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
   late String admobBannerId;
   BannerAd? _bannerAd;
   final _worldCupListKey = GlobalKey<WorldCupListState>();
+  bool _isImporting = false;
 
   @override
   void initState() {
@@ -80,29 +90,11 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
             semanticsLabel: "내가 만든 월드컵 화면",
           ),
           actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 10),
-              child: Semantics(
-                button: true,
-                enabled: true,
-                label: "Add WorldCup Button",
-                child: IconButton(
-                  onPressed: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const AddWorldCupScreen(),
-                        fullscreenDialog: true,
-                      ),
-                    );
-                    _worldCupListKey.currentState?.refresh();
-                  },
-                  icon: const Icon(
-                    Icons.add,
-                    semanticLabel: "추가",
-                    size: 32,
-                  ),
-                ),
-              ),
+            WorldCupActionMenuButton(
+              isBusy: _isImporting,
+              onCreate: _addWorldCup,
+              onReceiveNearby: _receiveWorldCup,
+              onImportFile: _importWorldCup,
             ),
           ],
         ),
@@ -167,6 +159,77 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
           ],
         );
       },
+    );
+  }
+
+  Future<void> _addWorldCup() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => const AddWorldCupScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+    if (!mounted) return;
+    await _worldCupListKey.currentState?.refresh();
+  }
+
+  Future<void> _importWorldCup() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const [WorldCupPackageService.fileExtension],
+      allowMultiple: false,
+    );
+    if (!mounted || result == null || result.files.isEmpty) return;
+
+    final packagePath = result.files.single.path;
+    if (packagePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('선택한 파일을 읽을 수 없습니다.')),
+      );
+      return;
+    }
+
+    setState(() => _isImporting = true);
+    try {
+      final imported = await (widget.packageGateway ?? WorldCupPackageService())
+          .importPackage(packagePath);
+      if (!mounted) return;
+      await _worldCupListKey.currentState?.refresh();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('"${imported.title}" 월드컵을 가져왔습니다.')),
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Failed to import world cup package',
+        error: error,
+        stackTrace: stackTrace,
+        name: 'main_worldcup_screen',
+      );
+      if (!mounted) return;
+      final message = error is WorldCupPackageException
+          ? error.message
+          : '월드컵을 가져올 수 없습니다. 잠시 후 다시 시도해주세요.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted) setState(() => _isImporting = false);
+    }
+  }
+
+  Future<void> _receiveWorldCup() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => NearbyWorldCupReceiveScreen(
+          gateway: widget.nearbyGatewayFactory?.call(),
+          packageGateway: widget.packageGateway,
+          onImported: (_) async {
+            await _worldCupListKey.currentState?.refresh();
+          },
+        ),
+        fullscreenDialog: true,
+      ),
     );
   }
 
