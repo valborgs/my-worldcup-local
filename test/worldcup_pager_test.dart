@@ -173,11 +173,91 @@ void main() {
     await listKey.currentState!.refreshAndScrollTo(21);
     await tester.pumpAndSettle();
 
-    expect(listKey.currentState!.worldCupList, hasLength(21));
+    expect(listKey.currentState!.worldCupList, hasLength(10));
+    expect(dao.requestedLimits, everyElement(lessThanOrEqualTo(10)));
     final pageView = tester.widget<PageView>(find.byType(PageView));
-    expect(pageView.controller!.page, 20);
+    expect(pageView.controller!.page, 9);
     expect(
         find.bySemanticsLabel('Game 21, 최대 라운드 4강, 21 / 21'), findsOneWidget);
+
+    await tester.drag(
+      find.byKey(const ValueKey('worldCupPager')),
+      const Offset(500, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(
+        find.bySemanticsLabel('Game 20, 최대 라운드 4강, 20 / 21'), findsOneWidget);
+  });
+
+  testWidgets('반복 새로고침해도 페이저 로드 범위가 계속 늘어나지 않는다', (tester) async {
+    final dao = _FakeWorldCupDao(_models(200));
+    final listKey = GlobalKey<WorldCupListState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              WorldCupList(
+                key: listKey,
+                dao: dao,
+                enableBottomSheetSelectionPagerTransition: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    for (var count = 0; count < 5; count++) {
+      await listKey.currentState!.refresh();
+      await tester.pumpAndSettle();
+    }
+
+    expect(listKey.currentState!.worldCupList, hasLength(10));
+  });
+
+  testWidgets('뒷쪽 페이지로 이동한 후 앞으로 넘기면 이전 페이지를 이어서 불러온다', (tester) async {
+    final dao = _FakeWorldCupDao(_models(31));
+    final listKey = GlobalKey<WorldCupListState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              WorldCupList(
+                key: listKey,
+                dao: dao,
+                enableBottomSheetSelectionPagerTransition: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    dao.items = _models(32);
+    await listKey.currentState!.refreshAndScrollTo(32);
+    await tester.pumpAndSettle();
+
+    for (var count = 0; count < 7; count++) {
+      await tester.drag(
+        find.byKey(const ValueKey('worldCupPager')),
+        const Offset(500, 0),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    expect(
+        find.bySemanticsLabel('Game 25, 최대 라운드 4강, 25 / 32'), findsOneWidget);
+    await tester.drag(
+      find.byKey(const ValueKey('worldCupPager')),
+      const Offset(500, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(
+        find.bySemanticsLabel('Game 24, 최대 라운드 4강, 24 / 32'), findsOneWidget);
   });
 }
 
@@ -195,6 +275,7 @@ List<WorldCupModel> _models(int count) => List.generate(
 
 class _FakeWorldCupDao extends WorldCupDao {
   List<WorldCupModel> items;
+  final List<int> requestedLimits = [];
 
   _FakeWorldCupDao(this.items);
 
@@ -206,12 +287,14 @@ class _FakeWorldCupDao extends WorldCupDao {
     required int limit,
     required int offset,
     String searchQuery = '',
-  }) async =>
-      items.skip(offset).take(limit).toList();
+  }) async {
+    requestedLimits.add(limit);
+    return items.skip(offset).take(limit).toList();
+  }
 
   @override
   Future<int> getWorldCupIndex(int idx) async =>
-      items.indexWhere((item) => item.idx == idx);
+      items.where((item) => item.idx < idx).length;
 }
 
 class _MutablePagerHost extends StatefulWidget {
