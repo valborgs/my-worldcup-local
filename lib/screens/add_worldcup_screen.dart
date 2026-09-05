@@ -78,13 +78,16 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                 label: "Confirm Button",
                 child: IconButton(
                   onPressed: () async {
-                    final success = isEditMode
-                        ? await updateWorldCup()
-                        : await addWorldCup();
-                    if (success) {
-                      if (!context.mounted) return;
+                    if (isEditMode) {
+                      final success = await updateWorldCup();
+                      if (!success || !context.mounted) return;
                       Navigator.of(context).pop();
+                      return;
                     }
+
+                    final addedWorldCupIdx = await addWorldCup();
+                    if (addedWorldCupIdx == null || !context.mounted) return;
+                    Navigator.of(context).pop(addedWorldCupIdx);
                   },
                   icon: const Icon(
                     Icons.check_rounded,
@@ -375,15 +378,15 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
   }
 
   // 월드컵 등록
-  Future<bool> addWorldCup() async {
+  Future<int?> addWorldCup() async {
     // 키보드 내리기
     FocusManager.instance.primaryFocus?.unfocus();
     // 제목, 설명 입력 체크
-    if (!_formKey.currentState!.validate()) return false;
+    if (!_formKey.currentState!.validate()) return null;
 
     // 등록된 항목이 없을 경우 체크
     if (_imagePathList.isEmpty || _imagePathList.length < 4) {
-      return false;
+      return null;
     }
 
     // Dao 객체
@@ -399,8 +402,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
         (index) => WorldCupItemModel(
             0, _imagePathList[index], _imageInfoList[index], 0),
       );
-      await dao.addWorldCupWithItems(model, items);
-      return true;
+      return await dao.addWorldCupWithItems(model, items);
     } catch (e) {
       log('DB Error', error: e, name: 'add_worldcup_screen');
       if (mounted) {
@@ -408,7 +410,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
           const SnackBar(content: Text("데이터를 저장할 수 없습니다. 잠시후에 다시 시도해주세요.")),
         );
       }
-      return false;
+      return null;
     }
   }
 

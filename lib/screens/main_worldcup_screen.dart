@@ -163,14 +163,14 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
   }
 
   Future<void> _addWorldCup() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    final addedWorldCupIdx = await Navigator.of(context).push<int>(
+      MaterialPageRoute<int>(
         builder: (context) => const AddWorldCupScreen(),
         fullscreenDialog: true,
       ),
     );
-    if (!mounted) return;
-    await _worldCupListKey.currentState?.refresh();
+    if (!mounted || addedWorldCupIdx == null) return;
+    await _worldCupListKey.currentState?.refreshAndScrollTo(addedWorldCupIdx);
   }
 
   Future<void> _importWorldCup() async {
@@ -194,7 +194,7 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
       final imported = await (widget.packageGateway ?? WorldCupPackageService())
           .importPackage(packagePath);
       if (!mounted) return;
-      await _worldCupListKey.currentState?.refresh();
+      await _worldCupListKey.currentState?.refreshAndScrollTo(imported.idx);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('"${imported.title}" 월드컵을 가져왔습니다.')),
@@ -224,8 +224,9 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
         builder: (context) => NearbyWorldCupReceiveScreen(
           gateway: widget.nearbyGatewayFactory?.call(),
           packageGateway: widget.packageGateway,
-          onImported: (_) async {
-            await _worldCupListKey.currentState?.refresh();
+          onImported: (imported) async {
+            await _worldCupListKey.currentState
+                ?.refreshAndScrollTo(imported.idx);
           },
         ),
         fullscreenDialog: true,
