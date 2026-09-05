@@ -4,39 +4,40 @@ import 'dart:math' hide log;
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:my_worldcup_local/screens/play_worldcup_screen.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../ad/ad_helper.dart';
-import '../api/imgbb_upload.dart';
-import '../api/kakaotalk_feed.dart';
-import '../tools/asset_to_file.dart';
-import '../tools/make_binary_file.dart';
 import '../widgets/auto_scrolling_text.dart';
+import '../di/providers.dart';
 
-class ResultWorldCupScreen extends StatefulWidget {
+class ResultWorldCupScreen extends ConsumerStatefulWidget {
   final WorldCupModel worldCupModel;
   final WorldCupItemModel winnerModel;
   final int round;
-  const ResultWorldCupScreen(this.worldCupModel, this.winnerModel, this.round,
-      {super.key});
+  const ResultWorldCupScreen(
+    this.worldCupModel,
+    this.winnerModel,
+    this.round, {
+    super.key,
+  });
 
   @override
-  State<ResultWorldCupScreen> createState() => _ResultWorldCupScreen();
+  ConsumerState<ResultWorldCupScreen> createState() => _ResultWorldCupScreen();
 }
 
-class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
+class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
   late ConfettiController _confettiController;
   InterstitialAd? _interstitialAd;
 
   @override
   void initState() {
     super.initState();
-    _confettiController =
-        ConfettiController(duration: const Duration(seconds: 5));
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 5),
+    );
     _confettiController.play();
     _loadInterstitialAd();
   }
@@ -50,15 +51,18 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
 
   void _loadInterstitialAd() {
     InterstitialAd.load(
-      adUnitId: AdHelper.interstitialAdUnitId,
+      adUnitId: ref.read(adUnitProvider).interstitialAdUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           _interstitialAd = ad;
         },
         onAdFailedToLoad: (LoadAdError error) {
-          log('InterstitialAd failed to load',
-              error: error, name: 'result_worldcup_screen');
+          log(
+            'InterstitialAd failed to load',
+            error: error,
+            name: 'result_worldcup_screen',
+          );
         },
       ),
     );
@@ -74,8 +78,11 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
           onAdClosed();
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
-          log('Failed to show interstitial ad',
-              error: error, name: 'result_worldcup_screen');
+          log(
+            'Failed to show interstitial ad',
+            error: error,
+            name: 'result_worldcup_screen',
+          );
           ad.dispose();
           _interstitialAd = null;
           _loadInterstitialAd(); // 다음 사용을 위해 새 광고 로드
@@ -149,13 +156,14 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                       children: [
                         Text(
                           "축하합니다!",
-                          style: TextStyle(
-                            fontSize: 22,
-                          ),
+                          style: TextStyle(fontSize: 22),
                           semanticsLabel: "축하 문구",
                         ),
-                        Icon(Icons.auto_awesome,
-                            color: Colors.yellow, semanticLabel: "축하")
+                        Icon(
+                          Icons.auto_awesome,
+                          color: Colors.yellow,
+                          semanticLabel: "축하",
+                        ),
                       ],
                     ),
                   ),
@@ -169,17 +177,17 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                           // 아바타 크기(150dp) 이상으로 디코딩할 필요가 없다.
                           : Image.file(
                               File(widget.winnerModel.imagePath),
-                              cacheWidth: (150 *
-                                      MediaQuery.of(context).devicePixelRatio)
-                                  .round(),
+                              cacheWidth:
+                                  (150 *
+                                          MediaQuery.of(context)
+                                              .devicePixelRatio)
+                                      .round(),
                             ).image,
                     ),
                   ),
                   Text(
                     widget.winnerModel.imageInfo,
-                    style: const TextStyle(
-                      fontSize: 18,
-                    ),
+                    style: const TextStyle(fontSize: 18),
                     semanticsLabel: "우승자 이름",
                   ),
                   const Padding(padding: EdgeInsets.only(top: 30)),
@@ -193,11 +201,15 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                           _showInterstitialAdAndNavigate(_replayGame);
                         },
                         style: const ButtonStyle(
-                            backgroundColor: WidgetStatePropertyAll(Colors.red),
-                            shape: WidgetStatePropertyAll(
-                                RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.all(
-                                        Radius.circular(5.0))))),
+                          backgroundColor: WidgetStatePropertyAll(Colors.red),
+                          shape: WidgetStatePropertyAll(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(5.0),
+                              ),
+                            ),
+                          ),
+                        ),
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -209,11 +221,9 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                             Padding(padding: EdgeInsets.only(right: 10)),
                             Text(
                               '다시 하기',
-                              style: TextStyle(
-                                color: Colors.white,
-                              ),
+                              style: TextStyle(color: Colors.white),
                               semanticsLabel: "다시 하기 버튼",
-                            )
+                            ),
                           ],
                         ),
                       ),
@@ -221,11 +231,12 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
                       // 정식 출시 전까지는 가렸다가 출시 후에 공유 버튼 살리기
                       // 공유 버튼
                       IconButton(
-                          onPressed: () => shareGameWithKakao(),
-                          icon: Image.network(
-                            'https://developers.kakao.com/assets/img/about/logos/kakaotalksharing/kakaotalk_sharing_btn_medium.png',
-                            width: 40,
-                          )),
+                        onPressed: () => shareGameWithKakao(),
+                        icon: Image.network(
+                          'https://developers.kakao.com/assets/img/about/logos/kakaotalksharing/kakaotalk_sharing_btn_medium.png',
+                          width: 40,
+                        ),
+                      ),
                     ],
                   ),
                   // 팡파레 효과
@@ -278,27 +289,34 @@ class _ResultWorldCupScreen extends State<ResultWorldCupScreen> {
 
     try {
       final title = widget.worldCupModel.title;
-      final image = widget.winnerModel.worldCupIdx > 0
-          ? File(widget.winnerModel.imagePath)
-          : await getImageFileFromAssets(widget.winnerModel.imagePath);
-      final binaryFile = base64Encode1(image);
-      final imgUrl = await uploadImage(binaryFile) ?? "";
+      final imgUrl =
+          await ref
+              .read(imageUploadProvider)
+              .uploadItemImage(widget.winnerModel) ??
+          "";
       if (imgUrl.isEmpty) {
         throw StateError('ImgBB did not return an image URL.');
       }
 
       final description =
           '${widget.worldCupModel.title} 우승자 : ${widget.winnerModel.imageInfo}';
-      final playstoreUrl = dotenv.env['playstore_url'] ?? "";
-      final myTemplate =
-          await makeFeedTemplate(title, description, imgUrl, playstoreUrl);
-      final didOpenShare = await sendFeed(myTemplate);
+      final didOpenShare = await ref
+          .read(socialShareProvider)
+          .shareFeed(
+            title: title,
+            description: description,
+            imageUrl: imgUrl,
+            linkUrl: ref.read(playStoreUrlProvider),
+          );
       if (!didOpenShare) {
         throw StateError('Kakao share UI could not be opened.');
       }
     } catch (error) {
-      log('Failed to share result',
-          error: error, name: 'result_worldcup_screen');
+      log(
+        'Failed to share result',
+        error: error,
+        name: 'result_worldcup_screen',
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('공유할 수 없습니다. 잠시 후 다시 시도해주세요.')),

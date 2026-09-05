@@ -7,9 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
+import 'package:worldcup_core/worldcup_core.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
-
-import 'worldcup_package_service.dart';
 
 enum NearbyTransferMode { send, receive }
 
@@ -46,7 +45,7 @@ class NearbyTransferTimeouts {
 class NearbyWorldCupTransferController extends ChangeNotifier {
   final NearbyTransferMode mode;
   final NearbyTransferGateway gateway;
-  final WorldCupPackageGateway packageGateway;
+  final WorldCupPackagePort packageGateway;
   final WorldCupModel? worldCup;
   final Future<void> Function(ImportedWorldCup imported)? onImported;
   final NearbyTransferTimeouts _timeouts;
@@ -80,11 +79,11 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     String Function()? displayNameProvider,
     Future<Directory> Function()? temporaryDirectoryProvider,
     this._timeouts = const NearbyTransferTimeouts(),
-  })  : mode = NearbyTransferMode.send,
-        onImported = null,
-        _temporaryDirectoryProvider =
-            temporaryDirectoryProvider ?? getTemporaryDirectory,
-        _displayName = (displayNameProvider ?? _defaultDisplayName)();
+  }) : mode = NearbyTransferMode.send,
+       onImported = null,
+       _temporaryDirectoryProvider =
+           temporaryDirectoryProvider ?? getTemporaryDirectory,
+       _displayName = (displayNameProvider ?? _defaultDisplayName)();
 
   NearbyWorldCupTransferController.receiver({
     required this.gateway,
@@ -93,11 +92,11 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     String Function()? displayNameProvider,
     Future<Directory> Function()? temporaryDirectoryProvider,
     this._timeouts = const NearbyTransferTimeouts(),
-  })  : mode = NearbyTransferMode.receive,
-        worldCup = null,
-        _temporaryDirectoryProvider =
-            temporaryDirectoryProvider ?? getTemporaryDirectory,
-        _displayName = (displayNameProvider ?? _defaultDisplayName)();
+  }) : mode = NearbyTransferMode.receive,
+       worldCup = null,
+       _temporaryDirectoryProvider =
+           temporaryDirectoryProvider ?? getTemporaryDirectory,
+       _displayName = (displayNameProvider ?? _defaultDisplayName)();
 
   List<NearbyEndpoint> get endpoints =>
       _endpoints.values.toList(growable: false)
@@ -180,10 +179,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     peer = endpoint;
     phase = NearbyTransferPhase.connecting;
     message = '${endpoint.name}에 연결을 요청하고 있습니다.';
-    _armTimeout(
-      _timeouts.connection,
-      '기기 연결 시간이 초과되었습니다. 다시 시도해주세요.',
-    );
+    _armTimeout(_timeouts.connection, '기기 연결 시간이 초과되었습니다. 다시 시도해주세요.');
     _notify();
     try {
       await gateway.requestConnection(
@@ -289,10 +285,10 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
         message = '${endpoint.name}의 인증 코드를 준비하고 있습니다.';
         _armTimeout(_timeouts.connection, '연결 확인 시간이 초과되었습니다. 다시 시도해주세요.');
       case NearbyVerificationCode(
-          :final endpointId,
-          :final endpointName,
-          :final code,
-        ):
+        :final endpointId,
+        :final endpointName,
+        :final code,
+      ):
         if (peer != null && peer!.id != endpointId) return;
         peer = NearbyEndpoint(id: endpointId, name: endpointName);
         verificationCode = code;
@@ -305,10 +301,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
           case NearbyConnectionState.connecting:
             phase = NearbyTransferPhase.connecting;
             message = '안전한 연결을 설정하고 있습니다.';
-            _armTimeout(
-              _timeouts.connection,
-              '기기 연결 시간이 초과되었습니다. 다시 시도해주세요.',
-            );
+            _armTimeout(_timeouts.connection, '기기 연결 시간이 초과되었습니다. 다시 시도해주세요.');
           case NearbyConnectionState.connected:
             phase = NearbyTransferPhase.connected;
             message = '${peer?.name ?? '상대 기기'}와 연결되었습니다.';
@@ -325,7 +318,8 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
             unawaited(_deleteOutgoingPackage());
             unawaited(_cleanupNative());
           case NearbyConnectionState.disconnected:
-            final canFinishReceivedFile = mode == NearbyTransferMode.receive &&
+            final canFinishReceivedFile =
+                mode == NearbyTransferMode.receive &&
                 (_receivingPayloadStarted ||
                     _receivedPayloadComplete ||
                     phase == NearbyTransferPhase.importing);
@@ -344,10 +338,10 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
             }
         }
       case NearbyTransferProgress(
-          :final direction,
-          :final status,
-          :final fraction,
-        ):
+        :final direction,
+        :final status,
+        :final fraction,
+      ):
         final expectedDirection = mode == NearbyTransferMode.send
             ? NearbyTransferDirection.sending
             : NearbyTransferDirection.receiving;
@@ -418,7 +412,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     _armTimeout(_timeouts.preparation, '공유 파일 준비 시간이 초과되었습니다. 다시 시도해주세요.');
     _notify();
     try {
-      final package = await packageGateway.createPackage(worldCup!);
+      final package = File(await packageGateway.createPackage(worldCup!));
       if (_disposed || finished) {
         if (await package.exists()) await package.delete();
         return;
@@ -432,7 +426,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
       await gateway.sendFile(
         endpointId: peer!.id,
         path: package.path,
-        name: '${worldCup!.title}.${WorldCupPackageService.fileExtension}',
+        name: '${worldCup!.title}.${WorldCupPackageFormat.fileExtension}',
       );
       if (finished) await _cleanupNative(cancelTransfer: true);
     } catch (error) {
@@ -456,7 +450,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
           !await sourceFile.absolute.exists() ||
           await sourceFile.length() != expectedSize ||
           expectedSize <= 0) {
-        throw const WorldCupPackageException('수신 파일이 완전히 저장되지 않았습니다.');
+        throw const PackageFailure('수신 파일이 완전히 저장되지 않았습니다.');
       }
       importFile = await _takeOwnershipOfReceivedFile(sourceFile);
       if (_disposed) return;
@@ -497,7 +491,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
   }
 
   String _messageFor(Object error, {bool importFailure = false}) {
-    if (error is WorldCupPackageException) return error.message;
+    if (error is Failure) return error.message;
     if (error is PlatformException && error.message?.isNotEmpty == true) {
       return error.message!;
     }
@@ -546,7 +540,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     final destination = File(
       path.join(
         importDirectory.path,
-        '${DateTime.now().microsecondsSinceEpoch}_${math.Random.secure().nextInt(1 << 32)}.${WorldCupPackageService.fileExtension}',
+        '${DateTime.now().microsecondsSinceEpoch}_${math.Random.secure().nextInt(1 << 32)}.${WorldCupPackageFormat.fileExtension}',
       ),
     );
     try {

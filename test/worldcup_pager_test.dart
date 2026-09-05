@@ -2,9 +2,9 @@ import 'dart:ui' show SemanticsAction;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_worldcup_local/dto/worldcup_dao.dart';
 import 'package:my_worldcup_local/widgets/worldcup_list.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   Widget buildPager({
@@ -33,7 +33,7 @@ void main() {
   }
 
   testWidgets('빈 목록이면 PageView를 만들지 않는다', (tester) async {
-    await tester.pumpWidget(buildPager(items: const []));
+    await tester.pumpWidget(ProviderScope(child: buildPager(items: const [])));
 
     expect(find.byType(PageView), findsNothing);
   });
@@ -42,10 +42,12 @@ void main() {
     var currentPage = 0;
     int? tappedIndex;
     await tester.pumpWidget(
-      buildPager(
-        items: const ['A', 'B', 'C'],
-        onPageChanged: (index) => currentPage = index,
-        onCurrentItemTap: (index) => tappedIndex = index,
+      ProviderScope(
+        child: buildPager(
+          items: const ['A', 'B', 'C'],
+          onPageChanged: (index) => currentPage = index,
+          onCurrentItemTap: (index) => tappedIndex = index,
+        ),
       ),
     );
 
@@ -63,7 +65,9 @@ void main() {
 
   testWidgets('현재 항목의 식별자를 유지하며 삭제 후 페이지를 보정한다', (tester) async {
     final hostKey = GlobalKey<_MutablePagerHostState>();
-    await tester.pumpWidget(_MutablePagerHost(key: hostKey));
+    await tester.pumpWidget(
+      ProviderScope(child: _MutablePagerHost(key: hostKey)),
+    );
     expect(find.bySemanticsLabel('월드컵 2 / 3'), findsOneWidget);
 
     hostKey.currentState!.removeFirst();
@@ -75,10 +79,12 @@ void main() {
   testWidgets('현재 마지막 항목 삭제 후 남은 카드를 중앙에 표시한다', (tester) async {
     final hostKey = GlobalKey<_MutablePagerHostState>();
     await tester.pumpWidget(
-      _MutablePagerHost(
-        key: hostKey,
-        initialItems: const ['A', 'B'],
-        initialPage: 1,
+      ProviderScope(
+        child: _MutablePagerHost(
+          key: hostKey,
+          initialItems: const ['A', 'B'],
+          initialPage: 1,
+        ),
       ),
     );
 
@@ -94,7 +100,9 @@ void main() {
 
   testWidgets('현재 카드에 접근성 탭 액션을 제공한다', (tester) async {
     final handle = tester.ensureSemantics();
-    await tester.pumpWidget(buildPager(items: const ['A', 'B']));
+    await tester.pumpWidget(
+      ProviderScope(child: buildPager(items: const ['A', 'B'])),
+    );
 
     final semantics = tester.getSemantics(find.bySemanticsLabel('월드컵 1 / 2'));
     final data = semantics.getSemanticsData();
@@ -108,16 +116,18 @@ void main() {
     final dao = _FakeWorldCupDao(_models(20));
     final listKey = GlobalKey<WorldCupListState>();
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Column(
-            children: [
-              WorldCupList(
-                key: listKey,
-                dao: dao,
-                enableBottomSheetSelectionPagerTransition: true,
-              ),
-            ],
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                WorldCupList(
+                  key: listKey,
+                  repository: dao,
+                  enableBottomSheetSelectionPagerTransition: true,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -132,44 +142,52 @@ void main() {
       await tester.pumpAndSettle();
     }
     expect(
-        find.bySemanticsLabel('Game 10, 최대 라운드 4강, 10 / 20'), findsOneWidget);
+      find.bySemanticsLabel('Game 10, 최대 라운드 4강, 10 / 20'),
+      findsOneWidget,
+    );
 
-    dao.items = _models(21);
+    dao.models = _models(21);
     await listKey.currentState!.refresh();
     await tester.pumpAndSettle();
 
     expect(
-        find.bySemanticsLabel('Game 10, 최대 라운드 4강, 10 / 21'), findsOneWidget);
+      find.bySemanticsLabel('Game 10, 최대 라운드 4강, 10 / 21'),
+      findsOneWidget,
+    );
     await tester.drag(
       find.byKey(const ValueKey('worldCupPager')),
       const Offset(-500, 0),
     );
     await tester.pumpAndSettle();
     expect(
-        find.bySemanticsLabel('Game 11, 최대 라운드 4강, 11 / 21'), findsOneWidget);
+      find.bySemanticsLabel('Game 11, 최대 라운드 4강, 11 / 21'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('추가된 월드컵이 현재 로드 범위 밖이어도 해당 페이지로 이동한다', (tester) async {
     final dao = _FakeWorldCupDao(_models(20));
     final listKey = GlobalKey<WorldCupListState>();
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Column(
-            children: [
-              WorldCupList(
-                key: listKey,
-                dao: dao,
-                enableBottomSheetSelectionPagerTransition: true,
-              ),
-            ],
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                WorldCupList(
+                  key: listKey,
+                  repository: dao,
+                  enableBottomSheetSelectionPagerTransition: true,
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    dao.items = _models(21);
+    dao.models = _models(21);
     await listKey.currentState!.refreshAndScrollTo(21);
     await tester.pumpAndSettle();
 
@@ -178,7 +196,9 @@ void main() {
     final pageView = tester.widget<PageView>(find.byType(PageView));
     expect(pageView.controller!.page, 9);
     expect(
-        find.bySemanticsLabel('Game 21, 최대 라운드 4강, 21 / 21'), findsOneWidget);
+      find.bySemanticsLabel('Game 21, 최대 라운드 4강, 21 / 21'),
+      findsOneWidget,
+    );
 
     await tester.drag(
       find.byKey(const ValueKey('worldCupPager')),
@@ -186,23 +206,27 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(
-        find.bySemanticsLabel('Game 20, 최대 라운드 4강, 20 / 21'), findsOneWidget);
+      find.bySemanticsLabel('Game 20, 최대 라운드 4강, 20 / 21'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('현재 로드 범위의 월드컵으로 이동할 때 애니메이션을 유지한다', (tester) async {
     final dao = _FakeWorldCupDao(_models(10));
     final listKey = GlobalKey<WorldCupListState>();
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Column(
-            children: [
-              WorldCupList(
-                key: listKey,
-                dao: dao,
-                enableBottomSheetSelectionPagerTransition: true,
-              ),
-            ],
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                WorldCupList(
+                  key: listKey,
+                  repository: dao,
+                  enableBottomSheetSelectionPagerTransition: true,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -224,21 +248,22 @@ void main() {
     expect(pageView.controller!.page, 3);
   });
 
-  testWidgets('뒤쪽 창의 앞 카드로 애니메이션한 뒤에도 선택 항목을 유지한다',
-      (tester) async {
+  testWidgets('뒤쪽 창의 앞 카드로 애니메이션한 뒤에도 선택 항목을 유지한다', (tester) async {
     final dao = _FakeWorldCupDao(_models(15));
     final listKey = GlobalKey<WorldCupListState>();
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Column(
-            children: [
-              WorldCupList(
-                key: listKey,
-                dao: dao,
-                enableBottomSheetSelectionPagerTransition: true,
-              ),
-            ],
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                WorldCupList(
+                  key: listKey,
+                  repository: dao,
+                  enableBottomSheetSelectionPagerTransition: true,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -248,7 +273,9 @@ void main() {
     await listKey.currentState!.refreshAndScrollTo(15);
     await tester.pumpAndSettle();
     expect(
-        find.bySemanticsLabel('Game 15, 최대 라운드 4강, 15 / 15'), findsOneWidget);
+      find.bySemanticsLabel('Game 15, 최대 라운드 4강, 15 / 15'),
+      findsOneWidget,
+    );
 
     final navigation = listKey.currentState!.refreshAndScrollTo(6);
     await tester.pump();
@@ -259,25 +286,25 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(listKey.currentState!.worldCupList.first.idx, 1);
-    expect(
-        find.bySemanticsLabel('Game 6, 최대 라운드 4강, 6 / 15'), findsOneWidget);
+    expect(find.bySemanticsLabel('Game 6, 최대 라운드 4강, 6 / 15'), findsOneWidget);
   });
 
-  testWidgets('첫 페이지를 공유하는 새로고침은 가장 큰 범위를 한 번만 조회한다',
-      (tester) async {
+  testWidgets('첫 페이지를 공유하는 새로고침은 가장 큰 범위를 한 번만 조회한다', (tester) async {
     final dao = _FakeWorldCupDao(_models(30));
     final listKey = GlobalKey<WorldCupListState>();
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Column(
-            children: [
-              WorldCupList(
-                key: listKey,
-                dao: dao,
-                enableBottomSheetSelectionPagerTransition: true,
-              ),
-            ],
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                WorldCupList(
+                  key: listKey,
+                  repository: dao,
+                  enableBottomSheetSelectionPagerTransition: true,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -298,16 +325,18 @@ void main() {
     final dao = _FakeWorldCupDao(_models(200));
     final listKey = GlobalKey<WorldCupListState>();
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Column(
-            children: [
-              WorldCupList(
-                key: listKey,
-                dao: dao,
-                enableBottomSheetSelectionPagerTransition: true,
-              ),
-            ],
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                WorldCupList(
+                  key: listKey,
+                  repository: dao,
+                  enableBottomSheetSelectionPagerTransition: true,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -326,23 +355,25 @@ void main() {
     final dao = _FakeWorldCupDao(_models(31));
     final listKey = GlobalKey<WorldCupListState>();
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Column(
-            children: [
-              WorldCupList(
-                key: listKey,
-                dao: dao,
-                enableBottomSheetSelectionPagerTransition: true,
-              ),
-            ],
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                WorldCupList(
+                  key: listKey,
+                  repository: dao,
+                  enableBottomSheetSelectionPagerTransition: true,
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    dao.items = _models(32);
+    dao.models = _models(32);
     await listKey.currentState!.refreshAndScrollTo(32);
     await tester.pumpAndSettle();
 
@@ -355,53 +386,67 @@ void main() {
     }
 
     expect(
-        find.bySemanticsLabel('Game 25, 최대 라운드 4강, 25 / 32'), findsOneWidget);
+      find.bySemanticsLabel('Game 25, 최대 라운드 4강, 25 / 32'),
+      findsOneWidget,
+    );
     await tester.drag(
       find.byKey(const ValueKey('worldCupPager')),
       const Offset(500, 0),
     );
     await tester.pumpAndSettle();
     expect(
-        find.bySemanticsLabel('Game 24, 최대 라운드 4강, 24 / 32'), findsOneWidget);
+      find.bySemanticsLabel('Game 24, 최대 라운드 4강, 24 / 32'),
+      findsOneWidget,
+    );
   });
 }
 
 List<WorldCupModel> _models(int count) => List.generate(
-      count,
-      (index) => WorldCupModel(
-        index + 1,
-        'Game ${index + 1}',
-        '',
-        DateTime(2026),
-        '',
-        4,
-      ),
-    );
+  count,
+  (index) =>
+      WorldCupModel(index + 1, 'Game ${index + 1}', '', DateTime(2026), '', 4),
+);
 
-class _FakeWorldCupDao extends WorldCupDao {
-  List<WorldCupModel> items;
+class _FakeWorldCupDao implements WorldCupRepository {
+  // WorldCupRepository.items(int)와 이름이 겹치지 않도록 models로 둔다.
+  List<WorldCupModel> models;
   final List<int> requestedLimits = [];
   final List<int> requestedOffsets = [];
 
-  _FakeWorldCupDao(this.items);
+  _FakeWorldCupDao(this.models);
 
   @override
-  Future<int> getWorldCupCount({String searchQuery = ''}) async => items.length;
+  Future<int> count({String searchQuery = ''}) async => models.length;
 
   @override
-  Future<List<WorldCupModel>> getWorldCupPage({
+  Future<List<WorldCupModel>> page({
     required int limit,
     required int offset,
     String searchQuery = '',
   }) async {
     requestedLimits.add(limit);
     requestedOffsets.add(offset);
-    return items.skip(offset).take(limit).toList();
+    return models.skip(offset).take(limit).toList();
   }
 
   @override
-  Future<int> getWorldCupIndex(int idx) async =>
-      items.where((item) => item.idx < idx).length;
+  Future<int> indexOf(int idx) async =>
+      models.where((item) => item.idx < idx).length;
+
+  // 페이저 테스트에서 쓰지 않는 나머지 멤버.
+  @override
+  Future<List<WorldCupItemModel>> items(int worldCupIdx) async => const [];
+
+  @override
+  Future<int> add(WorldCupModel model, List<WorldCupItemModel> items) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> update(WorldCupModel model, List<WorldCupItemModel> items) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> delete(int idx) => throw UnimplementedError();
 }
 
 class _MutablePagerHost extends StatefulWidget {

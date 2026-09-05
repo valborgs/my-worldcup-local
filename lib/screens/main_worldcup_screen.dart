@@ -2,24 +2,27 @@ import 'dart:developer';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:my_worldcup_local/screens/help_screen.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../ad/ad_helper.dart';
-import '../services/worldcup_package_service.dart';
 import '../widgets/worldcup_action_menu_button.dart';
 import '../widgets/worldcup_list.dart';
 import 'add_worldcup_screen.dart';
 import 'nearby_worldcup_transfer_screen.dart';
 
-class MainWorldCupScreen extends StatefulWidget {
+import 'package:worldcup_core/worldcup_core.dart';
+
+import '../di/providers.dart';
+
+class MainWorldCupScreen extends ConsumerStatefulWidget {
   final List<WorldCupModel>? initialWorldCupList;
   final bool enableBottomSheetSelectionPagerTransition;
   final NearbyTransferGateway Function()? nearbyGatewayFactory;
-  final WorldCupPackageGateway? packageGateway;
+  final WorldCupPackagePort? packageGateway;
 
   const MainWorldCupScreen({
     this.initialWorldCupList,
@@ -30,10 +33,10 @@ class MainWorldCupScreen extends StatefulWidget {
   });
 
   @override
-  State<MainWorldCupScreen> createState() => _MainWorldCupScreenState();
+  ConsumerState<MainWorldCupScreen> createState() => _MainWorldCupScreenState();
 }
 
-class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
+class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
   late String admobBannerId;
   BannerAd? _bannerAd;
   final _worldCupListKey = GlobalKey<WorldCupListState>();
@@ -85,10 +88,7 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
               ),
             ),
           ),
-          title: const Text(
-            "내가 만든 월드컵",
-            semanticsLabel: "내가 만든 월드컵 화면",
-          ),
+          title: const Text("내가 만든 월드컵", semanticsLabel: "내가 만든 월드컵 화면"),
           actions: [
             WorldCupActionMenuButton(
               isBusy: _isImporting,
@@ -134,9 +134,7 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('앱 종료'),
-          content: const Text(
-            '내가 만든 월드컵을 종료하시겠습니까?',
-          ),
+          content: const Text('내가 만든 월드컵을 종료하시겠습니까?'),
           actions: <Widget>[
             TextButton(
               style: TextButton.styleFrom(
@@ -176,23 +174,23 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
   Future<void> _importWorldCup() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: const [WorldCupPackageService.fileExtension],
+      allowedExtensions: const [WorldCupPackageFormat.fileExtension],
       allowMultiple: false,
     );
     if (!mounted || result == null || result.files.isEmpty) return;
 
     final packagePath = result.files.single.path;
     if (packagePath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('선택한 파일을 읽을 수 없습니다.')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('선택한 파일을 읽을 수 없습니다.')));
       return;
     }
 
     setState(() => _isImporting = true);
     try {
-      final imported = await (widget.packageGateway ?? WorldCupPackageService())
-          .importPackage(packagePath);
+      final WorldCupPackagePort packagePort =
+          widget.packageGateway ?? ref.read(worldCupPackageProvider);
+      final imported = await packagePort.importPackage(packagePath);
       if (!mounted) return;
       await _worldCupListKey.currentState?.refreshAndScrollTo(imported.idx);
       if (!mounted) return;
@@ -207,12 +205,11 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
         name: 'main_worldcup_screen',
       );
       if (!mounted) return;
-      final message = error is WorldCupPackageException
+      final message = error is Failure
           ? error.message
           : '월드컵을 가져올 수 없습니다. 잠시 후 다시 시도해주세요.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _isImporting = false);
     }
@@ -225,8 +222,9 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
           gateway: widget.nearbyGatewayFactory?.call(),
           packageGateway: widget.packageGateway,
           onImported: (imported) async {
-            await _worldCupListKey.currentState
-                ?.refreshAndScrollTo(imported.idx);
+            await _worldCupListKey.currentState?.refreshAndScrollTo(
+              imported.idx,
+            );
           },
         ),
         fullscreenDialog: true,
@@ -237,19 +235,22 @@ class _MainWorldCupScreenState extends State<MainWorldCupScreen> {
   void setAdmob() async {
     // admob 셋팅
     BannerAd(
-      adUnitId: AdHelper.bannerAdUnitId,
+      adUnitId: ref.read(adUnitProvider).bannerAdUnitId,
       request: const AdRequest(),
       size: AdSize.banner,
-      listener: BannerAdListener(onAdLoaded: (ad) {
-        setState(() {
-          // 광고가 로드되면 아래의 코드를 실행한다.
-          _bannerAd = ad as BannerAd;
-        });
-      }, onAdFailedToLoad: (ad, error) {
-        // 광고 로드가 실패하면 아래의 코드를 실행한다.
-        log(error.message, name: 'main_worldcup_screen');
-        ad.dispose();
-      }),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          setState(() {
+            // 광고가 로드되면 아래의 코드를 실행한다.
+            _bannerAd = ad as BannerAd;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          // 광고 로드가 실패하면 아래의 코드를 실행한다.
+          log(error.message, name: 'main_worldcup_screen');
+          ad.dispose();
+        },
+      ),
     ).load();
   }
 }

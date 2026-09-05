@@ -1,20 +1,23 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../dto/worldcup_dao.dart';
 import '../screens/play_worldcup_screen.dart';
 import '../screens/add_worldcup_screen.dart';
 import '../screens/nearby_worldcup_transfer_screen.dart';
-import '../services/worldcup_package_service.dart';
 import 'outlined_icon_button.dart';
 
-class WorldCupSelectDialog extends StatefulWidget {
+import 'package:worldcup_core/worldcup_core.dart';
+
+import '../di/providers.dart';
+
+class WorldCupSelectDialog extends ConsumerStatefulWidget {
   final WorldCupModel model;
   final VoidCallback onChanged;
-  final WorldCupPackageGateway? packageGateway;
+  final WorldCupPackagePort? packageGateway;
   final NearbyTransferGateway Function()? nearbyGatewayFactory;
 
   const WorldCupSelectDialog(
@@ -26,10 +29,11 @@ class WorldCupSelectDialog extends StatefulWidget {
   });
 
   @override
-  State<WorldCupSelectDialog> createState() => _WorldCupSelectDialogState();
+  ConsumerState<WorldCupSelectDialog> createState() =>
+      _WorldCupSelectDialogState();
 }
 
-class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
+class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
   late int _selectedRound;
   bool _isSharing = false;
 
@@ -43,36 +47,32 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       scrollable: true,
-      title: Text(
-        widget.model.title,
-        semanticsLabel: "월드컵 제목",
-      ),
-      content: Text(
-        widget.model.info,
-        semanticsLabel: "월드컵 설명",
-      ),
+      title: Text(widget.model.title, semanticsLabel: "월드컵 제목"),
+      content: Text(widget.model.info, semanticsLabel: "월드컵 설명"),
       actions: [
         Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              "- 라운드 수를 선택해주세요- ",
-              textAlign: TextAlign.center,
-            ),
+            const Text("- 라운드 수를 선택해주세요- ", textAlign: TextAlign.center),
             const SizedBox(height: 5),
             Center(
               child: DropdownMenu(
-                initialSelection: TournamentRounds.defaultRound(widget.model.maxRound),
+                initialSelection: TournamentRounds.defaultRound(
+                  widget.model.maxRound,
+                ),
                 menuStyle: const MenuStyle(
-                    padding: WidgetStatePropertyAll(EdgeInsets.all(0))),
-                dropdownMenuEntries: TournamentRounds.available(widget.model.maxRound)
-                    .map<DropdownMenuEntry<int>>((int value) {
-                  return DropdownMenuEntry<int>(
-                    value: value,
-                    label: '$value 강',
-                  );
-                }).toList(),
+                  padding: WidgetStatePropertyAll(EdgeInsets.all(0)),
+                ),
+                dropdownMenuEntries:
+                    TournamentRounds.available(widget.model.maxRound)
+                        .map<DropdownMenuEntry<int>>((int value) {
+                          return DropdownMenuEntry<int>(
+                            value: value,
+                            label: '$value 강',
+                          );
+                        })
+                        .toList(),
                 onSelected: (value) {
                   if (value != null) _selectedRound = value;
                 },
@@ -92,10 +92,8 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
                   onPressed: () {
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(
-                        builder: (context) => PlayWorldCupScreen(
-                          widget.model,
-                          _selectedRound,
-                        ),
+                        builder: (context) =>
+                            PlayWorldCupScreen(widget.model, _selectedRound),
                       ),
                     );
                   },
@@ -125,6 +123,7 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
                   onPressed: () {
                     deleteWorldCup(
                       context,
+                      ref.read(worldCupRepositoryProvider),
                       widget.model.idx,
                       widget.onChanged,
                     );
@@ -217,11 +216,20 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
   }
 
   Future<void> _shareWorldCup(Rect? sharePositionOrigin) async {
+    final WorldCupPackagePort packagePort =
+        widget.packageGateway ?? ref.read(worldCupPackageProvider);
     setState(() => _isSharing = true);
     try {
-      await (widget.packageGateway ?? WorldCupPackageService()).shareWorldCup(
+      await packagePort.share(
         widget.model,
-        sharePositionOrigin: sharePositionOrigin,
+        origin: sharePositionOrigin == null
+            ? null
+            : ShareOrigin(
+                left: sharePositionOrigin.left,
+                top: sharePositionOrigin.top,
+                width: sharePositionOrigin.width,
+                height: sharePositionOrigin.height,
+              ),
       );
     } catch (error, stackTrace) {
       log(
@@ -231,12 +239,11 @@ class _WorldCupSelectDialogState extends State<WorldCupSelectDialog> {
         name: 'worldcup_select_dialog',
       );
       if (!mounted) return;
-      final message = error is WorldCupPackageException
+      final message = error is Failure
           ? error.message
           : '월드컵을 공유할 수 없습니다. 잠시 후 다시 시도해주세요.';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _isSharing = false);
     }
@@ -248,17 +255,17 @@ enum _ShareChoice { nearby, otherApp }
 // 월드컵 삭제
 Future<void> deleteWorldCup(
   BuildContext context,
+  WorldCupRepository dao,
   int idx,
   VoidCallback onChanged,
 ) async {
-  final dao = WorldCupDao();
-
   try {
-    await dao.deleteWorldCup(idx);
+    await dao.delete(idx);
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("데이터를 삭제할 수 없습니다. 잠시후에 다시 시도해주세요.")));
+      const SnackBar(content: Text("데이터를 삭제할 수 없습니다. 잠시후에 다시 시도해주세요.")),
+    );
     return;
   }
 

@@ -4,15 +4,13 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 ///
 /// 엔티티는 저장 방식을 알아서는 안 되므로, 예전에 모델에 있던
 /// `toMap()` / `fromDB()`를 이 매퍼로 분리했다.
-///
-/// TODO(phase2): worldcup_data 패키지로 옮길 것.
 extension WorldCupRow on WorldCupModel {
   /// `worldcup_table`에 넣을 row.
   ///
   /// `idx`는 음수일 때(샘플 월드컵)만 넣는다. 사용자가 만든 월드컵은
   /// AUTOINCREMENT에 맡긴다.
-  Map<String, dynamic> toRow() {
-    return <String, dynamic>{
+  Map<String, Object?> toRow() {
+    return <String, Object?>{
       if (idx < 0) 'idx': idx,
       'title': title,
       'info': info,
@@ -25,7 +23,7 @@ extension WorldCupRow on WorldCupModel {
 }
 
 /// `worldcup_table` row를 엔티티로.
-WorldCupModel worldCupFromRow(Map<String, dynamic> row) {
+WorldCupModel worldCupFromRow(Map<String, Object?> row) {
   return WorldCupModel(
     row['idx'] as int,
     row['title'] as String,
@@ -38,8 +36,8 @@ WorldCupModel worldCupFromRow(Map<String, dynamic> row) {
 
 extension WorldCupItemRow on WorldCupItemModel {
   /// `worldcup_item_table`에 넣을 row. `idx`는 항상 AUTOINCREMENT에 맡긴다.
-  Map<String, dynamic> toRow() {
-    return <String, dynamic>{
+  Map<String, Object?> toRow() {
+    return <String, Object?>{
       'imagePath': imagePath,
       'imageInfo': imageInfo,
       'worldCupIdx': worldCupIdx,
@@ -48,7 +46,7 @@ extension WorldCupItemRow on WorldCupItemModel {
 }
 
 /// `worldcup_item_table` row를 엔티티로.
-WorldCupItemModel worldCupItemFromRow(Map<String, dynamic> row) {
+WorldCupItemModel worldCupItemFromRow(Map<String, Object?> row) {
   return WorldCupItemModel(
     row['idx'] as int,
     row['imagePath'] as String,

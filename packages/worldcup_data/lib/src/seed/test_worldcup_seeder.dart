@@ -1,11 +1,15 @@
-import 'package:my_worldcup_local/db/sqlite.dart';
+import '../database/app_database.dart';
 
 /// 무한 스크롤 UI를 확인하기 위한 개발 전용 테스트 데이터 생성기입니다.
 ///
 /// 테스트 데이터가 더 이상 필요하지 않으면 `main.dart`의 호출과 이 파일만
 /// 삭제하면 됩니다. 사용 범위가 분리되어 있어 사용자가 만든 데이터에는
 /// 영향을 주지 않습니다.
-abstract final class TestWorldCupSeeder {
+class TestWorldCupSeeder {
+  final AppDatabase _db;
+
+  const TestWorldCupSeeder(this._db);
+
   static const int _firstWorldCupIdx = -1019;
   static const int _lastWorldCupIdx = -1000;
   static const int _worldCupCount = 20;
@@ -18,23 +22,23 @@ abstract final class TestWorldCupSeeder {
   ];
 
   /// 기존 테스트 데이터만 제거한 뒤 20개를 다시 생성합니다.
-  static Future<void> seed() async {
-    final db = await SqliteProvider().database;
+  Future<void> seed() async {
+    final db = await _db.database;
     await db.transaction((txn) async {
       await txn.delete(
-        'worldcup_item_table',
+        AppDatabase.worldCupItemTable,
         where: 'worldCupIdx BETWEEN ? AND ?',
         whereArgs: [_firstWorldCupIdx, _lastWorldCupIdx],
       );
       await txn.delete(
-        'worldcup_table',
+        AppDatabase.worldCupTable,
         where: 'idx BETWEEN ? AND ?',
         whereArgs: [_firstWorldCupIdx, _lastWorldCupIdx],
       );
 
       for (var index = 0; index < _worldCupCount; index++) {
         final worldCupIdx = _lastWorldCupIdx - index;
-        await txn.insert('worldcup_table', {
+        await txn.insert(AppDatabase.worldCupTable, {
           'idx': worldCupIdx,
           'title': '페이징 테스트 월드컵 ${index + 1}',
           'info': '10개 단위 무한 스크롤 테스트 데이터',
@@ -44,10 +48,8 @@ abstract final class TestWorldCupSeeder {
         });
 
         final batch = txn.batch();
-        for (var itemIndex = 0;
-            itemIndex < _sampleImages.length;
-            itemIndex++) {
-          batch.insert('worldcup_item_table', {
+        for (var itemIndex = 0; itemIndex < _sampleImages.length; itemIndex++) {
+          batch.insert(AppDatabase.worldCupItemTable, {
             'imagePath': _sampleImages[itemIndex],
             'imageInfo': '테스트 후보 ${itemIndex + 1}',
             'worldCupIdx': worldCupIdx,

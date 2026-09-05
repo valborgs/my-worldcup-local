@@ -68,6 +68,8 @@ dependencies:
     path: packages/worldcup_core
   worldcup_domain:
     path: packages/worldcup_domain
+  worldcup_data:
+    path: packages/worldcup_data
   flutter_riverpod: ^3.0.0 # DI + 상태관리
   flutter:
     sdk: flutter
@@ -113,6 +115,9 @@ flutter:
   assets:
     - assets/images/
     - assets/icon/
+    # 디렉터리 항목은 재귀적이지 않다. 하위 폴더는 따로 적어야 하고,
+    # assets/sample/ 은 그 폴더에 바로 있는 sample_worldcups.json을 담는다.
+    - assets/sample/
     - assets/sample/female/
     - assets/sample/male/
     - .env

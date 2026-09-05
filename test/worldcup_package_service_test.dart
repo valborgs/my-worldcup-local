@@ -3,16 +3,17 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_worldcup_local/dto/worldcup_dao.dart';
-import 'package:my_worldcup_local/services/worldcup_package_service.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
+import 'package:worldcup_data/worldcup_data.dart';
+import 'package:worldcup_core/worldcup_core.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('월드컵 정보와 이미지를 패키지로 내보낸 뒤 새 월드컵으로 복원한다', () async {
-    final testDirectory =
-        await Directory.systemTemp.createTemp('my_worldcup_package_test_');
+    final testDirectory = await Directory.systemTemp.createTemp(
+      'my_worldcup_package_test_',
+    );
     addTearDown(() async {
       if (await testDirectory.exists()) {
         await testDirectory.delete(recursive: true);
@@ -32,12 +33,7 @@ void main() {
         '아현',
         10,
       ),
-      const WorldCupItemModel(
-        3,
-        'assets/sample/female/chu.jpg',
-        '츄',
-        10,
-      ),
+      const WorldCupItemModel(3, 'assets/sample/female/chu.jpg', '츄', 10),
       const WorldCupItemModel(
         4,
         'assets/sample/female/idle_miyeon.jpg',
@@ -54,25 +50,27 @@ void main() {
       sourceItems.length,
     );
     final dao = _FakeWorldCupDao(sourceItems);
-    final service = WorldCupPackageService(
-      dao: dao,
+    final service = WorldCupPackageRepository(
+      repository: dao,
       temporaryDirectoryProvider: () async => testDirectory,
       documentsDirectoryProvider: () async => testDirectory,
     );
 
-    final packageFile = await service.createPackage(sourceModel);
-    final imported = await service.importPackage(packageFile.path);
+    final packagePath = await service.createPackage(sourceModel);
+    final imported = await service.importPackage(packagePath);
 
-    expect(packageFile.path, endsWith('.myworldcup'));
-    expect(await packageFile.length(), greaterThan(0));
+    expect(packagePath, endsWith('.myworldcup'));
+    expect(await File(packagePath).length(), greaterThan(0));
     expect(imported.idx, 77);
     expect(imported.title, sourceModel.title);
     expect(dao.addedModel.title, sourceModel.title);
     expect(dao.addedModel.info, sourceModel.info);
     expect(dao.addedModel.date, sourceModel.date);
     expect(dao.addedModel.maxRound, sourceItems.length);
-    expect(dao.addedItems.map((item) => item.imageInfo),
-        sourceItems.map((item) => item.imageInfo));
+    expect(
+      dao.addedItems.map((item) => item.imageInfo),
+      sourceItems.map((item) => item.imageInfo),
+    );
     expect(
       dao.addedModel.titleImageSrc,
       dao.addedItems[1].imagePath,
@@ -85,8 +83,9 @@ void main() {
   });
 
   test('manifest의 maxRound가 항목 수와 다르면 가져오기를 거부한다', () async {
-    final testDirectory =
-        await Directory.systemTemp.createTemp('my_worldcup_manifest_test_');
+    final testDirectory = await Directory.systemTemp.createTemp(
+      'my_worldcup_manifest_test_',
+    );
     addTearDown(() async {
       if (await testDirectory.exists()) {
         await testDirectory.delete(recursive: true);
@@ -107,7 +106,7 @@ void main() {
     await expectLater(
       service.importPackage(package.path),
       throwsA(
-        isA<WorldCupPackageException>().having(
+        isA<PackageFailure>().having(
           (error) => error.message,
           'message',
           '월드컵 정보가 손상되었습니다.',
@@ -117,8 +116,9 @@ void main() {
   });
 
   test('여러 항목이 같은 이미지 archive 경로를 참조하면 명시적으로 거부한다', () async {
-    final testDirectory =
-        await Directory.systemTemp.createTemp('my_worldcup_duplicate_test_');
+    final testDirectory = await Directory.systemTemp.createTemp(
+      'my_worldcup_duplicate_test_',
+    );
     addTearDown(() async {
       if (await testDirectory.exists()) {
         await testDirectory.delete(recursive: true);
@@ -139,7 +139,7 @@ void main() {
     await expectLater(
       service.importPackage(package.path),
       throwsA(
-        isA<WorldCupPackageException>().having(
+        isA<PackageFailure>().having(
           (error) => error.message,
           'message',
           '중복된 이미지 리소스 경로가 포함되었습니다.',
@@ -149,9 +149,9 @@ void main() {
   });
 }
 
-WorldCupPackageService _importService(Directory directory) {
-  return WorldCupPackageService(
-    dao: _FakeWorldCupDao(const []),
+WorldCupPackageRepository _importService(Directory directory) {
+  return WorldCupPackageRepository(
+    repository: _FakeWorldCupDao(const []),
     temporaryDirectoryProvider: () async => directory,
     documentsDirectoryProvider: () async => directory,
   );
@@ -187,7 +187,7 @@ Future<File> _writePackage(
   return package;
 }
 
-class _FakeWorldCupDao extends WorldCupDao {
+class _FakeWorldCupDao implements WorldCupRepository {
   final List<WorldCupItemModel> sourceItems;
   late WorldCupModel addedModel;
   late List<WorldCupItemModel> addedItems;
@@ -195,17 +195,35 @@ class _FakeWorldCupDao extends WorldCupDao {
   _FakeWorldCupDao(this.sourceItems);
 
   @override
-  Future<List<WorldCupItemModel>> getWorldCupItemList(int worldCupIdx) async {
+  Future<List<WorldCupItemModel>> items(int worldCupIdx) async {
     return sourceItems;
   }
 
   @override
-  Future<int> addWorldCupWithItems(
-    WorldCupModel model,
-    List<WorldCupItemModel> items,
-  ) async {
+  Future<int> add(WorldCupModel model, List<WorldCupItemModel> items) async {
     addedModel = model;
     addedItems = items;
     return 77;
   }
+
+  // 패키지 테스트에서 쓰지 않는 나머지 멤버.
+  @override
+  Future<int> count({String searchQuery = ''}) => throw UnimplementedError();
+
+  @override
+  Future<int> indexOf(int idx) => throw UnimplementedError();
+
+  @override
+  Future<List<WorldCupModel>> page({
+    required int limit,
+    required int offset,
+    String searchQuery = '',
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> update(WorldCupModel model, List<WorldCupItemModel> items) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> delete(int idx) => throw UnimplementedError();
 }

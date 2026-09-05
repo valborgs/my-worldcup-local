@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
+import 'package:worldcup_data/worldcup_data.dart';
 
-import '../services/nearby_worldcup_transfer_controller.dart';
-import '../services/worldcup_package_service.dart';
+import '../di/providers.dart';
 
-class NearbyWorldCupSendScreen extends StatefulWidget {
+class NearbyWorldCupSendScreen extends ConsumerStatefulWidget {
   final WorldCupModel worldCup;
   final NearbyTransferGateway? gateway;
-  final WorldCupPackageGateway? packageGateway;
+  final WorldCupPackagePort? packageGateway;
   final NearbyWorldCupTransferController? controller;
 
   const NearbyWorldCupSendScreen({
@@ -20,11 +21,12 @@ class NearbyWorldCupSendScreen extends StatefulWidget {
   });
 
   @override
-  State<NearbyWorldCupSendScreen> createState() =>
+  ConsumerState<NearbyWorldCupSendScreen> createState() =>
       _NearbyWorldCupSendScreenState();
 }
 
-class _NearbyWorldCupSendScreenState extends State<NearbyWorldCupSendScreen>
+class _NearbyWorldCupSendScreenState
+    extends ConsumerState<NearbyWorldCupSendScreen>
     with WidgetsBindingObserver {
   late final NearbyWorldCupTransferController _controller;
 
@@ -32,10 +34,12 @@ class _NearbyWorldCupSendScreenState extends State<NearbyWorldCupSendScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _controller = widget.controller ??
+    _controller =
+        widget.controller ??
         NearbyWorldCupTransferController.sender(
           gateway: widget.gateway ?? MethodChannelNearbyTransferGateway(),
-          packageGateway: widget.packageGateway ?? WorldCupPackageService(),
+          packageGateway:
+              widget.packageGateway ?? ref.read(worldCupPackageProvider),
           worldCup: widget.worldCup,
         );
     _controller.addListener(_onChanged);
@@ -73,9 +77,9 @@ class _NearbyWorldCupSendScreenState extends State<NearbyWorldCupSendScreen>
   }
 }
 
-class NearbyWorldCupReceiveScreen extends StatefulWidget {
+class NearbyWorldCupReceiveScreen extends ConsumerStatefulWidget {
   final NearbyTransferGateway? gateway;
-  final WorldCupPackageGateway? packageGateway;
+  final WorldCupPackagePort? packageGateway;
   final Future<void> Function(ImportedWorldCup imported)? onImported;
   final NearbyWorldCupTransferController? controller;
 
@@ -88,22 +92,25 @@ class NearbyWorldCupReceiveScreen extends StatefulWidget {
   });
 
   @override
-  State<NearbyWorldCupReceiveScreen> createState() =>
+  ConsumerState<NearbyWorldCupReceiveScreen> createState() =>
       _NearbyWorldCupReceiveScreenState();
 }
 
 class _NearbyWorldCupReceiveScreenState
-    extends State<NearbyWorldCupReceiveScreen> with WidgetsBindingObserver {
+    extends ConsumerState<NearbyWorldCupReceiveScreen>
+    with WidgetsBindingObserver {
   late final NearbyWorldCupTransferController _controller;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _controller = widget.controller ??
+    _controller =
+        widget.controller ??
         NearbyWorldCupTransferController.receiver(
           gateway: widget.gateway ?? MethodChannelNearbyTransferGateway(),
-          packageGateway: widget.packageGateway ?? WorldCupPackageService(),
+          packageGateway:
+              widget.packageGateway ?? ref.read(worldCupPackageProvider),
           onImported: widget.onImported,
         );
     _controller.addListener(_onChanged);
@@ -136,7 +143,8 @@ class _NearbyWorldCupReceiveScreenState
     return _NearbyTransferScaffold(
       title: '월드컵 받기',
       controller: _controller,
-      introduction: '이 기기의 이름: ${_controller.displayName}\n\n'
+      introduction:
+          '이 기기의 이름: ${_controller.displayName}\n\n'
           'Bluetooth와 Wi-Fi를 켜주세요. 같은 Wi-Fi 공유기나 인터넷 연결은 필요하지 않습니다.',
     );
   }
@@ -166,7 +174,8 @@ class _NearbyTransferScaffold extends StatelessWidget {
               label: '주변 기기 전송 취소',
               child: IconButton(
                 tooltip: '전송 취소',
-                onPressed: controller.busy &&
+                onPressed:
+                    controller.busy &&
                         controller.phase == NearbyTransferPhase.importing
                     ? null
                     : controller.cancel,
@@ -249,7 +258,8 @@ class _StatusSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showProgress = controller.phase == NearbyTransferPhase.transferring ||
+    final showProgress =
+        controller.phase == NearbyTransferPhase.transferring ||
         controller.phase == NearbyTransferPhase.importing;
     final percent = controller.progress == null
         ? null
@@ -376,17 +386,12 @@ class _ConnectionDecision extends StatelessWidget {
               child: SelectableText(
                 verificationCode,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      letterSpacing: 4,
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(context).textTheme.headlineMedium
+                    ?.copyWith(letterSpacing: 4, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              '코드가 다르면 연결하지 마세요.',
-              textAlign: TextAlign.center,
-            ),
+            const Text('코드가 다르면 연결하지 마세요.', textAlign: TextAlign.center),
             const SizedBox(height: 16),
             Wrap(
               alignment: WrapAlignment.end,
@@ -394,13 +399,15 @@ class _ConnectionDecision extends StatelessWidget {
               runSpacing: 8,
               children: [
                 OutlinedButton(
-                  onPressed:
-                      controller.busy ? null : controller.rejectConnection,
+                  onPressed: controller.busy
+                      ? null
+                      : controller.rejectConnection,
                   child: const Text('거절'),
                 ),
                 FilledButton(
-                  onPressed:
-                      controller.busy ? null : controller.acceptConnection,
+                  onPressed: controller.busy
+                      ? null
+                      : controller.acceptConnection,
                   child: const Text('코드 일치 · 수락'),
                 ),
               ],

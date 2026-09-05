@@ -1,0 +1,151 @@
+{
+  "_comment": "샘플 월드컵 시드 데이터. 앱 시작 시마다 이 내용으로 동기화된다.",
+  "worldCups": [
+    {
+      "idx": -1,
+      "title": "여자 아이돌 월드컵",
+      "info": "최고의 여자 아이돌",
+      "titleImage": "assets/sample/female/aespa_carina.jpg",
+      "maxRound": 16,
+      "items": [
+        {
+          "image": "assets/sample/female/aespa_carina.jpg",
+          "info": "에스파 카리나"
+        },
+        {
+          "image": "assets/sample/female/hearts2_ian.jpg",
+          "info": "하츠투하츠 이안"
+        },
+        {
+          "image": "assets/sample/female/nmix_sul.jpg",
+          "info": "엔믹스 설윤"
+        },
+        {
+          "image": "assets/sample/female/ive_jang.jpg",
+          "info": "아이브 장원영"
+        },
+        {
+          "image": "assets/sample/female/babymon_ahyun.jpg",
+          "info": "베이비몬스터 아현"
+        },
+        {
+          "image": "assets/sample/female/promise_song.jpg",
+          "info": "프로미스나인 송하영"
+        },
+        {
+          "image": "assets/sample/female/ilit_wonhee.jpg",
+          "info": "아일릿 원희"
+        },
+        {
+          "image": "assets/sample/female/newjeans_haerin.jpg",
+          "info": "뉴진스 해린"
+        },
+        {
+          "image": "assets/sample/female/itzy_yuna.jpg",
+          "info": "있지 유나"
+        },
+        {
+          "image": "assets/sample/female/rescene_won.jpg",
+          "info": "리센느 원이"
+        },
+        {
+          "image": "assets/sample/female/meovv_anna.jpg",
+          "info": "미야오 안나"
+        },
+        {
+          "image": "assets/sample/female/triples_chaewon.jpg",
+          "info": "트리플에스 김채원"
+        },
+        {
+          "image": "assets/sample/female/chu.jpg",
+          "info": "츄"
+        },
+        {
+          "image": "assets/sample/female/izone_hyewon.jpg",
+          "info": "강혜원"
+        },
+        {
+          "image": "assets/sample/female/idle_miyeon.jpg",
+          "info": "아이들 미연"
+        },
+        {
+          "image": "assets/sample/female/lesserafim_kimchaewon.jpg",
+          "info": "르세라핌 김채원"
+        }
+      ]
+    },
+    {
+      "idx": -2,
+      "title": "남자 아이돌 월드컵",
+      "info": "최고의 남자 아이돌",
+      "titleImage": "assets/sample/male/astro_cha.jpg",
+      "maxRound": 16,
+      "items": [
+        {
+          "image": "assets/sample/male/park_ji_hun.jpg",
+          "info": "박지훈"
+        },
+        {
+          "image": "assets/sample/male/cortis_gunho.jpg",
+          "info": "코르티스 건호"
+        },
+        {
+          "image": "assets/sample/male/nct127_jaehyun.jpg",
+          "info": "NCT 127 재현"
+        },
+        {
+          "image": "assets/sample/male/tws_dohun.jpg",
+          "info": "투어스 도훈"
+        },
+        {
+          "image": "assets/sample/male/and2ble_yujin.jpg",
+          "info": "앤더블 한유진"
+        },
+        {
+          "image": "assets/sample/male/bnd_myung.jpg",
+          "info": "보넥도 명재현"
+        },
+        {
+          "image": "assets/sample/male/bts_v.jpg",
+          "info": "방탄 뷔"
+        },
+        {
+          "image": "assets/sample/male/txt_yun.jpg",
+          "info": "TXT 연준"
+        },
+        {
+          "image": "assets/sample/male/theboyz_juyeon.jpg",
+          "info": "더보이즈 주연"
+        },
+        {
+          "image": "assets/sample/male/riize_wonbin.jpg",
+          "info": "라이즈 원빈"
+        },
+        {
+          "image": "assets/sample/male/nctwish_riku.jpg",
+          "info": "NCT WISH 리쿠"
+        },
+        {
+          "image": "assets/sample/male/btob_yuk.jpg",
+          "info": "비투비 육성재"
+        },
+        {
+          "image": "assets/sample/male/enhyphen_sunwoo.jpg",
+          "info": "엔하이픈 선우"
+        },
+        {
+          "image": "assets/sample/male/txt_taehyun.jpg",
+          "info": "TXT 태현"
+        },
+        {
+          "image": "assets/sample/male/astro_cha.jpg",
+          "info": "아스트로 차은우"
+        },
+        {
+          "image": "assets/sample/male/got7_jinyoung.jpg",
+          "info": "갓세븐 진영"
+        }
+      ]
+    }
+  ]
+}

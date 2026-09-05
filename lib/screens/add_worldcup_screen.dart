@@ -4,20 +4,23 @@ import 'dart:io';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../dto/worldcup_dao.dart';
 import '../widgets/worldcup_add_picutre_dialog.dart';
+import '../di/providers.dart';
 
-class AddWorldCupScreen extends StatefulWidget {
+class AddWorldCupScreen extends ConsumerStatefulWidget {
   final WorldCupModel? editModel;
   const AddWorldCupScreen({super.key, this.editModel});
 
   @override
-  State<AddWorldCupScreen> createState() => _AddWorldCupScreenState();
+  ConsumerState<AddWorldCupScreen> createState() => _AddWorldCupScreenState();
 }
 
-class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
+class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
+  late final _repository = ref.read(worldCupRepositoryProvider);
+
   late TextEditingController _titleController;
   late TextEditingController _infoController;
   late GlobalKey<FormState> _formKey;
@@ -165,10 +168,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                                   size: 20,
                                 ),
                                 SizedBox(width: 6),
-                                Text(
-                                  "이미지 선택",
-                                  style: TextStyle(fontSize: 14),
-                                ),
+                                Text("이미지 선택", style: TextStyle(fontSize: 14)),
                               ],
                             ),
                           ),
@@ -194,10 +194,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                                   size: 20,
                                 ),
                                 SizedBox(width: 6),
-                                Text(
-                                  "여러개 선택",
-                                  style: TextStyle(fontSize: 14),
-                                ),
+                                Text("여러개 선택", style: TextStyle(fontSize: 14)),
                               ],
                             ),
                           ),
@@ -210,23 +207,29 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
               const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
               Expanded(
                 child: Container(
-                    padding: const EdgeInsetsDirectional.fromSTEB(20, 5, 20, 0),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withAlpha(50),
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(30)),
+                  padding: const EdgeInsetsDirectional.fromSTEB(20, 5, 20, 0),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withAlpha(50),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(30),
                     ),
-                    child: GridView.builder(
-                      itemCount: _imageInfoList.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                      ),
-                      itemBuilder: (context, index) => makeListItem(context,
-                          index, _imagePathList[index], _imageInfoList[index]),
-                    )),
+                  ),
+                  child: GridView.builder(
+                    itemCount: _imageInfoList.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
+                    itemBuilder: (context, index) => makeListItem(
+                      context,
+                      index,
+                      _imagePathList[index],
+                      _imageInfoList[index],
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -255,7 +258,11 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
   }
 
   Widget makeListItem(
-      BuildContext context, int index, String src, String info) {
+    BuildContext context,
+    int index,
+    String src,
+    String info,
+  ) {
     return SizedBox(
       width: 100,
       height: 80,
@@ -268,9 +275,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                 children: [
                   Text(
                     info,
-                    style: const TextStyle(
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    style: const TextStyle(overflow: TextOverflow.ellipsis),
                   ),
                   InkWell(
                     onTap: () {
@@ -388,20 +393,29 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
       return null;
     }
 
-    // Dao 객체
-    var dao = WorldCupDao();
+    final dao = _repository;
     // 월드컵 객체 생성
-    var model = WorldCupModel(0, _titleController.text, _infoController.text,
-        DateTime.now(), _imagePathList.first, _imagePathList.length);
+    var model = WorldCupModel(
+      0,
+      _titleController.text,
+      _infoController.text,
+      DateTime.now(),
+      _imagePathList.first,
+      _imagePathList.length,
+    );
 
     // 등록
     try {
       final items = List.generate(
         _imagePathList.length,
         (index) => WorldCupItemModel(
-            0, _imagePathList[index], _imageInfoList[index], 0),
+          0,
+          _imagePathList[index],
+          _imageInfoList[index],
+          0,
+        ),
       );
-      return await dao.addWorldCupWithItems(model, items);
+      return await dao.add(model, items);
     } catch (e) {
       log('DB Error', error: e, name: 'add_worldcup_screen');
       if (mounted) {
@@ -414,17 +428,11 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
   }
 
   TextStyle isPictureListEmpty() {
-    return const TextStyle(
-      color: Colors.red,
-      fontWeight: FontWeight.bold,
-    );
+    return const TextStyle(color: Colors.red, fontWeight: FontWeight.bold);
   }
 
   TextStyle isPictureListNotEmpty() {
-    return const TextStyle(
-      color: Colors.black,
-      fontWeight: FontWeight.normal,
-    );
+    return const TextStyle(color: Colors.black, fontWeight: FontWeight.normal);
   }
 
   void _initializeEditMode() async {
@@ -432,9 +440,8 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
       _titleController.text = widget.editModel!.title;
       _infoController.text = widget.editModel!.info;
 
-      WorldCupDao dao = WorldCupDao();
-      List<WorldCupItemModel> items =
-          await dao.getWorldCupItemList(widget.editModel!.idx);
+      final dao = _repository;
+      List<WorldCupItemModel> items = await dao.items(widget.editModel!.idx);
       if (!mounted) return;
       setState(() {
         _imagePathList = items.map((item) => item.imagePath).toList();
@@ -451,14 +458,15 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
       return false;
     }
 
-    var dao = WorldCupDao();
+    final dao = _repository;
     var model = WorldCupModel(
-        widget.editModel!.idx,
-        _titleController.text,
-        _infoController.text,
-        widget.editModel!.date,
-        _imagePathList.first,
-        _imagePathList.length);
+      widget.editModel!.idx,
+      _titleController.text,
+      _infoController.text,
+      widget.editModel!.date,
+      _imagePathList.first,
+      _imagePathList.length,
+    );
 
     try {
       final items = List.generate(
@@ -470,7 +478,7 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
           widget.editModel!.idx,
         ),
       );
-      await dao.updateWorldCupWithItems(model, items);
+      await dao.update(model, items);
       return true;
     } catch (e) {
       log('DB Error', error: e, name: 'add_worldcup_screen');
@@ -487,10 +495,11 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     FocusManager.instance.primaryFocus?.unfocus();
 
     final result = await showDialog<List<String>>(
-        context: context,
-        builder: (context) {
-          return const WorldCupAddPictureDialog();
-        });
+      context: context,
+      builder: (context) {
+        return const WorldCupAddPictureDialog();
+      },
+    );
 
     if (!mounted) return;
     if (result != null && result.isNotEmpty) {
@@ -505,13 +514,15 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
     FocusManager.instance.primaryFocus?.unfocus();
 
     final result = await showDialog<List<String>>(
-        context: context,
-        builder: (context) {
-          return WorldCupAddPictureDialog(
-              isEditMode: true,
-              existingImageInfo: _imageInfoList[index],
-              existingImagePath: _imagePathList[index]);
-        });
+      context: context,
+      builder: (context) {
+        return WorldCupAddPictureDialog(
+          isEditMode: true,
+          existingImageInfo: _imageInfoList[index],
+          existingImagePath: _imagePathList[index],
+        );
+      },
+    );
 
     if (!mounted) return;
     if (result != null && result.isNotEmpty) {
@@ -574,9 +585,9 @@ class _AddWorldCupScreenState extends State<AddWorldCupScreen> {
                   ),
                   TextButton(
                     onPressed: () {
-                      Navigator.of(context).pop(controller.text.isNotEmpty
-                          ? controller.text
-                          : '설명 없음');
+                      Navigator.of(context).pop(
+                        controller.text.isNotEmpty ? controller.text : '설명 없음',
+                      );
                     },
                     child: const Text('확인'),
                   ),

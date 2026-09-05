@@ -6,7 +6,13 @@ class IconOutlinedButton extends StatelessWidget {
   final IconData icon;
   final Color textColor;
   final void Function()? onPressed;
-  const IconOutlinedButton(this.text, this.icon, this.textColor, {required this.onPressed, super.key});
+  const IconOutlinedButton(
+    this.text,
+    this.icon,
+    this.textColor, {
+    required this.onPressed,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +21,7 @@ class IconOutlinedButton extends StatelessWidget {
       style: const ButtonStyle(
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(5.0))
+            borderRadius: BorderRadius.all(Radius.circular(5.0)),
           ),
         ),
       ),

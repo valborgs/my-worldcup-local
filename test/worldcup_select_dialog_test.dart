@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:my_worldcup_local/widgets/worldcup_select_dialog.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   testWidgets('게임 시작 다이얼로그는 제한된 높이를 넘으면 전체 본문이 스크롤된다', (tester) async {
@@ -21,9 +22,9 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: WorldCupSelectDialog(model, onChanged: () {}),
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(body: WorldCupSelectDialog(model, onChanged: () {})),
         ),
       ),
     );
@@ -70,11 +71,12 @@ void main() {
       matching: find.byType(Scrollable),
     );
     expect(
-        tester
-            .state<ScrollableState>(scrollableFinder.first)
-            .position
-            .maxScrollExtent,
-        greaterThan(0));
+      tester
+          .state<ScrollableState>(scrollableFinder.first)
+          .position
+          .maxScrollExtent,
+      greaterThan(0),
+    );
     final roundLabelCenter = tester.getCenter(roundLabelFinder);
     final startButtonCenter = tester.getCenter(startButtonFinder);
     await tester.drag(scrollViewFinder, const Offset(0, -100));
@@ -85,7 +87,8 @@ void main() {
     expect(
       tester.getCenter(shareButtonFinder).dy,
       greaterThan(
-          tester.getCenter(find.widgetWithText(OutlinedButton, '삭제')).dy),
+        tester.getCenter(find.widgetWithText(OutlinedButton, '삭제')).dy,
+      ),
       reason: '실제 월드컵 공유 버튼은 다른 다이얼로그 작업 아래에 배치해야 한다.',
     );
     expect(tester.takeException(), isNull);
@@ -102,9 +105,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: WorldCupSelectDialog(sampleModel, onChanged: () {}),
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: WorldCupSelectDialog(sampleModel, onChanged: () {}),
+          ),
         ),
       ),
     );
@@ -131,19 +136,12 @@ void main() {
   });
 
   testWidgets('사용자 월드컵은 Nearby 공유와 기존 앱 공유를 선택할 수 있다', (tester) async {
-    final model = WorldCupModel(
-      5,
-      '공유 월드컵',
-      '설명',
-      DateTime(2026),
-      '',
-      4,
-    );
+    final model = WorldCupModel(5, '공유 월드컵', '설명', DateTime(2026), '', 4);
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: WorldCupSelectDialog(model, onChanged: () {}),
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(body: WorldCupSelectDialog(model, onChanged: () {})),
         ),
       ),
     );

@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:my_worldcup_local/dto/worldcup_dao.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:my_worldcup_local/widgets/worldcup_list_item.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
+
+import '../di/providers.dart';
 
 class _PagerTarget {
   final int index;
@@ -14,23 +16,26 @@ class _PagerTarget {
   const _PagerTarget(this.index, {required this.replacedWindow});
 }
 
-class WorldCupList extends StatefulWidget {
+class WorldCupList extends ConsumerStatefulWidget {
   final List<WorldCupModel>? initialWorldCupList;
   final bool enableBottomSheetSelectionPagerTransition;
-  final WorldCupDao? dao;
+
+  /// 테스트에서 저장소를 갈아끼우기 위한 훅.
+  /// 비워두면 DI(`worldCupRepositoryProvider`)에서 받는다.
+  final WorldCupRepository? repository;
 
   const WorldCupList({
     this.initialWorldCupList,
     required this.enableBottomSheetSelectionPagerTransition,
-    this.dao,
+    this.repository,
     super.key,
   });
 
   @override
-  State<WorldCupList> createState() => WorldCupListState();
+  ConsumerState<WorldCupList> createState() => WorldCupListState();
 }
 
-class WorldCupListState extends State<WorldCupList> {
+class WorldCupListState extends ConsumerState<WorldCupList> {
   static const _pageSize = 10;
   static const _sheetHeaderHeight = 64.0;
 
@@ -40,7 +45,8 @@ class WorldCupListState extends State<WorldCupList> {
   // The sheet keeps a prefix for list scrolling, while the pager may hold a
   // bounded window around a selected item near the end of a large database.
   late List<WorldCupModel> _sheetWorldCupList = List.of(worldCupList);
-  late final WorldCupDao _dao = widget.dao ?? WorldCupDao();
+  late final WorldCupRepository _dao =
+      widget.repository ?? ref.read(worldCupRepositoryProvider);
   final _pagerKey = GlobalKey<_CoverFlowPagerState<WorldCupModel>>();
   final _sheetController = DraggableScrollableController();
   final _searchController = TextEditingController();
@@ -170,8 +176,9 @@ class WorldCupListState extends State<WorldCupList> {
                   targetPage: _pagerTargetPage,
                   navigationRequest: _pagerNavigationRequest,
                   semanticLabelBuilder: (model, index) {
-                    final title =
-                        model.idx < 0 ? '(샘플) ${model.title}' : model.title;
+                    final title = model.idx < 0
+                        ? '(샘플) ${model.title}'
+                        : model.title;
                     return '$title, 최대 라운드 ${TournamentRounds.defaultRound(model.maxRound)}강, '
                         '${_pagerOffset + index + 1} / $_allTotalCount';
                   },
@@ -236,9 +243,8 @@ class WorldCupListState extends State<WorldCupList> {
                                   final model = _sheetItems[index];
                                   return _WorldCupSheetItem(
                                     model: model,
-                                    onTap: () => unawaited(
-                                      _handleSheetItemTap(model),
-                                    ),
+                                    onTap: () =>
+                                        unawaited(_handleSheetItemTap(model)),
                                   );
                                 },
                               ),
@@ -261,7 +267,8 @@ class WorldCupListState extends State<WorldCupList> {
       label: '전체 월드컵 목록 열기',
       child: InkWell(
         onTap: () {
-          final isCollapsed = !_sheetController.isAttached ||
+          final isCollapsed =
+              !_sheetController.isAttached ||
               _sheetController.size <= minSheetSize + 0.05;
           _sheetController.animateTo(
             isCollapsed ? 0.92 : minSheetSize,
@@ -435,14 +442,17 @@ class WorldCupListState extends State<WorldCupList> {
     );
 
     if (targetIndex < 0) {
-      final resolvedIndex = await _dao.getWorldCupIndex(worldCupIdx);
+      final resolvedIndex = await _dao.indexOf(worldCupIdx);
       if (!mounted) return null;
 
-      final maxTargetWindowOffset =
-          _allTotalCount > _pageSize ? _allTotalCount - _pageSize : 0;
-      final targetWindowOffset =
-          (resolvedIndex - (_pageSize ~/ 2)).clamp(0, maxTargetWindowOffset);
-      final targetWindow = await _dao.getWorldCupPage(
+      final maxTargetWindowOffset = _allTotalCount > _pageSize
+          ? _allTotalCount - _pageSize
+          : 0;
+      final targetWindowOffset = (resolvedIndex - (_pageSize ~/ 2)).clamp(
+        0,
+        maxTargetWindowOffset,
+      );
+      final targetWindow = await _dao.page(
         limit: _pageSize,
         offset: targetWindowOffset,
       );
@@ -522,30 +532,29 @@ class WorldCupListState extends State<WorldCupList> {
     final sheetLimit = _sheetWorldCupList.length < _pageSize
         ? _pageSize
         : _sheetWorldCupList.length;
-    final pagerLimit =
-        worldCupList.length < _pageSize ? _pageSize : worldCupList.length;
+    final pagerLimit = worldCupList.length < _pageSize
+        ? _pageSize
+        : worldCupList.length;
     final firstPageLimit = _pagerOffset == 0 && pagerLimit > sheetLimit
         ? pagerLimit
         : sheetLimit;
     final results = await Future.wait([
-      _dao.getWorldCupCount(),
-      _dao.getWorldCupPage(limit: firstPageLimit, offset: 0),
+      _dao.count(),
+      _dao.page(limit: firstPageLimit, offset: 0),
     ]);
     if (!mounted) return;
 
     final totalCount = results[0] as int;
     final firstPageItems = results[1] as List<WorldCupModel>;
     final refreshedSheetItems = firstPageItems.take(sheetLimit).toList();
-    final maxPagerOffset =
-        totalCount > pagerLimit ? totalCount - pagerLimit : 0;
+    final maxPagerOffset = totalCount > pagerLimit
+        ? totalCount - pagerLimit
+        : 0;
     final refreshedPagerOffset = _pagerOffset.clamp(0, maxPagerOffset);
     final refreshedPagerItems =
         refreshedPagerOffset == 0 && firstPageLimit >= pagerLimit
-            ? firstPageItems.take(pagerLimit).toList()
-            : await _dao.getWorldCupPage(
-                limit: pagerLimit,
-                offset: refreshedPagerOffset,
-              );
+        ? firstPageItems.take(pagerLimit).toList()
+        : await _dao.page(limit: pagerLimit, offset: refreshedPagerOffset);
     if (!mounted) return;
 
     setState(() {
@@ -568,12 +577,8 @@ class WorldCupListState extends State<WorldCupList> {
   Future<void> _loadFirstPageForQuery(String query) async {
     final generation = ++_queryGeneration;
     final results = await Future.wait([
-      _dao.getWorldCupCount(searchQuery: query),
-      _dao.getWorldCupPage(
-        limit: _pageSize,
-        offset: 0,
-        searchQuery: query,
-      ),
+      _dao.count(searchQuery: query),
+      _dao.page(limit: _pageSize, offset: 0, searchQuery: query),
     ]);
     if (!mounted || !_isSearchMode || generation != _queryGeneration) return;
     setState(() {
@@ -589,10 +594,7 @@ class WorldCupListState extends State<WorldCupList> {
     final pagerOffset = _pagerOffset;
     final loadedItemCount = worldCupList.length;
     try {
-      final nextPage = await _dao.getWorldCupPage(
-        limit: _pageSize,
-        offset: offset,
-      );
+      final nextPage = await _dao.page(limit: _pageSize, offset: offset);
       if (mounted &&
           _pagerOffset == pagerOffset &&
           worldCupList.length == loadedItemCount) {
@@ -607,10 +609,11 @@ class WorldCupListState extends State<WorldCupList> {
     if (_isLoadingPagerPage || _pagerOffset <= 0) return;
     _isLoadingPagerPage = true;
     final pagerOffset = _pagerOffset;
-    final previousOffset =
-        pagerOffset > _pageSize ? pagerOffset - _pageSize : 0;
+    final previousOffset = pagerOffset > _pageSize
+        ? pagerOffset - _pageSize
+        : 0;
     try {
-      final previousPage = await _dao.getWorldCupPage(
+      final previousPage = await _dao.page(
         limit: pagerOffset - previousOffset,
         offset: previousOffset,
       );
@@ -633,10 +636,7 @@ class WorldCupListState extends State<WorldCupList> {
       _isLoadingSheetPage = true;
       final offset = _sheetWorldCupList.length;
       try {
-        final nextPage = await _dao.getWorldCupPage(
-          limit: _pageSize,
-          offset: offset,
-        );
+        final nextPage = await _dao.page(limit: _pageSize, offset: offset);
         if (mounted && _sheetWorldCupList.length == offset) {
           setState(() => _sheetWorldCupList.addAll(nextPage));
         }
@@ -654,7 +654,7 @@ class WorldCupListState extends State<WorldCupList> {
     final query = _searchQuery;
     final offset = _searchResults.length;
     try {
-      final nextPage = await _dao.getWorldCupPage(
+      final nextPage = await _dao.page(
         limit: _pageSize,
         offset: offset,
         searchQuery: query,
@@ -686,7 +686,10 @@ class _SheetHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return child;
   }
 
@@ -706,8 +709,8 @@ class _WorldCupSheetItem extends StatelessWidget {
     final image = model.titleImageSrc.isEmpty
         ? Image.asset('assets/images/free_character.png', fit: BoxFit.cover)
         : model.idx < 0
-            ? Image.asset(model.titleImageSrc, fit: BoxFit.cover)
-            : Image.file(File(model.titleImageSrc), fit: BoxFit.cover);
+        ? Image.asset(model.titleImageSrc, fit: BoxFit.cover)
+        : Image.file(File(model.titleImageSrc), fit: BoxFit.cover);
     return ListTile(
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -720,7 +723,9 @@ class _WorldCupSheetItem extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text('최대 라운드 : ${TournamentRounds.defaultRound(model.maxRound)}강'),
+      subtitle: Text(
+        '최대 라운드 : ${TournamentRounds.defaultRound(model.maxRound)}강',
+      ),
     );
   }
 }
@@ -729,7 +734,7 @@ class CoverFlowPager<T> extends StatefulWidget {
   final List<T> items;
   final Widget Function(BuildContext context, T item, int index) itemBuilder;
   final void Function(BuildContext context, T item, int index)?
-      onCurrentItemTap;
+  onCurrentItemTap;
   final void Function(T item, int index)? onPageChanged;
   final Object Function(T item)? itemKey;
   final String Function(T item, int index)? semanticLabelBuilder;
@@ -803,12 +808,12 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
         widget.itemKey != null && _currentItemKey != null && keyedIndex < 0;
     final hasNavigationRequest =
         widget.navigationRequest != oldWidget.navigationRequest &&
-            widget.targetPage != null;
+        widget.targetPage != null;
     final targetPage = hasNavigationRequest
         ? widget.targetPage!.clamp(0, widget.items.length - 1)
         : keyedIndex >= 0
-            ? keyedIndex
-            : currentPage.clamp(0, widget.items.length - 1);
+        ? keyedIndex
+        : currentPage.clamp(0, widget.items.length - 1);
     _currentPageIndex = targetPage;
     _currentItemKey = _keyAt(targetPage);
     if (hasNavigationRequest ||
@@ -907,12 +912,18 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
     required double availableWidth,
     required double availableHeight,
   }) {
-    final startIndex = (currentPage.floor() - widget.visibleSideCount)
-        .clamp(0, widget.items.length - 1);
-    final endIndex = (currentPage.ceil() + widget.visibleSideCount)
-        .clamp(0, widget.items.length - 1);
-    final indexes = [for (var i = startIndex; i <= endIndex; i++) i]..sort(
-        (a, b) => (b - currentPage).abs().compareTo((a - currentPage).abs()));
+    final startIndex = (currentPage.floor() - widget.visibleSideCount).clamp(
+      0,
+      widget.items.length - 1,
+    );
+    final endIndex = (currentPage.ceil() + widget.visibleSideCount).clamp(
+      0,
+      widget.items.length - 1,
+    );
+    final indexes = [for (var i = startIndex; i <= endIndex; i++) i]
+      ..sort(
+        (a, b) => (b - currentPage).abs().compareTo((a - currentPage).abs()),
+      );
 
     return indexes.map((index) {
       final geometry = _cardGeometry(
@@ -952,8 +963,11 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
         _scrollToPage(currentIndex);
         return;
       }
-      widget.onCurrentItemTap
-          ?.call(context, widget.items[currentIndex], currentIndex);
+      widget.onCurrentItemTap?.call(
+        context,
+        widget.items[currentIndex],
+        currentIndex,
+      );
       return;
     }
     _scrollToPage(tappedIndex);
@@ -962,12 +976,18 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
   int? _findTappedCard(Offset position, double currentPage) {
     final size = context.size;
     if (size == null) return null;
-    final startIndex = (currentPage.floor() - widget.visibleSideCount)
-        .clamp(0, widget.items.length - 1);
-    final endIndex = (currentPage.ceil() + widget.visibleSideCount)
-        .clamp(0, widget.items.length - 1);
-    final indexes = [for (var i = startIndex; i <= endIndex; i++) i]..sort(
-        (a, b) => (a - currentPage).abs().compareTo((b - currentPage).abs()));
+    final startIndex = (currentPage.floor() - widget.visibleSideCount).clamp(
+      0,
+      widget.items.length - 1,
+    );
+    final endIndex = (currentPage.ceil() + widget.visibleSideCount).clamp(
+      0,
+      widget.items.length - 1,
+    );
+    final indexes = [for (var i = startIndex; i <= endIndex; i++) i]
+      ..sort(
+        (a, b) => (a - currentPage).abs().compareTo((b - currentPage).abs()),
+      );
     for (final index in indexes) {
       final geometry = _cardGeometry(
         index: index,
@@ -1019,21 +1039,28 @@ class _CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
 
   Widget _buildAccessibilityControls(BuildContext context) {
     final currentIndex = _currentPage.round().clamp(0, widget.items.length - 1);
-    final label = widget.semanticLabelBuilder
-            ?.call(widget.items[currentIndex], currentIndex) ??
+    final label =
+        widget.semanticLabelBuilder?.call(
+          widget.items[currentIndex],
+          currentIndex,
+        ) ??
         '월드컵 ${currentIndex + 1} / ${widget.items.length}';
     return Semantics(
       container: true,
       button: true,
       label: label,
       hint: '두 번 탭하여 현재 월드컵을 열거나 위아래로 쓸어 넘기세요',
-      onTap: () => widget.onCurrentItemTap
-          ?.call(context, widget.items[currentIndex], currentIndex),
+      onTap: () => widget.onCurrentItemTap?.call(
+        context,
+        widget.items[currentIndex],
+        currentIndex,
+      ),
       onIncrease: currentIndex < widget.items.length - 1
           ? () => _scrollToPage(currentIndex + 1)
           : null,
-      onDecrease:
-          currentIndex > 0 ? () => _scrollToPage(currentIndex - 1) : null,
+      onDecrease: currentIndex > 0
+          ? () => _scrollToPage(currentIndex - 1)
+          : null,
       child: const ExcludeSemantics(child: SizedBox.expand()),
     );
   }
@@ -1063,11 +1090,11 @@ class _CoverFlowScrollBehavior extends MaterialScrollBehavior {
 
   @override
   Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.stylus,
-        PointerDeviceKind.trackpad,
-      };
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.trackpad,
+  };
 }
 
 class _CardGeometry {
@@ -1086,8 +1113,8 @@ class _CardGeometry {
   });
 
   Rect get rect => Rect.fromCenter(
-        center: viewportSize.center(Offset.zero) + translation,
-        width: unscaledSize.width * scale,
-        height: unscaledSize.height * scale,
-      );
+    center: viewportSize.center(Offset.zero) + translation,
+    width: unscaledSize.width * scale,
+    height: unscaledSize.height * scale,
+  );
 }

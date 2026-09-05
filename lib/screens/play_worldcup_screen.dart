@@ -1,24 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
-import 'package:my_worldcup_local/dto/worldcup_dao.dart';
 import 'package:provider/provider.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../provider/worldcup_select_provider.dart';
 import '../widgets/auto_scrolling_text.dart';
 import '../widgets/worldcup_game.dart';
+import '../di/providers.dart';
 
-class PlayWorldCupScreen extends StatefulWidget {
+class PlayWorldCupScreen extends ConsumerStatefulWidget {
   final WorldCupModel worldCupModel;
   final int selectedRound;
   const PlayWorldCupScreen(this.worldCupModel, this.selectedRound, {super.key});
 
   @override
-  State<PlayWorldCupScreen> createState() => _PlayWorldCupScreenState();
+  ConsumerState<PlayWorldCupScreen> createState() => _PlayWorldCupScreenState();
 }
 
-class _PlayWorldCupScreenState extends State<PlayWorldCupScreen> {
-  final dao = WorldCupDao();
+class _PlayWorldCupScreenState extends ConsumerState<PlayWorldCupScreen> {
+  late final dao = ref.read(worldCupRepositoryProvider);
   List<WorldCupItemModel>? itemList;
 
   @override
@@ -28,7 +29,7 @@ class _PlayWorldCupScreenState extends State<PlayWorldCupScreen> {
   }
 
   Future<void> getItemList() async {
-    final value = await dao.getWorldCupItemList(widget.worldCupModel.idx);
+    final value = await dao.items(widget.worldCupModel.idx);
     if (!mounted) return;
     setState(() => itemList = value);
   }
@@ -53,7 +54,10 @@ class _PlayWorldCupScreenState extends State<PlayWorldCupScreen> {
           create: (context) => WorldCupSelectProvider(),
           child: itemList != null
               ? WorldCupGame(
-                  widget.worldCupModel, itemList!, widget.selectedRound)
+                  widget.worldCupModel,
+                  itemList!,
+                  widget.selectedRound,
+                )
               : const ColoredBox(color: Colors.black),
         ),
       ),
