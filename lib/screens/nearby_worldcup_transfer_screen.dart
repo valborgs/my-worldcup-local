@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
@@ -7,13 +9,17 @@ import 'package:worldcup_data/worldcup_data.dart';
 import '../di/providers.dart';
 
 class NearbyWorldCupSendScreen extends ConsumerStatefulWidget {
-  final WorldCupModel worldCup;
+  /// 보낼 월드컵의 id.
+  ///
+  /// 라우트 인자가 엔티티가 아니라 id이므로 여기서 조회한 뒤 컨트롤러를 만든다.
+  /// [controller]를 직접 주입하면 조회를 건너뛴다.
+  final int worldCupId;
   final NearbyTransferGateway? gateway;
   final WorldCupPackagePort? packageGateway;
   final NearbyWorldCupTransferController? controller;
 
   const NearbyWorldCupSendScreen({
-    required this.worldCup,
+    required this.worldCupId,
     this.gateway,
     this.packageGateway,
     this.controller,
@@ -28,22 +34,40 @@ class NearbyWorldCupSendScreen extends ConsumerStatefulWidget {
 class _NearbyWorldCupSendScreenState
     extends ConsumerState<NearbyWorldCupSendScreen>
     with WidgetsBindingObserver {
-  late final NearbyWorldCupTransferController _controller;
+  // 월드컵을 불러온 뒤에야 컨트롤러를 만들 수 있어 nullable이다.
+  NearbyWorldCupTransferController? _controller;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _controller =
-        widget.controller ??
-        NearbyWorldCupTransferController.sender(
-          gateway: widget.gateway ?? MethodChannelNearbyTransferGateway(),
-          packageGateway:
-              widget.packageGateway ?? ref.read(worldCupPackageProvider),
-          worldCup: widget.worldCup,
-        );
-    _controller.addListener(_onChanged);
-    _controller.start();
+    final injected = widget.controller;
+    if (injected != null) {
+      _attach(injected);
+    } else {
+      unawaited(_loadAndStart());
+    }
+  }
+
+  Future<void> _loadAndStart() async {
+    final model = await ref
+        .read(worldCupRepositoryProvider)
+        .findById(widget.worldCupId);
+    if (!mounted || model == null) return;
+    _attach(
+      NearbyWorldCupTransferController.sender(
+        gateway: widget.gateway ?? MethodChannelNearbyTransferGateway(),
+        packageGateway:
+            widget.packageGateway ?? ref.read(worldCupPackageProvider),
+        worldCup: model,
+      ),
+    );
+  }
+
+  void _attach(NearbyWorldCupTransferController controller) {
+    setState(() => _controller = controller);
+    controller.addListener(_onChanged);
+    controller.start();
   }
 
   void _onChanged() {
@@ -55,28 +79,43 @@ class _NearbyWorldCupSendScreenState
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached ||
         state == AppLifecycleState.hidden) {
-      _controller.cancel();
+      _controller?.cancel();
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _controller.removeListener(_onChanged);
-    _controller.dispose();
+    _controller?.removeListener(_onChanged);
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    const title = '주변 기기로 보내기';
+    final controller = _controller;
+    if (controller == null) {
+      // 월드컵을 불러오는 동안. 보통 한 프레임 안에 끝난다.
+      return Scaffold(
+        appBar: AppBar(title: const Text(title)),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
     return _NearbyTransferScaffold(
-      title: '주변 기기로 보내기',
-      controller: _controller,
+      title: title,
+      controller: controller,
       introduction: '받는 기기에서 먼저 ‘월드컵 받기’를 열어주세요.',
     );
   }
 }
 
+/// 주변 기기에서 월드컵을 받는 화면.
+///
+/// 가져오기에 성공하면 화면이 닫힐 때 [ImportedWorldCup]을 pop 결과로 돌려준다.
+/// 예전에는 `onImported` 콜백으로 목록을 갱신했지만, 라우트 인자로는 클로저를
+/// 넘길 수 없어 결과 반환 방식으로 바꿨다. 전체 화면 다이얼로그라 목록은
+/// 어차피 닫힌 뒤에야 보인다.
 class NearbyWorldCupReceiveScreen extends ConsumerStatefulWidget {
   final NearbyTransferGateway? gateway;
   final WorldCupPackagePort? packageGateway;
@@ -101,6 +140,9 @@ class _NearbyWorldCupReceiveScreenState
     with WidgetsBindingObserver {
   late final NearbyWorldCupTransferController _controller;
 
+  /// 가져오기에 성공한 월드컵. 화면이 닫힐 때 pop 결과로 돌려준다.
+  ImportedWorldCup? _imported;
+
   @override
   void initState() {
     super.initState();
@@ -111,10 +153,16 @@ class _NearbyWorldCupReceiveScreenState
           gateway: widget.gateway ?? MethodChannelNearbyTransferGateway(),
           packageGateway:
               widget.packageGateway ?? ref.read(worldCupPackageProvider),
-          onImported: widget.onImported,
+          onImported: _handleImported,
         );
     _controller.addListener(_onChanged);
     _controller.start();
+  }
+
+  Future<void> _handleImported(ImportedWorldCup imported) async {
+    _imported = imported;
+    // 테스트나 호출부가 직접 콜백을 넘겼다면 그대로 이어준다.
+    await widget.onImported?.call(imported);
   }
 
   void _onChanged() {
@@ -140,12 +188,21 @@ class _NearbyWorldCupReceiveScreenState
 
   @override
   Widget build(BuildContext context) {
-    return _NearbyTransferScaffold(
-      title: '월드컵 받기',
-      controller: _controller,
-      introduction:
-          '이 기기의 이름: ${_controller.displayName}\n\n'
-          'Bluetooth와 Wi-Fi를 켜주세요. 같은 Wi-Fi 공유기나 인터넷 연결은 필요하지 않습니다.',
+    // 기본 뒤로가기로 닫힐 때도 가져온 월드컵을 결과로 실어 보내야 해서
+    // pop을 가로챈다.
+    return PopScope<ImportedWorldCup?>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        Navigator.of(context).pop(_imported);
+      },
+      child: _NearbyTransferScaffold(
+        title: '월드컵 받기',
+        controller: _controller,
+        introduction:
+            '이 기기의 이름: ${_controller.displayName}\n\n'
+            'Bluetooth와 Wi-Fi를 켜주세요. 같은 Wi-Fi 공유기나 인터넷 연결은 필요하지 않습니다.',
+      ),
     );
   }
 }

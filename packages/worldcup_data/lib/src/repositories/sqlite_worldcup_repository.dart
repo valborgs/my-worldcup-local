@@ -62,6 +62,21 @@ class SqliteWorldCupRepository implements WorldCupRepository {
   }
 
   @override
+  Future<WorldCupModel?> findById(int idx) {
+    return _guard('월드컵을 불러오지 못했습니다.', () async {
+      final db = await _db.database;
+      final rows = await db.query(
+        AppDatabase.worldCupTable,
+        where: 'idx = ?',
+        whereArgs: [idx],
+        limit: 1,
+      );
+      if (rows.isEmpty) return null;
+      return worldCupFromRow(rows.first);
+    });
+  }
+
+  @override
   Future<List<WorldCupItemModel>> items(int worldCupIdx) {
     return _guard('월드컵 항목을 불러오지 못했습니다.', () async {
       final db = await _db.database;

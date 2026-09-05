@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_worldcup_local/widgets/worldcup_action_menu_button.dart';
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
 void main() {
   Widget buildMenu({
@@ -11,9 +11,9 @@ void main() {
       builder: textScaler == null
           ? null
           : (context, child) => MediaQuery(
-                data: MediaQuery.of(context).copyWith(textScaler: textScaler),
-                child: child!,
-              ),
+              data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+              child: child!,
+            ),
       home: Scaffold(
         appBar: AppBar(
           actions: [
@@ -61,14 +61,11 @@ void main() {
     await select('주변 기기에서 받기');
     await select('파일에서 가져오기');
 
-    expect(
-      selected,
-      const [
-        WorldCupAction.create,
-        WorldCupAction.receiveNearby,
-        WorldCupAction.importFile,
-      ],
-    );
+    expect(selected, const [
+      WorldCupAction.create,
+      WorldCupAction.receiveNearby,
+      WorldCupAction.importFile,
+    ]);
   });
 
   testWidgets('접근성 글자 크기가 커도 시트에서 모든 기능을 스크롤해 선택할 수 있다', (tester) async {
@@ -76,10 +73,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(
-      buildMenu(
-        onSelected: (_) {},
-        textScaler: const TextScaler.linear(2),
-      ),
+      buildMenu(onSelected: (_) {}, textScaler: const TextScaler.linear(2)),
     );
 
     await tester.tap(find.byTooltip('월드컵 추가 메뉴'));

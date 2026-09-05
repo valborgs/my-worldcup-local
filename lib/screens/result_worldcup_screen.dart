@@ -7,10 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:my_worldcup_local/screens/play_worldcup_screen.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+import 'package:worldcup_core/worldcup_core.dart';
 
-import '../widgets/auto_scrolling_text.dart';
 import '../di/providers.dart';
 
 class ResultWorldCupScreen extends ConsumerStatefulWidget {
@@ -97,10 +97,11 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
   }
 
   void _replayGame() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) =>
-            PlayWorldCupScreen(widget.worldCupModel, widget.round),
+    Navigator.of(context).pushReplacementNamed(
+      AppRoutes.play,
+      arguments: PlayArgs(
+        worldCupId: widget.worldCupModel.idx,
+        round: widget.round,
       ),
     );
   }

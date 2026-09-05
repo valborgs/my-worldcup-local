@@ -19,6 +19,11 @@ abstract interface class WorldCupRepository {
     String searchQuery = '',
   });
 
+  /// id로 월드컵 한 건. 없으면 `null`.
+  ///
+  /// 화면 이동 인자가 엔티티가 아니라 id이므로, 도착 화면이 이걸로 조회한다.
+  Future<WorldCupModel?> findById(int idx);
+
   /// [worldCupIdx]에 속한 항목 전체.
   Future<List<WorldCupItemModel>> items(int worldCupIdx);
 

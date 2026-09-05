@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum WorldCupAction {
-  create,
-  receiveNearby,
-  importFile,
-}
+enum WorldCupAction { create, receiveNearby, importFile }
 
 class WorldCupActionMenuButton extends StatelessWidget {
   final bool isBusy;
@@ -37,11 +33,7 @@ class WorldCupActionMenuButton extends StatelessWidget {
                   height: 22,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(
-                  Icons.add,
-                  semanticLabel: '월드컵 추가 메뉴',
-                  size: 32,
-                ),
+              : const Icon(Icons.add, semanticLabel: '월드컵 추가 메뉴', size: 32),
         ),
       ),
     );
@@ -73,30 +65,21 @@ class WorldCupActionMenuButton extends StatelessWidget {
                 leading: const Icon(Icons.add_photo_alternate_outlined),
                 title: const Text('새 월드컵 만들기'),
                 subtitle: const Text('사진을 골라 나만의 월드컵 만들기'),
-                onTap: () => Navigator.pop(
-                  sheetContext,
-                  WorldCupAction.create,
-                ),
+                onTap: () => Navigator.pop(sheetContext, WorldCupAction.create),
               ),
               ListTile(
                 leading: const Icon(Icons.devices_other),
                 title: const Text('주변 기기에서 받기'),
-                subtitle: const Text(
-                  '인터넷 없이 Nearby Connections로 직접 받기',
-                ),
-                onTap: () => Navigator.pop(
-                  sheetContext,
-                  WorldCupAction.receiveNearby,
-                ),
+                subtitle: const Text('인터넷 없이 Nearby Connections로 직접 받기'),
+                onTap: () =>
+                    Navigator.pop(sheetContext, WorldCupAction.receiveNearby),
               ),
               ListTile(
                 leading: const Icon(Icons.file_download_outlined),
                 title: const Text('파일에서 가져오기'),
                 subtitle: const Text('.myworldcup 파일을 직접 선택하여 가져오기'),
-                onTap: () => Navigator.pop(
-                  sheetContext,
-                  WorldCupAction.importFile,
-                ),
+                onTap: () =>
+                    Navigator.pop(sheetContext, WorldCupAction.importFile),
               ),
             ],
           ),

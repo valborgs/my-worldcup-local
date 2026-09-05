@@ -70,6 +70,8 @@ dependencies:
     path: packages/worldcup_domain
   worldcup_data:
     path: packages/worldcup_data
+  worldcup_ui_kit:
+    path: packages/worldcup_ui_kit
   flutter_riverpod: ^3.0.0 # DI + 상태관리
   flutter:
     sdk: flutter

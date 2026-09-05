@@ -5,12 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../screens/play_worldcup_screen.dart';
-import '../screens/add_worldcup_screen.dart';
-import '../screens/nearby_worldcup_transfer_screen.dart';
-import 'outlined_icon_button.dart';
 
 import 'package:worldcup_core/worldcup_core.dart';
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
 import '../di/providers.dart';
 
@@ -90,10 +87,11 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
                   Icons.play_arrow,
                   Colors.deepPurpleAccent,
                   onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            PlayWorldCupScreen(widget.model, _selectedRound),
+                    Navigator.of(context).pushReplacementNamed(
+                      AppRoutes.play,
+                      arguments: PlayArgs(
+                        worldCupId: widget.model.idx,
+                        round: _selectedRound,
                       ),
                     );
                   },
@@ -106,11 +104,9 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
                     Colors.orange,
                     onPressed: () {
                       Navigator.of(context)
-                          .pushReplacement(
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  AddWorldCupScreen(editModel: widget.model),
-                            ),
+                          .pushReplacementNamed(
+                            AppRoutes.editor,
+                            arguments: EditorArgs(worldCupId: widget.model.idx),
                           )
                           .then((_) => widget.onChanged());
                     },
@@ -200,15 +196,9 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
     );
     if (!mounted || choice == null) return;
     if (choice == _ShareChoice.nearby) {
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (context) => NearbyWorldCupSendScreen(
-            worldCup: widget.model,
-            gateway: widget.nearbyGatewayFactory?.call(),
-            packageGateway: widget.packageGateway,
-          ),
-          fullscreenDialog: true,
-        ),
+      await Navigator.of(context).pushNamed<void>(
+        AppRoutes.nearbySend,
+        arguments: NearbySendArgs(worldCupId: widget.model.idx),
       );
       return;
     }

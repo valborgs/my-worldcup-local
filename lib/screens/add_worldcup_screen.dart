@@ -11,8 +11,12 @@ import '../widgets/worldcup_add_picutre_dialog.dart';
 import '../di/providers.dart';
 
 class AddWorldCupScreen extends ConsumerStatefulWidget {
-  final WorldCupModel? editModel;
-  const AddWorldCupScreen({super.key, this.editModel});
+  /// 수정할 월드컵의 id. `null`이면 새로 만드는 화면이다.
+  ///
+  /// 라우트 인자가 엔티티가 아니라 id이므로 여기서 직접 조회한다.
+  final int? editWorldCupId;
+
+  const AddWorldCupScreen({super.key, this.editWorldCupId});
 
   @override
   ConsumerState<AddWorldCupScreen> createState() => _AddWorldCupScreenState();
@@ -28,7 +32,10 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
   late FocusNode _infoFocusNode;
   late List<String> _imagePathList;
   late List<String> _imageInfoList;
-  bool get isEditMode => widget.editModel != null;
+  bool get isEditMode => widget.editWorldCupId != null;
+
+  /// 수정 모드에서 불러온 원본. 제목 / 설명 / 등록일을 유지하는 데 쓴다.
+  WorldCupModel? _editModel;
 
   @override
   void initState() {
@@ -436,18 +443,23 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
   }
 
   void _initializeEditMode() async {
-    if (widget.editModel != null) {
-      _titleController.text = widget.editModel!.title;
-      _infoController.text = widget.editModel!.info;
+    final editId = widget.editWorldCupId;
+    if (editId == null) return;
 
-      final dao = _repository;
-      List<WorldCupItemModel> items = await dao.items(widget.editModel!.idx);
-      if (!mounted) return;
-      setState(() {
-        _imagePathList = items.map((item) => item.imagePath).toList();
-        _imageInfoList = items.map((item) => item.imageInfo).toList();
-      });
-    }
+    final dao = _repository;
+    final model = await dao.findById(editId);
+    if (!mounted || model == null) return;
+
+    final items = await dao.items(editId);
+    if (!mounted) return;
+
+    _titleController.text = model.title;
+    _infoController.text = model.info;
+    setState(() {
+      _editModel = model;
+      _imagePathList = items.map((item) => item.imagePath).toList();
+      _imageInfoList = items.map((item) => item.imageInfo).toList();
+    });
   }
 
   Future<bool> updateWorldCup() async {
@@ -458,12 +470,27 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
       return false;
     }
 
+    // 원본을 아직 못 불러왔으면 덮어쓸 수 없다.
+    // 보통 화면 진입 직후 한순간뿐이지만, 아무 반응 없이 끝나면 안 되므로
+    // 사용자에게 알린다.
+    final editModel = _editModel;
+    if (editModel == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("월드컵 정보를 아직 불러오는 중입니다. 잠시 후 다시 시도해주세요."),
+          ),
+        );
+      }
+      return false;
+    }
+
     final dao = _repository;
     var model = WorldCupModel(
-      widget.editModel!.idx,
+      editModel.idx,
       _titleController.text,
       _infoController.text,
-      widget.editModel!.date,
+      editModel.date,
       _imagePathList.first,
       _imagePathList.length,
     );
@@ -475,7 +502,7 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
           0,
           _imagePathList[index],
           _imageInfoList[index],
-          widget.editModel!.idx,
+          editModel.idx,
         ),
       );
       await dao.update(model, items);

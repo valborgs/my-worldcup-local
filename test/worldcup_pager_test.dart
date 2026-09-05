@@ -438,6 +438,9 @@ class _FakeWorldCupDao implements WorldCupRepository {
   Future<List<WorldCupItemModel>> items(int worldCupIdx) async => const [];
 
   @override
+  Future<WorldCupModel?> findById(int idx) => throw UnimplementedError();
+
+  @override
   Future<int> add(WorldCupModel model, List<WorldCupItemModel> items) =>
       throw UnimplementedError();
 

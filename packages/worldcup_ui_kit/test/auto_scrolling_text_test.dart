@@ -2,8 +2,7 @@ import 'dart:ui' show SemanticsAction;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:my_worldcup_local/widgets/auto_scrolling_text.dart';
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
 void main() {
   testWidgets('공간을 넘는 제목은 말줄임 없이 자동으로 끝까지 이동한다', (tester) async {
@@ -16,10 +15,7 @@ void main() {
           body: Center(
             child: SizedBox(
               width: 120,
-              child: AutoScrollingText(
-                title,
-                semanticsLabel: '월드컵 결과 제목',
-              ),
+              child: AutoScrollingText(title, semanticsLabel: '월드컵 결과 제목'),
             ),
           ),
         ),
@@ -57,10 +53,7 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: SizedBox(
-            width: 300,
-            child: AutoScrollingText(title),
-          ),
+          body: SizedBox(width: 300, child: AutoScrollingText(title)),
         ),
       ),
     );

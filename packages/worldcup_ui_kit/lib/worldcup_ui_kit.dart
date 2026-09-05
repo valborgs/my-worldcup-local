@@ -1,5 +1,10 @@
-/// worldcup_ui_kit 공개 API 배럴 파일.
+/// worldcup_ui_kit 공개 API.
 ///
-/// 이 패키지 밖에서는 이 파일을 통해서만 import 한다.
-/// 구현 세부는 lib/src/ 아래에 두고, 여기서 명시적으로 export 한 것만 공개한다.
+/// 여러 feature가 함께 쓰는 위젯과 테마만 담는다. 특정 기능에만 쓰이는
+/// 위젯은 해당 feature 패키지 안에 둔다.
 library;
+
+export 'src/theme/app_theme.dart';
+export 'src/widgets/auto_scrolling_text.dart';
+export 'src/widgets/outlined_icon_button.dart';
+export 'src/widgets/worldcup_action_menu_button.dart';

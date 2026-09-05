@@ -5,16 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:my_worldcup_local/screens/help_screen.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../widgets/worldcup_action_menu_button.dart';
 import '../widgets/worldcup_list.dart';
-import 'add_worldcup_screen.dart';
-import 'nearby_worldcup_transfer_screen.dart';
 
 import 'package:worldcup_core/worldcup_core.dart';
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
 import '../di/providers.dart';
 
@@ -70,16 +67,7 @@ class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
             child: IconButton(
               tooltip: "도움말",
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => HelpScreen(
-                      false,
-                      enableBottomSheetSelectionPagerTransition:
-                          widget.enableBottomSheetSelectionPagerTransition,
-                    ),
-                    fullscreenDialog: true,
-                  ),
-                );
+                Navigator.of(context).pushNamed<void>(AppRoutes.help);
               },
               icon: const Icon(
                 Icons.help_outline,
@@ -161,12 +149,8 @@ class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
   }
 
   Future<void> _addWorldCup() async {
-    final addedWorldCupIdx = await Navigator.of(context).push<int>(
-      MaterialPageRoute<int>(
-        builder: (context) => const AddWorldCupScreen(),
-        fullscreenDialog: true,
-      ),
-    );
+    final addedWorldCupIdx = await Navigator.of(context)
+        .pushNamed<int>(AppRoutes.editor, arguments: const EditorArgs());
     if (!mounted || addedWorldCupIdx == null) return;
     await _worldCupListKey.currentState?.refreshAndScrollTo(addedWorldCupIdx);
   }
@@ -216,20 +200,10 @@ class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
   }
 
   Future<void> _receiveWorldCup() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => NearbyWorldCupReceiveScreen(
-          gateway: widget.nearbyGatewayFactory?.call(),
-          packageGateway: widget.packageGateway,
-          onImported: (imported) async {
-            await _worldCupListKey.currentState?.refreshAndScrollTo(
-              imported.idx,
-            );
-          },
-        ),
-        fullscreenDialog: true,
-      ),
-    );
+    final imported = await Navigator.of(context)
+        .pushNamed<ImportedWorldCup>(AppRoutes.nearbyReceive);
+    if (!mounted || imported == null) return;
+    await _worldCupListKey.currentState?.refreshAndScrollTo(imported.idx);
   }
 
   void setAdmob() async {

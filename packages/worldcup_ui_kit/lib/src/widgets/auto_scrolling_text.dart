@@ -98,10 +98,7 @@ class _AutoScrollingTextState extends State<AutoScrollingText> {
     _scrollController.jumpTo(0);
     if (_scrollController.position.maxScrollExtent <= 0) return;
 
-    _pauseTimer = Timer(
-      _startDelay,
-      () => unawaited(_scrollToEnd(generation)),
-    );
+    _pauseTimer = Timer(_startDelay, () => unawaited(_scrollToEnd(generation)));
   }
 
   Future<void> _scrollToEnd(int generation) async {
@@ -116,10 +113,7 @@ class _AutoScrollingTextState extends State<AutoScrollingText> {
     );
     if (!_isActive(generation)) return;
 
-    _pauseTimer = Timer(
-      _endDelay,
-      () => unawaited(_scrollToStart(generation)),
-    );
+    _pauseTimer = Timer(_endDelay, () => unawaited(_scrollToStart(generation)));
   }
 
   Future<void> _scrollToStart(int generation) async {
@@ -132,10 +126,7 @@ class _AutoScrollingTextState extends State<AutoScrollingText> {
     );
     if (!_isActive(generation)) return;
 
-    _pauseTimer = Timer(
-      _startDelay,
-      () => unawaited(_scrollToEnd(generation)),
-    );
+    _pauseTimer = Timer(_startDelay, () => unawaited(_scrollToEnd(generation)));
   }
 
   bool _isActive(int generation) {
@@ -145,11 +136,12 @@ class _AutoScrollingTextState extends State<AutoScrollingText> {
   Duration _scrollDurationFor(double distance) {
     // 일반적인 제목은 선호 속도로 이동하되, 너무 짧거나 긴 제목도 사용자가
     // 움직임을 인지하고 합리적인 시간 안에 끝을 확인할 수 있도록 범위를 제한한다.
-    final milliseconds =
-        (distance / _preferredPixelsPerSecond * 1000).round().clamp(
-              _minimumScrollDuration.inMilliseconds,
-              _maximumScrollDuration.inMilliseconds,
-            );
+    final milliseconds = (distance / _preferredPixelsPerSecond * 1000)
+        .round()
+        .clamp(
+          _minimumScrollDuration.inMilliseconds,
+          _maximumScrollDuration.inMilliseconds,
+        );
     return Duration(milliseconds: milliseconds);
   }
 }

@@ -211,6 +211,9 @@ class _FakeWorldCupDao implements WorldCupRepository {
   Future<int> count({String searchQuery = ''}) => throw UnimplementedError();
 
   @override
+  Future<WorldCupModel?> findById(int idx) => throw UnimplementedError();
+
+  @override
   Future<int> indexOf(int idx) => throw UnimplementedError();
 
   @override

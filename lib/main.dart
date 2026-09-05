@@ -10,7 +10,9 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:kakao_flutter_sdk_share/kakao_flutter_sdk_share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
+import 'app_router.dart';
 import 'di/providers.dart';
 import 'firebase_options.dart';
 import 'screens/help_screen.dart';
@@ -142,18 +144,23 @@ class _MyWorldCupState extends State<MyWorldCup> {
 
   @override
   Widget build(BuildContext context) {
+    final router = AppRouter(
+      enableBottomSheetSelectionPagerTransition:
+          widget.enableBottomSheetSelectionPagerTransition,
+    );
+
     return MaterialApp(
       title: "내가 만든 월드컵",
       themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurpleAccent),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light(),
       builder: (context, child) {
         _applyOrientationPolicy(context);
         return child!;
       },
+      onGenerateRoute: router.onGenerateRoute,
+      // 첫 화면만 여기서 만든다. 목록 화면은 미리 불러온 목록을 받아
+      // 첫 프레임의 깜빡임을 없애기 때문에 라우터를 거치지 않는다.
       home: (widget.isAlreadyShownHelp == true)
           ? MainWorldCupScreen(
               initialWorldCupList: widget.initialWorldCupList,
