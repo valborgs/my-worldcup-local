@@ -57,6 +57,7 @@ class WorldCupListState extends State<WorldCupList> {
   bool _isSearchMode = false;
   bool _isSearchCloseScheduled = false;
   bool _isHandlingSheetItemTap = false;
+  bool _isPagerTransitionInFlight = false;
   String _searchQuery = '';
   int _queryGeneration = 0;
   int _pagerNavigationRequest = 0;
@@ -164,12 +165,8 @@ class WorldCupListState extends State<WorldCupList> {
                     showDialogBeforeGameStart(context, model, refresh);
                   },
                   onPageChanged: (_, index) {
-                    if (index >= worldCupList.length - 3) {
-                      unawaited(_loadNextPagerPage());
-                    }
-                    if (index <= 2) {
-                      unawaited(_loadPreviousPagerPage());
-                    }
+                    if (_isPagerTransitionInFlight) return;
+                    _prefetchAroundPagerIndex(index);
                   },
                   itemKey: (model) => model.idx,
                   targetPage: _pagerTargetPage,
@@ -486,7 +483,24 @@ class WorldCupListState extends State<WorldCupList> {
     // Wait until the pager sees that item before starting the transition.
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
-    await _pagerKey.currentState?._scrollToPage(target.index);
+    _isPagerTransitionInFlight = true;
+    try {
+      await _pagerKey.currentState?._scrollToPage(target.index);
+    } finally {
+      _isPagerTransitionInFlight = false;
+    }
+    if (!mounted) return;
+    final settledIndex = _pagerKey.currentState?._currentPageIndex ?? 0;
+    _prefetchAroundPagerIndex(settledIndex);
+  }
+
+  void _prefetchAroundPagerIndex(int index) {
+    if (index >= worldCupList.length - 3) {
+      unawaited(_loadNextPagerPage());
+    }
+    if (index <= 2) {
+      unawaited(_loadPreviousPagerPage());
+    }
   }
 
   void _movePagerToPage(int targetIndex) {

@@ -224,6 +224,45 @@ void main() {
     expect(pageView.controller!.page, 3);
   });
 
+  testWidgets('뒤쪽 창의 앞 카드로 애니메이션한 뒤에도 선택 항목을 유지한다',
+      (tester) async {
+    final dao = _FakeWorldCupDao(_models(15));
+    final listKey = GlobalKey<WorldCupListState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              WorldCupList(
+                key: listKey,
+                dao: dao,
+                enableBottomSheetSelectionPagerTransition: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await listKey.currentState!.refreshAndScrollTo(15);
+    await tester.pumpAndSettle();
+    expect(
+        find.bySemanticsLabel('Game 15, 최대 라운드 4강, 15 / 15'), findsOneWidget);
+
+    final navigation = listKey.currentState!.refreshAndScrollTo(6);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    await tester.pumpAndSettle();
+    await navigation;
+    await tester.pumpAndSettle();
+
+    expect(listKey.currentState!.worldCupList.first.idx, 1);
+    expect(
+        find.bySemanticsLabel('Game 6, 최대 라운드 4강, 6 / 15'), findsOneWidget);
+  });
+
   testWidgets('첫 페이지를 공유하는 새로고침은 가장 큰 범위를 한 번만 조회한다',
       (tester) async {
     final dao = _FakeWorldCupDao(_models(30));
