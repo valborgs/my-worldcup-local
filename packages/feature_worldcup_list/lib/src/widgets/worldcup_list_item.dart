@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:my_worldcup_local/widgets/worldcup_select_dialog.dart';
+
+import 'worldcup_select_dialog.dart';
+
 import 'package:worldcup_domain/worldcup_domain.dart';
 
 class WorldCupListItem extends StatelessWidget {
@@ -14,9 +16,9 @@ class WorldCupListItem extends StatelessWidget {
     const cardRadius = 20.0;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cacheWidth = (constraints.maxWidth *
-                MediaQuery.devicePixelRatioOf(context))
-            .round();
+        final cacheWidth =
+            (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context))
+                .round();
         return Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -40,9 +42,8 @@ class WorldCupListItem extends StatelessWidget {
                     : worldCupModel.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold),
                 semanticsLabel: '월드컵 게임 타이틀',
               ),
               const SizedBox(height: 8),

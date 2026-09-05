@@ -12,11 +12,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
+import 'package:feature_worldcup_list/feature_worldcup_list.dart';
+
 import 'app_router.dart';
 import 'di/providers.dart';
 import 'firebase_options.dart';
 import 'screens/help_screen.dart';
-import 'screens/main_worldcup_screen.dart';
 
 // 이 너비(dp) 이상을 '대화면'(폴더블 내부화면, 태블릿 등)으로 간주하여 회전을 허용한다.
 const double _kLargeScreenWidth = 600.0;

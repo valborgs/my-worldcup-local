@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../widgets/worldcup_list.dart';
@@ -13,17 +12,14 @@ import '../widgets/worldcup_list.dart';
 import 'package:worldcup_core/worldcup_core.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
-
 class MainWorldCupScreen extends ConsumerStatefulWidget {
   final List<WorldCupModel>? initialWorldCupList;
   final bool enableBottomSheetSelectionPagerTransition;
-  final NearbyTransferGateway Function()? nearbyGatewayFactory;
   final WorldCupPackagePort? packageGateway;
 
   const MainWorldCupScreen({
     this.initialWorldCupList,
     required this.enableBottomSheetSelectionPagerTransition,
-    this.nearbyGatewayFactory,
     this.packageGateway,
     super.key,
   });

@@ -19,6 +19,9 @@ dependencies:
     path: ../worldcup_domain
   worldcup_ui_kit:
     path: ../worldcup_ui_kit
+  flutter_riverpod: ^3.0.0
+  google_mobile_ads: ^9.1.0 # 목록 화면 배너 광고
+  file_picker: ^10.3.10 # 월드컵 패키지 파일 가져오기
 
 dev_dependencies:
   flutter_test:

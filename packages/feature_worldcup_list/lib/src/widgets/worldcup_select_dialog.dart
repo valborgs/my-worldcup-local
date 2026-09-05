@@ -2,25 +2,20 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
-
 
 import 'package:worldcup_core/worldcup_core.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
-
 
 class WorldCupSelectDialog extends ConsumerStatefulWidget {
   final WorldCupModel model;
   final VoidCallback onChanged;
   final WorldCupPackagePort? packageGateway;
-  final NearbyTransferGateway Function()? nearbyGatewayFactory;
 
   const WorldCupSelectDialog(
     this.model, {
     required this.onChanged,
     this.packageGateway,
-    this.nearbyGatewayFactory,
     super.key,
   });
 

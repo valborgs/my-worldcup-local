@@ -2,7 +2,9 @@ import 'dart:ui' show SemanticsAction;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_worldcup_local/widgets/worldcup_list.dart';
+import 'package:feature_worldcup_list/src/state/worldcup_list_view_model.dart';
+import 'package:feature_worldcup_list/src/widgets/cover_flow_pager.dart';
+import 'package:feature_worldcup_list/src/widgets/worldcup_list.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -289,34 +291,17 @@ void main() {
     expect(find.bySemanticsLabel('Game 6, 최대 라운드 4강, 6 / 15'), findsOneWidget);
   });
 
-  testWidgets('첫 페이지를 공유하는 새로고침은 가장 큰 범위를 한 번만 조회한다', (tester) async {
+  // 위젯을 띄우지 않고 ViewModel만으로 검증한다. 새로고침의 조회 범위 계산은
+  // 이제 위젯이 아니라 ViewModel의 책임이다.
+  test('첫 페이지를 공유하는 새로고침은 가장 큰 범위를 한 번만 조회한다', () async {
     final dao = _FakeWorldCupDao(_models(30));
-    final listKey = GlobalKey<WorldCupListState>();
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          home: Scaffold(
-            body: Column(
-              children: [
-                WorldCupList(
-                  key: listKey,
-                  repository: dao,
-                  enableBottomSheetSelectionPagerTransition: true,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
+    // 페이저가 이미 30개를 들고 있는 상태에서 새로고침한다.
+    final viewModel = WorldCupListViewModel(dao, initialItems: _models(30));
+    addTearDown(viewModel.dispose);
 
-    listKey.currentState!.worldCupList = _models(30);
-    dao.requestedLimits.clear();
-    dao.requestedOffsets.clear();
-    await listKey.currentState!.refresh();
-    await tester.pumpAndSettle();
+    await viewModel.refresh();
 
+    // 시트용 조회와 페이저용 조회를 하나로 합쳐 한 번만 물어봐야 한다.
     expect(dao.requestedLimits, [30]);
     expect(dao.requestedOffsets, [0]);
   });

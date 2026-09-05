@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:my_worldcup_local/widgets/worldcup_select_dialog.dart';
+import 'package:feature_worldcup_list/src/widgets/worldcup_select_dialog.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
