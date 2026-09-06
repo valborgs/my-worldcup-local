@@ -59,7 +59,7 @@ class WorldCupListViewModel extends ChangeNotifier {
   List<WorldCupModel> _pagerItems;
   int _pagerOffset = 0;
   bool _isLoadingPagerPage = false;
-  _PagerTrimSide? _deferredPagerTrimSide;
+  _WindowTrimSide? _deferredPagerTrimSide;
 
   /// 페이저가 들고 있는 항목. 전체가 아니라 선택 지점 주변의 창일 수 있다.
   List<WorldCupModel> get pagerItems => List.unmodifiable(_pagerItems);
@@ -113,10 +113,7 @@ class WorldCupListViewModel extends ChangeNotifier {
   Future<void> refresh() async {
     // 현재 창의 크기와 오프셋을 유지해 스크롤 extent가 급격히 줄지
     // 않게 한다. 대신 조회량은 부분 페이지를 포함한 창 상한으로 제한한다.
-    final sheetLimit = _sheetItems.length.clamp(
-      pageSize,
-      _sheetWindowCapacity,
-    );
+    final sheetLimit = _sheetItems.length.clamp(pageSize, _sheetWindowCapacity);
     final pagerLimit = _pagerItems.length.clamp(pageSize, _pagerWindowCapacity);
 
     final totalCount = await _repository.count();
@@ -210,9 +207,9 @@ class WorldCupListViewModel extends ChangeNotifier {
           _pagerItems.length == loadedCount) {
         _pagerItems = [..._pagerItems, ...nextPage];
         if (deferTrim && _hasFullPageOverflow) {
-          _deferredPagerTrimSide = _PagerTrimSide.start;
+          _deferredPagerTrimSide = _WindowTrimSide.start;
         } else {
-          _trimPagerWindowFrom(_PagerTrimSide.start);
+          _trimPagerWindowFrom(_WindowTrimSide.start);
         }
         _notify();
       }
@@ -236,9 +233,9 @@ class WorldCupListViewModel extends ChangeNotifier {
         _pagerOffset = previousOffset;
         _pagerItems = [...previousPage, ..._pagerItems];
         if (deferTrim && _hasFullPageOverflow) {
-          _deferredPagerTrimSide = _PagerTrimSide.end;
+          _deferredPagerTrimSide = _WindowTrimSide.end;
         } else {
-          _trimPagerWindowFrom(_PagerTrimSide.end);
+          _trimPagerWindowFrom(_WindowTrimSide.end);
         }
         _notify();
       }
@@ -259,12 +256,12 @@ class WorldCupListViewModel extends ChangeNotifier {
   }
 
   /// 페이지 정렬을 유지하도록 상한 초과분을 [pageSize] 단위로만 잘라낸다.
-  bool _trimPagerWindowFrom(_PagerTrimSide trimSide) {
+  bool _trimPagerWindowFrom(_WindowTrimSide trimSide) {
     final overflow = _pagerItems.length - pagerWindowSize;
     final trimCount = (overflow ~/ pageSize) * pageSize;
     if (trimCount < pageSize) return false;
 
-    if (trimSide == _PagerTrimSide.start) {
+    if (trimSide == _WindowTrimSide.start) {
       _pagerOffset += trimCount;
       _pagerItems = _pagerItems.sublist(trimCount);
     } else {
@@ -302,13 +299,11 @@ class WorldCupListViewModel extends ChangeNotifier {
   }
 
   /// 시트 창 앞쪽 페이지를 이어 붙인다.
-  Future<void> loadPreviousSheetPage() async {
-    if (_isSearching || _isLoadingSheetPage || _sheetOffset <= 0) return;
+  Future<int> loadPreviousSheetPage() async {
+    if (_isSearching || _isLoadingSheetPage || _sheetOffset <= 0) return 0;
     _isLoadingSheetPage = true;
     final sheetOffset = _sheetOffset;
-    final previousOffset = sheetOffset > pageSize
-        ? sheetOffset - pageSize
-        : 0;
+    final previousOffset = sheetOffset > pageSize ? sheetOffset - pageSize : 0;
     try {
       final previousPage = await _repository.page(
         limit: sheetOffset - previousOffset,
@@ -319,7 +314,9 @@ class WorldCupListViewModel extends ChangeNotifier {
         _sheetItems = [...previousPage, ..._sheetItems];
         _trimSheetWindowFrom(_WindowTrimSide.end);
         _notify();
+        return previousPage.length;
       }
+      return 0;
     } finally {
       _isLoadingSheetPage = false;
     }
@@ -375,7 +372,10 @@ class WorldCupListViewModel extends ChangeNotifier {
   void startSearch() {
     if (_isSearching) return;
     _isSearching = true;
-    _searchResults = List.of(_sheetItems);
+    // 시트 창이 전역 0에서 시작할 때만 길이를 다음 페이지
+    // 오프셋으로 쓸 수 있다. 뒤로 밀린 창을 예열하면 71..100 뒤에
+    // 31..40을 이어 붙이는 식으로 전역 오프셋과 길이가 어긋난다.
+    _searchResults = _sheetOffset == 0 ? List.of(_sheetItems) : [];
     _searchTotalCount = _totalCount;
     _notify();
   }
@@ -422,8 +422,6 @@ class WorldCupListViewModel extends ChangeNotifier {
     _searchTotalCount = 0;
   }
 }
-
-enum _PagerTrimSide { start, end }
 
 enum _WindowTrimSide { start, end }
 

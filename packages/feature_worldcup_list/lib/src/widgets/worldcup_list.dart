@@ -48,6 +48,8 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
   bool _isHandlingSheetItemTap = false;
   bool _isPagerTransitionInFlight = false;
   bool _isLoadingNextSheetPage = false;
+  bool _isLoadingPreviousSheetPage = false;
+  bool _isCorrectingSheetPosition = false;
   int _pagerNavigationRequest = 0;
   int? _pagerTargetPage;
   double _collapsedSheetSize = 0.1;
@@ -187,6 +189,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                   snap: true,
                   snapSizes: [minSheetSize, 0.92],
                   builder: (context, scrollController) {
+                    final itemExtent = WorldCupSheetItem.extentFor(context);
                     return Material(
                       elevation: 16,
                       color: Theme.of(context).colorScheme.surface,
@@ -196,13 +199,26 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                       clipBehavior: Clip.antiAlias,
                       child: NotificationListener<ScrollNotification>(
                         onNotification: (notification) {
-                          if (notification.metrics.extentBefore < 240) {
-                            unawaited(_vm.loadPreviousSheetPage());
+                          if (_isCorrectingSheetPosition ||
+                              notification is! ScrollUpdateNotification) {
+                            return false;
                           }
-                          if (notification.metrics.extentAfter < 240) {
+                          final scrollDelta = notification.scrollDelta ?? 0;
+                          if (scrollDelta < 0 &&
+                              notification.metrics.extentBefore < 240) {
+                            unawaited(
+                              _loadPreviousSheetPagePreservingPosition(
+                                scrollController,
+                                itemExtent,
+                              ),
+                            );
+                          }
+                          if (scrollDelta > 0 &&
+                              notification.metrics.extentAfter < 240) {
                             unawaited(
                               _loadNextSheetPagePreservingPosition(
                                 scrollController,
+                                itemExtent,
                               ),
                             );
                           }
@@ -239,7 +255,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                               )
                             else
                               SliverFixedExtentList.builder(
-                                itemExtent: WorldCupSheetItem.extent,
+                                itemExtent: itemExtent,
                                 itemCount: _sheetItems.length,
                                 itemBuilder: (context, index) {
                                   final model = _sheetItems[index];
@@ -489,31 +505,55 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
 
   Future<void> _loadNextSheetPagePreservingPosition(
     ScrollController controller,
+    double itemExtent,
   ) async {
     if (_isLoadingNextSheetPage) return;
     _isLoadingNextSheetPage = true;
-    final previousOffset = controller.hasClients ? controller.offset : null;
     try {
       final trimmedItems = await _vm.loadNextSheetPage();
-      if (!mounted ||
-          trimmedItems == 0 ||
-          previousOffset == null ||
-          !controller.hasClients) {
+      if (!mounted || trimmedItems == 0 || !controller.hasClients) {
         return;
       }
       // 창 앞쪽에서 잘라낸 높이만큼 오프셋을 줄여, 로드 전에
       // 보던 항목이 같은 화면 위치에 남도록 한다.
-      final correctedOffset =
-          previousOffset - (trimmedItems * WorldCupSheetItem.extent);
-      controller.jumpTo(
-        correctedOffset.clamp(
-          controller.position.minScrollExtent,
-          controller.position.maxScrollExtent,
-        ),
-      );
+      final correctedOffset = controller.offset - (trimmedItems * itemExtent);
+      _correctSheetPosition(controller, correctedOffset);
     } finally {
       _isLoadingNextSheetPage = false;
     }
+  }
+
+  Future<void> _loadPreviousSheetPagePreservingPosition(
+    ScrollController controller,
+    double itemExtent,
+  ) async {
+    if (_isLoadingPreviousSheetPage) return;
+    _isLoadingPreviousSheetPage = true;
+    try {
+      final prependedItems = await _vm.loadPreviousSheetPage();
+      if (!mounted || prependedItems == 0 || !controller.hasClients) {
+        return;
+      }
+      // 앞에 추가된 높이만큼 오프셋을 늘려 로드 전에 보던
+      // 항목이 같은 화면 위치에 남도록 한다.
+      final correctedOffset = controller.offset + (prependedItems * itemExtent);
+      _correctSheetPosition(controller, correctedOffset);
+    } finally {
+      _isLoadingPreviousSheetPage = false;
+    }
+  }
+
+  void _correctSheetPosition(ScrollController controller, double targetOffset) {
+    _isCorrectingSheetPosition = true;
+    controller.jumpTo(
+      targetOffset.clamp(
+        controller.position.minScrollExtent,
+        controller.position.maxScrollExtent,
+      ),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _isCorrectingSheetPosition = false;
+    });
   }
 
   void _movePagerToPage(int targetIndex) {

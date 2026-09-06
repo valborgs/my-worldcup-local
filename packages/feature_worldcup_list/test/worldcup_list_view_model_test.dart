@@ -181,6 +181,23 @@ void main() {
       expect(vm.sheetItems.first.idx, 11);
       expect(vm.sheetItems.last.idx, 40);
     });
+
+    test('창이 뒤로 밀린 상태에서 검색을 열어도 중복 없이 이어진다', () async {
+      final vm = WorldCupListViewModel(_FakeRepository(models(100)));
+      addTearDown(vm.dispose);
+      await vm.refresh();
+      for (var page = 1; page < 10; page++) {
+        await vm.loadNextSheetPage();
+      }
+      expect(vm.sheetOffset, 70);
+
+      vm.startSearch();
+      await vm.loadNextSheetPage();
+
+      final ids = vm.sheetItems.map((model) => model.idx).toList();
+      expect(ids.toSet(), hasLength(ids.length));
+      expect(ids, orderedEquals(models(10).map((model) => model.idx)));
+    });
   });
 
   group('페이저 페이징', () {

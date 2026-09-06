@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:feature_worldcup_list/src/state/worldcup_list_view_model.dart';
 import 'package:feature_worldcup_list/src/widgets/cover_flow_pager.dart';
 import 'package:feature_worldcup_list/src/widgets/worldcup_list.dart';
+import 'package:feature_worldcup_list/src/widgets/worldcup_sheet.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -508,6 +509,91 @@ void main() {
       find.bySemanticsLabel('Game 24, 최대 라운드 4강, 24 / 32'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('시트 앞쪽 페이지를 이어붙여도 보던 항목이 제자리에 남는다', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final dao = _FakeWorldCupDao(_models(100));
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                WorldCupList(
+                  repository: dao,
+                  enableBottomSheetSelectionPagerTransition: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('전체 목록 (100)'));
+    await tester.pumpAndSettle();
+
+    final list = find.byType(CustomScrollView);
+    int topVisibleIndex() {
+      final ids =
+          tester
+              .widgetList<Text>(
+                find.descendant(of: list, matching: find.byType(Text)),
+              )
+              .map((text) => text.data)
+              .where((text) => text != null && text.startsWith('Game '))
+              .map((text) => int.parse(text!.substring(5)))
+              .toList()
+            ..sort();
+      return ids.first;
+    }
+
+    for (var i = 0; i < 24; i++) {
+      await tester.drag(list, const Offset(0, -400));
+      await tester.pumpAndSettle();
+    }
+
+    var previousTop = topVisibleIndex();
+    var worstJump = 0;
+    for (var i = 0; i < 10; i++) {
+      await tester.drag(list, const Offset(0, 200));
+      await tester.pumpAndSettle();
+      final top = topVisibleIndex();
+      final jump = previousTop - top;
+      if (jump > worstJump) worstJump = jump;
+      previousTop = top;
+    }
+
+    expect(worstJump, lessThanOrEqualTo(4));
+  });
+
+  testWidgets('시트 항목 높이는 큰 글꼴 배율에 맞춰 늘어난다', (tester) async {
+    late double itemExtent;
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: const TextScaler.linear(1.6)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) {
+              itemExtent = WorldCupSheetItem.extentFor(context);
+              return WorldCupSheetItem(model: _models(1).single, onTap: () {});
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(itemExtent, greaterThan(84));
+    expect(tester.getSize(find.byType(WorldCupSheetItem)).height, itemExtent);
   });
 }
 
