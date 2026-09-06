@@ -49,7 +49,6 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
   bool _isPagerTransitionInFlight = false;
   bool _isLoadingNextSheetPage = false;
   bool _isLoadingPreviousSheetPage = false;
-  bool _isCorrectingSheetPosition = false;
   int _pagerNavigationRequest = 0;
   int? _pagerTargetPage;
   double _collapsedSheetSize = 0.1;
@@ -199,8 +198,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                       clipBehavior: Clip.antiAlias,
                       child: NotificationListener<ScrollNotification>(
                         onNotification: (notification) {
-                          if (_isCorrectingSheetPosition ||
-                              notification is! ScrollUpdateNotification) {
+                          if (notification is! ScrollUpdateNotification) {
                             return false;
                           }
                           final scrollDelta = notification.scrollDelta ?? 0;
@@ -261,6 +259,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                                   final model = _sheetItems[index];
                                   return WorldCupSheetItem(
                                     model: model,
+                                    itemExtent: itemExtent,
                                     onTap: () =>
                                         unawaited(_handleSheetItemTap(model)),
                                   );
@@ -369,6 +368,10 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
 
   Future<void> _openSearch(double minSheetSize) async {
     _vm.startSearch();
+    // 뒤로 밀린 시트 창은 전역 0 기준 검색 결과로 예열할 수
+    // 없다. 예열이 비었으면 스크롤 알림을 기다리지 말고 첫 페이지를
+    // 바로 조회해 '검색 결과가 없습니다'에 멈추는 상태를 피한다.
+    if (_vm.sheetItems.isEmpty) unawaited(_vm.runSearch());
     if (_sheetController.isAttached &&
         _sheetController.size <= minSheetSize + 0.05) {
       await _sheetController.animateTo(
@@ -511,13 +514,8 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
     _isLoadingNextSheetPage = true;
     try {
       final trimmedItems = await _vm.loadNextSheetPage();
-      if (!mounted || trimmedItems == 0 || !controller.hasClients) {
-        return;
-      }
-      // 창 앞쪽에서 잘라낸 높이만큼 오프셋을 줄여, 로드 전에
-      // 보던 항목이 같은 화면 위치에 남도록 한다.
-      final correctedOffset = controller.offset - (trimmedItems * itemExtent);
-      _correctSheetPosition(controller, correctedOffset);
+      if (!mounted || trimmedItems == 0 || !controller.hasClients) return;
+      _correctSheetPositionBy(controller, -trimmedItems * itemExtent);
     } finally {
       _isLoadingNextSheetPage = false;
     }
@@ -531,29 +529,22 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
     _isLoadingPreviousSheetPage = true;
     try {
       final prependedItems = await _vm.loadPreviousSheetPage();
-      if (!mounted || prependedItems == 0 || !controller.hasClients) {
-        return;
-      }
-      // 앞에 추가된 높이만큼 오프셋을 늘려 로드 전에 보던
-      // 항목이 같은 화면 위치에 남도록 한다.
-      final correctedOffset = controller.offset + (prependedItems * itemExtent);
-      _correctSheetPosition(controller, correctedOffset);
+      if (!mounted || prependedItems == 0 || !controller.hasClients) return;
+      _correctSheetPositionBy(controller, prependedItems * itemExtent);
     } finally {
       _isLoadingPreviousSheetPage = false;
     }
   }
 
-  void _correctSheetPosition(ScrollController controller, double targetOffset) {
-    _isCorrectingSheetPosition = true;
-    controller.jumpTo(
-      targetOffset.clamp(
-        controller.position.minScrollExtent,
-        controller.position.maxScrollExtent,
-      ),
+  void _correctSheetPositionBy(ScrollController controller, double correction) {
+    if (!controller.hasClients) return;
+    final position = controller.position;
+    final correctedOffset = (position.pixels + correction).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _isCorrectingSheetPosition = false;
-    });
+    // jumpTo와 달리 현재 ScrollActivity를 교체하지 않아 플링 관성이 유지된다.
+    position.correctBy(correctedOffset - position.pixels);
   }
 
   void _movePagerToPage(int targetIndex) {

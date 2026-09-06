@@ -68,11 +68,13 @@ class WorldCupSheetItem extends StatelessWidget {
   }
 
   final WorldCupModel model;
+  final double itemExtent;
   final VoidCallback onTap;
 
   const WorldCupSheetItem({
     super.key,
     required this.model,
+    required this.itemExtent,
     required this.onTap,
   });
 
@@ -84,7 +86,7 @@ class WorldCupSheetItem extends StatelessWidget {
         ? Image.asset(model.titleImageSrc, fit: BoxFit.cover)
         : Image.file(File(model.titleImageSrc), fit: BoxFit.cover);
     return SizedBox(
-      height: extentFor(context),
+      height: itemExtent,
       child: ListTile(
         onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
