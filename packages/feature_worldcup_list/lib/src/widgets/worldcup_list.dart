@@ -164,6 +164,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                     if (_isPagerTransitionInFlight) return;
                     _prefetchAroundPagerIndex(index);
                   },
+                  onScrollEnd: _vm.trimDeferredPagerWindow,
                   itemKey: (model) => model.idx,
                   targetPage: _pagerTargetPage,
                   navigationRequest: _pagerNavigationRequest,
@@ -456,11 +457,25 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
 
   void _prefetchAroundPagerIndex(int index) {
     if (index >= worldCupList.length - 3) {
-      unawaited(_vm.loadNextPagerPage());
+      unawaited(_loadNextPagerPage());
     }
     if (index <= 2) {
-      unawaited(_vm.loadPreviousPagerPage());
+      unawaited(_loadPreviousPagerPage());
     }
+  }
+
+  Future<void> _loadNextPagerPage() async {
+    final deferTrim = _pagerKey.currentState?.isScrolling ?? false;
+    await _vm.loadNextPagerPage(deferTrim: deferTrim);
+    if (!mounted || (_pagerKey.currentState?.isScrolling ?? false)) return;
+    _vm.trimDeferredPagerWindow();
+  }
+
+  Future<void> _loadPreviousPagerPage() async {
+    final deferTrim = _pagerKey.currentState?.isScrolling ?? false;
+    await _vm.loadPreviousPagerPage(deferTrim: deferTrim);
+    if (!mounted || (_pagerKey.currentState?.isScrolling ?? false)) return;
+    _vm.trimDeferredPagerWindow();
   }
 
   void _movePagerToPage(int targetIndex) {
@@ -489,7 +504,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
 
     // 새로고침으로 목록 길이가 달라졌을 수 있어, 끝에 닿아 있으면 이어 불러온다.
     if (currentPagerIndex >= worldCupList.length - 3) {
-      await _vm.loadNextPagerPage();
+      await _loadNextPagerPage();
     }
   }
 }

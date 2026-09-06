@@ -147,6 +147,55 @@ void main() {
 
       expect(repo.pageCalls, callsBefore);
     });
+
+    test('양방향으로 페이지를 불러도 페이저 창이 상한을 넘지 않는다', () async {
+      final repo = _FakeRepository(models(100));
+      final vm = WorldCupListViewModel(repo);
+      addTearDown(vm.dispose);
+      await vm.refresh();
+
+      await vm.loadNextPagerPage();
+      await vm.loadNextPagerPage();
+      await vm.loadNextPagerPage();
+
+      expect(vm.pagerItems, hasLength(WorldCupListViewModel.pagerWindowSize));
+      expect(vm.pagerOffset, 10);
+      expect(vm.pagerItems.first.idx, 11);
+      expect(vm.pagerItems.last.idx, 40);
+
+      await vm.loadPreviousPagerPage();
+
+      expect(vm.pagerItems, hasLength(WorldCupListViewModel.pagerWindowSize));
+      expect(vm.pagerOffset, 0);
+      expect(vm.pagerItems.first.idx, 1);
+      expect(vm.pagerItems.last.idx, 30);
+      expect(
+        repo.requestedOffsets.last,
+        0,
+        reason: '방향을 바꾸면 버린 이전 페이지를 다시 조회해야 한다',
+      );
+    });
+
+    test('마지막 부분 페이지는 완전한 페이지가 될 때까지 잘라내지 않는다', () async {
+      final vm = WorldCupListViewModel(_FakeRepository(models(31)));
+      addTearDown(vm.dispose);
+      await vm.refresh();
+
+      await vm.loadNextPagerPage();
+      await vm.loadNextPagerPage();
+      await vm.loadNextPagerPage();
+
+      expect(vm.pagerItems, hasLength(31));
+      expect(vm.pagerOffset, 0);
+      expect(vm.pagerItems.first.idx, 1);
+      expect(vm.pagerItems.last.idx, 31);
+
+      await vm.refresh();
+
+      expect(vm.pagerItems, hasLength(31));
+      expect(vm.pagerOffset, 0);
+      expect(vm.pagerItems.last.idx, 31);
+    });
   });
 
   group('페이저 위치 찾기', () {
@@ -231,6 +280,7 @@ void main() {
 class _FakeRepository implements WorldCupRepository {
   List<WorldCupModel> models;
   int pageCalls = 0;
+  final List<int> requestedOffsets = [];
   Completer<void>? _gate;
   bool _gateArmed = false;
 
@@ -265,6 +315,7 @@ class _FakeRepository implements WorldCupRepository {
     String searchQuery = '',
   }) async {
     pageCalls++;
+    requestedOffsets.add(offset);
     if (_gateArmed) {
       // 한 번만 붙잡는다. 이후 호출은 그대로 통과시킨다.
       _gateArmed = false;
