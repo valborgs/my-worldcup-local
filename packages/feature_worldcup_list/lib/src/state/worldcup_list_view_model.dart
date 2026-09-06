@@ -99,9 +99,10 @@ class WorldCupListViewModel extends ChangeNotifier {
   /// 페이저가 보고 있던 위치를 최대한 유지한다. 항목을 추가한 직후에도
   /// 보던 카드가 그대로 있어야 하기 때문이다.
   Future<void> refresh() async {
-    final sheetLimit = _sheetItems.length < pageSize
-        ? pageSize
-        : _sheetItems.length;
+    // 시트가 이전에 몇 페이지를 불러왔든 새로고침은 첫 페이지부터 다시
+    // 시작한다. 누적 길이를 limit으로 쓰면 100개까지 스크롤한 뒤의 모든
+    // 새로고침이 100개 단일 조회로 굳어진다.
+    const sheetLimit = pageSize;
     // initialItems는 현재 1페이지지만, 외부 주입이 늘어나도 새로고침
     // 조회 범위가 부분 페이지를 포함한 창 상한을 넘지 않도록 방어한다.
     final pagerLimit = _pagerItems.length.clamp(pageSize, _pagerWindowCapacity);
