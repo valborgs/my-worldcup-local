@@ -170,6 +170,21 @@ constructors so they stay testable.
 - **BuildContext across async gaps**: After any `await` inside a method that later uses `context` (navigation, `showDialog`, `ScaffoldMessenger`, etc.), guard with a mounted check before the first post-await context use: `if (!mounted) return;` inside a `State` method, or `if (!context.mounted) return;` when `context` is a parameter (e.g., a free function or a loop awaiting multiple times — check on every iteration).
 - **Riverpod lifecycle**: Never modify a provider during a widget lifecycle callback (`initState`, `build`, `dispose`) — Riverpod throws. Do it from an async callback or an event handler instead.
 - **Null-coalescing with `ref.read`**: `widget.something ?? ref.read(provider)` infers a nullable `T` from the left operand and makes the whole expression nullable. Annotate the local explicitly: `final MyPort port = widget.something ?? ref.read(provider);`
+- **Moving widget logic into a view model**: a `State` protects its async work with
+  `mounted` checks and sometimes with a generation counter that invalidates in-flight
+  requests. Those guards are easy to miss because they are not part of the visible
+  behaviour — but dropping them is a regression. Carry each one across:
+  - `if (!mounted) return;` after an `await` becomes a `_disposed` flag on the view
+    model, checked before applying state, plus a `_notify()` wrapper that skips
+    `notifyListeners()` once disposed. Without it the widget's `dispose` disposes the
+    view model while a query is still in flight, and the response throws
+    `A <Notifier> was used after being disposed`.
+  - A generation counter (`_queryGeneration++`) that a cancel path bumped must keep
+    bumping. Put it in the shared reset helper so every caller — cancel *and*
+    refresh — is covered, not just the one you were looking at.
+
+  Write the reproduction test before the fix and watch it fail; these paths are
+  timing-dependent and a test that never actually failed proves nothing.
 
 ## Asset Structure
 
