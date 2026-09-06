@@ -13,6 +13,12 @@ class WorldCupListViewModel extends ChangeNotifier {
   /// 한 번에 불러오는 항목 수.
   static const int pageSize = 10;
 
+  /// 페이저가 메모리에 유지하는 최대 항목 수.
+  ///
+  /// 현재 페이지 양쪽에 여유를 두어 방향을 바꿀 때 방금 잘라낸 페이지를
+  /// 경계에서 바로 다시 조회하지 않도록 3페이지를 유지한다.
+  static const int pagerWindowSize = pageSize * 3;
+
   final WorldCupRepository _repository;
 
   WorldCupListViewModel(this._repository, {List<WorldCupModel>? initialItems})
@@ -94,6 +100,8 @@ class WorldCupListViewModel extends ChangeNotifier {
         : _sheetItems.length;
     final pagerLimit = _pagerItems.length < pageSize
         ? pageSize
+        : _pagerItems.length > pagerWindowSize
+        ? pagerWindowSize
         : _pagerItems.length;
     // 페이저가 첫 페이지를 보고 있고 더 많이 필요하면 한 번의 조회로 합친다.
     final firstPageLimit = _pagerOffset == 0 && pagerLimit > sheetLimit
@@ -176,7 +184,14 @@ class WorldCupListViewModel extends ChangeNotifier {
       if (!_disposed &&
           _pagerOffset == pagerOffset &&
           _pagerItems.length == loadedCount) {
-        _pagerItems = [..._pagerItems, ...nextPage];
+        final appendedItems = [..._pagerItems, ...nextPage];
+        final overflow = appendedItems.length - pagerWindowSize;
+        if (overflow > 0) {
+          _pagerOffset += overflow;
+          _pagerItems = appendedItems.sublist(overflow);
+        } else {
+          _pagerItems = appendedItems;
+        }
         _notify();
       }
     } finally {
@@ -196,8 +211,11 @@ class WorldCupListViewModel extends ChangeNotifier {
         offset: previousOffset,
       );
       if (!_disposed && _pagerOffset == pagerOffset) {
+        final prependedItems = [...previousPage, ..._pagerItems];
         _pagerOffset = previousOffset;
-        _pagerItems = [...previousPage, ..._pagerItems];
+        _pagerItems = prependedItems.length > pagerWindowSize
+            ? prependedItems.sublist(0, pagerWindowSize)
+            : prependedItems;
         _notify();
       }
     } finally {

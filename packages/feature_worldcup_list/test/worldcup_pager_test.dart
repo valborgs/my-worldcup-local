@@ -336,6 +336,62 @@ void main() {
     expect(listKey.currentState!.worldCupList, hasLength(10));
   });
 
+  testWidgets('페이저 창을 잘라내도 현재 카드를 유지하고 역방향 페이지를 다시 부른다', (tester) async {
+    final dao = _FakeWorldCupDao(_models(100));
+    final listKey = GlobalKey<WorldCupListState>();
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                WorldCupList(
+                  key: listKey,
+                  repository: dao,
+                  enableBottomSheetSelectionPagerTransition: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // 28번째 카드에 도달하면 4번째 페이지를 붙인 뒤 첫 페이지를 잘라낸다.
+    for (var count = 0; count < 27; count++) {
+      await tester.drag(
+        find.byKey(const ValueKey('worldCupPager')),
+        const Offset(-500, 0),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    expect(
+      listKey.currentState!.worldCupList,
+      hasLength(WorldCupListViewModel.pagerWindowSize),
+    );
+    expect(
+      find.bySemanticsLabel('Game 28, 최대 라운드 4강, 28 / 100'),
+      findsOneWidget,
+    );
+
+    // 방향을 바꿔 앞쪽 경계로 돌아가면 버렸던 0~9 범위를 다시 조회한다.
+    for (var count = 0; count < 15; count++) {
+      await tester.drag(
+        find.byKey(const ValueKey('worldCupPager')),
+        const Offset(500, 0),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    expect(dao.requestedOffsets.where((offset) => offset == 0), hasLength(2));
+    expect(
+      find.bySemanticsLabel('Game 13, 최대 라운드 4강, 13 / 100'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('뒷쪽 페이지로 이동한 후 앞으로 넘기면 이전 페이지를 이어서 불러온다', (tester) async {
     final dao = _FakeWorldCupDao(_models(31));
     final listKey = GlobalKey<WorldCupListState>();
