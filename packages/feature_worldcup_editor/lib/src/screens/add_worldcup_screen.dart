@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
-import '../widgets/worldcup_add_picutre_dialog.dart';
+import '../state/worldcup_editor_view_model.dart';
+import '../widgets/worldcup_add_picture_dialog.dart';
 
 class AddWorldCupScreen extends ConsumerStatefulWidget {
   /// 수정할 월드컵의 id. `null`이면 새로 만드는 화면이다.
@@ -22,19 +23,27 @@ class AddWorldCupScreen extends ConsumerStatefulWidget {
 }
 
 class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
-  late final _repository = ref.read(worldCupRepositoryProvider);
+  /// 항목 목록과 저장 규칙. 화면은 입력 위젯만 들고 있는다.
+  late final WorldCupEditorViewModel _vm = WorldCupEditorViewModel(
+    ref.read(worldCupRepositoryProvider),
+    editWorldCupId: widget.editWorldCupId,
+  );
 
   late TextEditingController _titleController;
   late TextEditingController _infoController;
   late GlobalKey<FormState> _formKey;
   late FocusNode _titleFocusNode;
   late FocusNode _infoFocusNode;
-  late List<String> _imagePathList;
-  late List<String> _imageInfoList;
+
   bool get isEditMode => widget.editWorldCupId != null;
 
-  /// 수정 모드에서 불러온 원본. 제목 / 설명 / 등록일을 유지하는 데 쓴다.
-  WorldCupModel? _editModel;
+  // ViewModel 항목을 기존 이름으로 읽는 통로. build()가 그대로 쓰인다.
+  List<String> get _imagePathList => [
+    for (final item in _vm.items) item.imagePath,
+  ];
+  List<String> get _imageInfoList => [
+    for (final item in _vm.items) item.imageInfo,
+  ];
 
   @override
   void initState() {
@@ -44,12 +53,15 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
     _formKey = GlobalKey<FormState>();
     _titleFocusNode = FocusNode();
     _infoFocusNode = FocusNode();
-    _imagePathList = [];
-    _imageInfoList = [];
 
+    _vm.addListener(_onViewModelChanged);
     if (isEditMode) {
       _initializeEditMode();
     }
+  }
+
+  void _onViewModelChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -57,9 +69,8 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
     _titleController.dispose();
     _infoController.dispose();
     _titleFocusNode.dispose();
-    _infoFocusNode.dispose();
-    _imagePathList = [];
-    _imageInfoList = [];
+    _vm.removeListener(_onViewModelChanged);
+    _vm.dispose();
     super.dispose();
   }
 
@@ -335,11 +346,9 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                // 해당 아이템을 리스트에서 삭제
-                setState(() {
-                  _imagePathList.removeAt(index);
-                  _imageInfoList.removeAt(index);
-                });
+                // 해당 아이템을 리스트에서 삭제. ViewModel이 알림을 보내
+                // 화면이 다시 그려지므로 setState는 필요 없다.
+                _vm.removeItemAt(index);
               },
               child: const Text('네'),
             ),
@@ -394,34 +403,11 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
     // 제목, 설명 입력 체크
     if (!_formKey.currentState!.validate()) return null;
 
-    // 등록된 항목이 없을 경우 체크
-    if (_imagePathList.isEmpty || _imagePathList.length < 4) {
-      return null;
-    }
-
-    final dao = _repository;
-    // 월드컵 객체 생성
-    var model = WorldCupModel(
-      0,
-      _titleController.text,
-      _infoController.text,
-      DateTime.now(),
-      _imagePathList.first,
-      _imagePathList.length,
-    );
-
-    // 등록
     try {
-      final items = List.generate(
-        _imagePathList.length,
-        (index) => WorldCupItemModel(
-          0,
-          _imagePathList[index],
-          _imageInfoList[index],
-          0,
-        ),
+      return await _vm.save(
+        title: _titleController.text,
+        info: _infoController.text,
       );
-      return await dao.add(model, items);
     } catch (e) {
       log('DB Error', error: e, name: 'add_worldcup_screen');
       if (mounted) {
@@ -441,71 +427,33 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
     return const TextStyle(color: Colors.black, fontWeight: FontWeight.normal);
   }
 
-  void _initializeEditMode() async {
-    final editId = widget.editWorldCupId;
-    if (editId == null) return;
-
-    final dao = _repository;
-    final model = await dao.findById(editId);
-    if (!mounted || model == null) return;
-
-    final items = await dao.items(editId);
+  Future<void> _initializeEditMode() async {
+    await _vm.load();
     if (!mounted) return;
-
-    _titleController.text = model.title;
-    _infoController.text = model.info;
-    setState(() {
-      _editModel = model;
-      _imagePathList = items.map((item) => item.imagePath).toList();
-      _imageInfoList = items.map((item) => item.imageInfo).toList();
-    });
+    // 텍스트 컨트롤러는 화면이 들고 있으므로 여기서 채운다.
+    _titleController.text = _vm.originalTitle;
+    _infoController.text = _vm.originalInfo;
   }
 
   Future<bool> updateWorldCup() async {
     FocusManager.instance.primaryFocus?.unfocus();
     if (!_formKey.currentState!.validate()) return false;
 
-    if (_imagePathList.isEmpty || _imagePathList.length < 4) {
-      return false;
-    }
-
-    // 원본을 아직 못 불러왔으면 덮어쓸 수 없다.
-    // 보통 화면 진입 직후 한순간뿐이지만, 아무 반응 없이 끝나면 안 되므로
-    // 사용자에게 알린다.
-    final editModel = _editModel;
-    if (editModel == null) {
-      if (mounted) {
+    try {
+      final updated = await _vm.update(
+        title: _titleController.text,
+        info: _infoController.text,
+      );
+      // 원본을 아직 못 불러왔으면 덮어쓸 수 없다. 보통 화면 진입 직후
+      // 한순간뿐이지만, 아무 반응 없이 끝나면 안 되므로 알린다.
+      if (!updated && !_vm.isReady && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("월드컵 정보를 아직 불러오는 중입니다. 잠시 후 다시 시도해주세요."),
           ),
         );
       }
-      return false;
-    }
-
-    final dao = _repository;
-    var model = WorldCupModel(
-      editModel.idx,
-      _titleController.text,
-      _infoController.text,
-      editModel.date,
-      _imagePathList.first,
-      _imagePathList.length,
-    );
-
-    try {
-      final items = List.generate(
-        _imagePathList.length,
-        (index) => WorldCupItemModel(
-          0,
-          _imagePathList[index],
-          _imageInfoList[index],
-          editModel.idx,
-        ),
-      );
-      await dao.update(model, items);
-      return true;
+      return updated;
     } catch (e) {
       log('DB Error', error: e, name: 'add_worldcup_screen');
       if (mounted) {
@@ -529,10 +477,7 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
 
     if (!mounted) return;
     if (result != null && result.isNotEmpty) {
-      setState(() {
-        _imagePathList.add(result[0]);
-        _imageInfoList.add(result[1]);
-      });
+      _vm.addItem(EditorItem(imagePath: result[0], imageInfo: result[1]));
     }
   }
 
@@ -552,10 +497,10 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
 
     if (!mounted) return;
     if (result != null && result.isNotEmpty) {
-      setState(() {
-        _imagePathList[index] = result[0];
-        _imageInfoList[index] = result[1];
-      });
+      _vm.replaceItem(
+        index,
+        EditorItem(imagePath: result[0], imageInfo: result[1]),
+      );
     }
   }
 
@@ -624,10 +569,9 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
 
           if (!mounted) return;
           if (description != null) {
-            setState(() {
-              _imagePathList.add(file.path!);
-              _imageInfoList.add(description);
-            });
+            _vm.addItem(
+              EditorItem(imagePath: file.path!, imageInfo: description),
+            );
           }
         }
       }

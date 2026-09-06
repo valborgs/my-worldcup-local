@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:worldcup_core/worldcup_core.dart';
+import 'package:feature_worldcup_editor/feature_worldcup_editor.dart';
 import 'package:feature_worldcup_list/feature_worldcup_list.dart';
 import 'package:feature_worldcup_play/feature_worldcup_play.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
-import 'screens/add_worldcup_screen.dart';
 import 'screens/help_screen.dart';
 import 'screens/nearby_worldcup_transfer_screen.dart';
 

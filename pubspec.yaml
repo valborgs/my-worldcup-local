@@ -75,6 +75,8 @@ dependencies:
     path: packages/feature_worldcup_play
   feature_worldcup_list:
     path: packages/feature_worldcup_list
+  feature_worldcup_editor:
+    path: packages/feature_worldcup_editor
   flutter_riverpod: ^3.0.0 # DI + 상태관리
   flutter:
     sdk: flutter
