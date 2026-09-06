@@ -89,6 +89,15 @@ class WorldCupListViewModel extends ChangeNotifier {
   /// 검색 결과가 뒤늦게 도착해 최신 질의를 덮어쓰는 것을 막는 세대 번호.
   int _queryGeneration = 0;
 
+  /// 새로고침이 창을 갈아끼운 뒤 도착한 페이지 응답을 무효화하는 세대 번호.
+  ///
+  /// 오프셋과 길이 비교만으로는 부족하다. 그 둘은 "조회 중 창이 바뀌지
+  /// 않았다"의 약한 대리 지표일 뿐이어서, 새로고침이 같은 자리에 같은
+  /// 개수를 다시 채우면 두 검사를 모두 통과한다. 그러면 새로고침 이전
+  /// 기준으로 조회한 페이지가 새 창에 이어붙어 중복 항목이나 이미 지워진
+  /// 항목이 보인다.
+  int _windowGeneration = 0;
+
   /// 검색 모드 여부. 시트가 무엇을 보여줄지 결정한다.
   bool get isSearching => _isSearching;
 
@@ -149,6 +158,9 @@ class WorldCupListViewModel extends ChangeNotifier {
 
     if (_disposed) return;
 
+    // 진행 중이던 페이지 조회를 무효화한다. 여기서 두 창을 통째로 갈아끼우므로
+    // 그 이전에 보낸 응답은 모두 낡은 것이다.
+    _windowGeneration++;
     _totalCount = totalCount;
     _pagerOffset = refreshedPagerOffset;
     _pagerItems = refreshedPagerItems;
@@ -198,11 +210,13 @@ class WorldCupListViewModel extends ChangeNotifier {
     if (_isLoadingPagerPage || offset >= _totalCount) return;
     _isLoadingPagerPage = true;
     // 조회 중에 창이 교체되면 결과를 버린다.
+    final generation = _windowGeneration;
     final pagerOffset = _pagerOffset;
     final loadedCount = _pagerItems.length;
     try {
       final nextPage = await _repository.page(limit: pageSize, offset: offset);
       if (!_disposed &&
+          generation == _windowGeneration &&
           _pagerOffset == pagerOffset &&
           _pagerItems.length == loadedCount) {
         _pagerItems = [..._pagerItems, ...nextPage];
@@ -222,6 +236,7 @@ class WorldCupListViewModel extends ChangeNotifier {
   Future<void> loadPreviousPagerPage({bool deferTrim = false}) async {
     if (_isLoadingPagerPage || _pagerOffset <= 0) return;
     _isLoadingPagerPage = true;
+    final generation = _windowGeneration;
     final pagerOffset = _pagerOffset;
     final previousOffset = pagerOffset > pageSize ? pagerOffset - pageSize : 0;
     try {
@@ -229,7 +244,9 @@ class WorldCupListViewModel extends ChangeNotifier {
         limit: pagerOffset - previousOffset,
         offset: previousOffset,
       );
-      if (!_disposed && _pagerOffset == pagerOffset) {
+      if (!_disposed &&
+          generation == _windowGeneration &&
+          _pagerOffset == pagerOffset) {
         _pagerOffset = previousOffset;
         _pagerItems = [...previousPage, ..._pagerItems];
         if (deferTrim && _hasFullPageOverflow) {
@@ -280,11 +297,14 @@ class WorldCupListViewModel extends ChangeNotifier {
     final offset = _sheetOffset + _sheetItems.length;
     if (_isLoadingSheetPage || offset >= _totalCount) return 0;
     _isLoadingSheetPage = true;
+    // 조회 중에 창이 교체되면 결과를 버린다.
+    final generation = _windowGeneration;
     final sheetOffset = _sheetOffset;
     final loadedCount = _sheetItems.length;
     try {
       final nextPage = await _repository.page(limit: pageSize, offset: offset);
       if (!_disposed &&
+          generation == _windowGeneration &&
           _sheetOffset == sheetOffset &&
           _sheetItems.length == loadedCount) {
         _sheetItems = [..._sheetItems, ...nextPage];
@@ -302,6 +322,7 @@ class WorldCupListViewModel extends ChangeNotifier {
   Future<int> loadPreviousSheetPage() async {
     if (_isSearching || _isLoadingSheetPage || _sheetOffset <= 0) return 0;
     _isLoadingSheetPage = true;
+    final generation = _windowGeneration;
     final sheetOffset = _sheetOffset;
     final previousOffset = sheetOffset > pageSize ? sheetOffset - pageSize : 0;
     try {
@@ -309,7 +330,9 @@ class WorldCupListViewModel extends ChangeNotifier {
         limit: sheetOffset - previousOffset,
         offset: previousOffset,
       );
-      if (!_disposed && _sheetOffset == sheetOffset) {
+      if (!_disposed &&
+          generation == _windowGeneration &&
+          _sheetOffset == sheetOffset) {
         _sheetOffset = previousOffset;
         _sheetItems = [...previousPage, ..._sheetItems];
         _trimSheetWindowFrom(_WindowTrimSide.end);
