@@ -152,8 +152,11 @@ constructors so they stay testable.
 - Material 3, deep purple seed colour, defined once in `worldcup_ui_kit`'s `AppTheme`.
 - ImgBB uploads expire after 3 days.
 - Round options come from `TournamentRounds` in `worldcup_domain`.
-  Note the known `TODO(round-mismatch)`: `defaultRound` can return a value that
-  is not in `available()` when the item count is ≥ 12 and not a power of two.
+  `defaultRound()` derives from `available().last`, so it is always a power of two
+  and always one of the selectable values. Keep it that way: the two used to carry
+  separate rules, and the default could land on a value the dropdown did not offer
+  (20 items → offered `[4, 8, 16]`, defaulted to 20), which crashed the game once
+  the bracket reached an odd count. Tests in `worldcup_domain` pin the invariant.
 - **Assets stay in the app package.** Moving them under `packages/` would change
   asset paths to `packages/<name>/...`, and those path strings are stored in the
   user's SQLite rows.
