@@ -392,6 +392,70 @@ void main() {
     );
   });
 
+  testWidgets('스크롤 중에는 페이저 창 트리밍을 미룬다', (tester) async {
+    final dao = _FakeWorldCupDao(_models(100));
+    final listKey = GlobalKey<WorldCupListState>();
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                WorldCupList(
+                  key: listKey,
+                  repository: dao,
+                  enableBottomSheetSelectionPagerTransition: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    for (var count = 0; count < 25; count++) {
+      await tester.drag(
+        find.byKey(const ValueKey('worldCupPager')),
+        const Offset(-500, 0),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    final center = tester.getCenter(
+      find.byKey(const ValueKey('worldCupPager')),
+    );
+    final gesture = await tester.startGesture(center);
+    for (var step = 0; step < 40; step++) {
+      await gesture.moveBy(const Offset(-80, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+
+    final pagerState = tester.state<CoverFlowPagerState<WorldCupModel>>(
+      find.byType(CoverFlowPager<WorldCupModel>),
+    );
+    expect(pagerState.currentPageIndex, greaterThan(27));
+    expect(listKey.currentState!.worldCupList, hasLength(40));
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(
+      listKey.currentState!.worldCupList,
+      hasLength(WorldCupListViewModel.pagerWindowSize),
+    );
+    final settledPagerState = tester.state<CoverFlowPagerState<WorldCupModel>>(
+      find.byType(CoverFlowPager<WorldCupModel>),
+    );
+    expect(
+      listKey
+          .currentState!
+          .worldCupList[settledPagerState.currentPageIndex]
+          .idx,
+      30,
+    );
+  });
+
   testWidgets('뒷쪽 페이지로 이동한 후 앞으로 넘기면 이전 페이지를 이어서 불러온다', (tester) async {
     final dao = _FakeWorldCupDao(_models(31));
     final listKey = GlobalKey<WorldCupListState>();

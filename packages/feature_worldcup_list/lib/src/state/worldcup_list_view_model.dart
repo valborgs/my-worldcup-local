@@ -13,11 +13,14 @@ class WorldCupListViewModel extends ChangeNotifier {
   /// 한 번에 불러오는 항목 수.
   static const int pageSize = 10;
 
-  /// 페이저가 메모리에 유지하는 최대 항목 수.
+  /// 페이저가 완전한 페이지를 잘라낸 뒤 유지하는 기본 항목 수.
   ///
   /// 현재 페이지 양쪽에 여유를 두어 방향을 바꿀 때 방금 잘라낸 페이지를
   /// 경계에서 바로 다시 조회하지 않도록 3페이지를 유지한다.
   static const int pagerWindowSize = pageSize * 3;
+
+  /// 부분 페이지를 포함한, 스크롤 정지 상태의 최대 창 크기.
+  static const int _pagerWindowCapacity = pagerWindowSize + pageSize - 1;
 
   final WorldCupRepository _repository;
 
@@ -48,6 +51,7 @@ class WorldCupListViewModel extends ChangeNotifier {
   List<WorldCupModel> _pagerItems;
   int _pagerOffset = 0;
   bool _isLoadingPagerPage = false;
+  _PagerTrimSide? _deferredPagerTrimSide;
 
   /// 페이저가 들고 있는 항목. 전체가 아니라 선택 지점 주변의 창일 수 있다.
   List<WorldCupModel> get pagerItems => List.unmodifiable(_pagerItems);
@@ -98,11 +102,9 @@ class WorldCupListViewModel extends ChangeNotifier {
     final sheetLimit = _sheetItems.length < pageSize
         ? pageSize
         : _sheetItems.length;
-    final pagerLimit = _pagerItems.length < pageSize
-        ? pageSize
-        : _pagerItems.length > pagerWindowSize
-        ? pagerWindowSize
-        : _pagerItems.length;
+    // initialItems는 현재 1페이지지만, 외부 주입이 늘어나도 새로고침
+    // 조회 범위가 부분 페이지를 포함한 창 상한을 넘지 않도록 방어한다.
+    final pagerLimit = _pagerItems.length.clamp(pageSize, _pagerWindowCapacity);
     // 페이저가 첫 페이지를 보고 있고 더 많이 필요하면 한 번의 조회로 합친다.
     final firstPageLimit = _pagerOffset == 0 && pagerLimit > sheetLimit
         ? pagerLimit
@@ -134,6 +136,7 @@ class WorldCupListViewModel extends ChangeNotifier {
     _totalCount = totalCount;
     _pagerOffset = refreshedPagerOffset;
     _pagerItems = refreshedPagerItems;
+    _deferredPagerTrimSide = null;
     _sheetItems = firstPageItems.take(sheetLimit).toList();
     _clearSearchState();
     _notify();
@@ -167,12 +170,13 @@ class WorldCupListViewModel extends ChangeNotifier {
 
     _pagerOffset = windowOffset;
     _pagerItems = window;
+    _deferredPagerTrimSide = null;
     _notify();
     return PagerTarget(targetIndex, replacedWindow: true);
   }
 
   /// 페이저의 다음 페이지를 이어 붙인다.
-  Future<void> loadNextPagerPage() async {
+  Future<void> loadNextPagerPage({bool deferTrim = false}) async {
     final offset = _pagerOffset + _pagerItems.length;
     if (_isLoadingPagerPage || offset >= _totalCount) return;
     _isLoadingPagerPage = true;
@@ -184,13 +188,11 @@ class WorldCupListViewModel extends ChangeNotifier {
       if (!_disposed &&
           _pagerOffset == pagerOffset &&
           _pagerItems.length == loadedCount) {
-        final appendedItems = [..._pagerItems, ...nextPage];
-        final overflow = appendedItems.length - pagerWindowSize;
-        if (overflow > 0) {
-          _pagerOffset += overflow;
-          _pagerItems = appendedItems.sublist(overflow);
+        _pagerItems = [..._pagerItems, ...nextPage];
+        if (deferTrim && _hasFullPageOverflow) {
+          _deferredPagerTrimSide = _PagerTrimSide.start;
         } else {
-          _pagerItems = appendedItems;
+          _trimPagerWindowFrom(_PagerTrimSide.start);
         }
         _notify();
       }
@@ -200,7 +202,7 @@ class WorldCupListViewModel extends ChangeNotifier {
   }
 
   /// 페이저 앞쪽 페이지를 앞에 붙인다. 창이 뒤로 밀려 있을 때만 의미가 있다.
-  Future<void> loadPreviousPagerPage() async {
+  Future<void> loadPreviousPagerPage({bool deferTrim = false}) async {
     if (_isLoadingPagerPage || _pagerOffset <= 0) return;
     _isLoadingPagerPage = true;
     final pagerOffset = _pagerOffset;
@@ -211,16 +213,44 @@ class WorldCupListViewModel extends ChangeNotifier {
         offset: previousOffset,
       );
       if (!_disposed && _pagerOffset == pagerOffset) {
-        final prependedItems = [...previousPage, ..._pagerItems];
         _pagerOffset = previousOffset;
-        _pagerItems = prependedItems.length > pagerWindowSize
-            ? prependedItems.sublist(0, pagerWindowSize)
-            : prependedItems;
+        _pagerItems = [...previousPage, ..._pagerItems];
+        if (deferTrim && _hasFullPageOverflow) {
+          _deferredPagerTrimSide = _PagerTrimSide.end;
+        } else {
+          _trimPagerWindowFrom(_PagerTrimSide.end);
+        }
         _notify();
       }
     } finally {
       _isLoadingPagerPage = false;
     }
+  }
+
+  bool get _hasFullPageOverflow =>
+      _pagerItems.length - pagerWindowSize >= pageSize;
+
+  /// 스크롤 중이라 미뤄 둔 페이저 창 트리밍을 적용한다.
+  void trimDeferredPagerWindow() {
+    final trimSide = _deferredPagerTrimSide;
+    if (trimSide == null) return;
+    _deferredPagerTrimSide = null;
+    if (_trimPagerWindowFrom(trimSide)) _notify();
+  }
+
+  /// 페이지 정렬을 유지하도록 상한 초과분을 [pageSize] 단위로만 잘라낸다.
+  bool _trimPagerWindowFrom(_PagerTrimSide trimSide) {
+    final overflow = _pagerItems.length - pagerWindowSize;
+    final trimCount = (overflow ~/ pageSize) * pageSize;
+    if (trimCount < pageSize) return false;
+
+    if (trimSide == _PagerTrimSide.start) {
+      _pagerOffset += trimCount;
+      _pagerItems = _pagerItems.sublist(trimCount);
+    } else {
+      _pagerItems = _pagerItems.take(_pagerItems.length - trimCount).toList();
+    }
+    return true;
   }
 
   /// 시트(또는 검색 결과)의 다음 페이지를 이어 붙인다.
@@ -323,6 +353,8 @@ class WorldCupListViewModel extends ChangeNotifier {
     _searchTotalCount = 0;
   }
 }
+
+enum _PagerTrimSide { start, end }
 
 /// 페이저에서 어떤 카드로 갈지, 그리고 창을 교체했는지.
 class PagerTarget {

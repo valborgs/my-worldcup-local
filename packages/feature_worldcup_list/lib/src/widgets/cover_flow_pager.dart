@@ -13,6 +13,7 @@ class CoverFlowPager<T> extends StatefulWidget {
   final void Function(BuildContext context, T item, int index)?
   onCurrentItemTap;
   final void Function(T item, int index)? onPageChanged;
+  final VoidCallback? onScrollEnd;
   final Object Function(T item)? itemKey;
   final String Function(T item, int index)? semanticLabelBuilder;
   final int initialPage;
@@ -33,6 +34,7 @@ class CoverFlowPager<T> extends StatefulWidget {
     required this.itemBuilder,
     this.onCurrentItemTap,
     this.onPageChanged,
+    this.onScrollEnd,
     this.itemKey,
     this.semanticLabelBuilder,
     this.initialPage = 0,
@@ -59,6 +61,10 @@ class CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
   late int currentPageIndex;
   int _pageViewRevision = 0;
   Object? _currentItemKey;
+
+  bool get isScrolling =>
+      _pageController.hasClients &&
+      _pageController.position.isScrollingNotifier.value;
 
   int get _safeInitialPage {
     if (widget.items.isEmpty) return 0;
@@ -146,28 +152,34 @@ class CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
               behavior: const _CoverFlowScrollBehavior(),
               child: KeyedSubtree(
                 key: ValueKey(_pageViewRevision),
-                child: PageView.builder(
-                  key: const ValueKey('worldCupPager'),
-                  controller: _pageController,
-                  itemCount: widget.items.length,
-                  physics: const PageScrollPhysics(),
-                  onPageChanged: (index) {
-                    setState(() {
-                      currentPageIndex = index;
-                      _currentItemKey = _keyAt(index);
-                    });
-                    widget.onPageChanged?.call(widget.items[index], index);
+                child: NotificationListener<ScrollEndNotification>(
+                  onNotification: (notification) {
+                    widget.onScrollEnd?.call();
+                    return false;
                   },
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onTapUp: (details) => _handleTap(
-                        context,
-                        _viewportPosition(details.globalPosition),
-                      ),
-                      child: const SizedBox.expand(),
-                    );
-                  },
+                  child: PageView.builder(
+                    key: const ValueKey('worldCupPager'),
+                    controller: _pageController,
+                    itemCount: widget.items.length,
+                    physics: const PageScrollPhysics(),
+                    onPageChanged: (index) {
+                      setState(() {
+                        currentPageIndex = index;
+                        _currentItemKey = _keyAt(index);
+                      });
+                      widget.onPageChanged?.call(widget.items[index], index);
+                    },
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTapUp: (details) => _handleTap(
+                          context,
+                          _viewportPosition(details.globalPosition),
+                        ),
+                        child: const SizedBox.expand(),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),

@@ -175,6 +175,27 @@ void main() {
         reason: '방향을 바꾸면 버린 이전 페이지를 다시 조회해야 한다',
       );
     });
+
+    test('마지막 부분 페이지는 완전한 페이지가 될 때까지 잘라내지 않는다', () async {
+      final vm = WorldCupListViewModel(_FakeRepository(models(31)));
+      addTearDown(vm.dispose);
+      await vm.refresh();
+
+      await vm.loadNextPagerPage();
+      await vm.loadNextPagerPage();
+      await vm.loadNextPagerPage();
+
+      expect(vm.pagerItems, hasLength(31));
+      expect(vm.pagerOffset, 0);
+      expect(vm.pagerItems.first.idx, 1);
+      expect(vm.pagerItems.last.idx, 31);
+
+      await vm.refresh();
+
+      expect(vm.pagerItems, hasLength(31));
+      expect(vm.pagerOffset, 0);
+      expect(vm.pagerItems.last.idx, 31);
+    });
   });
 
   group('페이저 위치 찾기', () {
