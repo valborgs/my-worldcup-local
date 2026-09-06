@@ -47,6 +47,8 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
   bool _isSearchCloseScheduled = false;
   bool _isHandlingSheetItemTap = false;
   bool _isPagerTransitionInFlight = false;
+  bool _isLoadingNextSheetPage = false;
+  bool _isLoadingPreviousSheetPage = false;
   int _pagerNavigationRequest = 0;
   int? _pagerTargetPage;
   double _collapsedSheetSize = 0.1;
@@ -186,6 +188,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                   snap: true,
                   snapSizes: [minSheetSize, 0.92],
                   builder: (context, scrollController) {
+                    final itemExtent = WorldCupSheetItem.extentFor(context);
                     return Material(
                       elevation: 16,
                       color: Theme.of(context).colorScheme.surface,
@@ -195,8 +198,27 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                       clipBehavior: Clip.antiAlias,
                       child: NotificationListener<ScrollNotification>(
                         onNotification: (notification) {
-                          if (notification.metrics.extentAfter < 240) {
-                            unawaited(_vm.loadNextSheetPage());
+                          if (notification is! ScrollUpdateNotification) {
+                            return false;
+                          }
+                          final scrollDelta = notification.scrollDelta ?? 0;
+                          if (scrollDelta < 0 &&
+                              notification.metrics.extentBefore < 240) {
+                            unawaited(
+                              _loadPreviousSheetPagePreservingPosition(
+                                scrollController,
+                                itemExtent,
+                              ),
+                            );
+                          }
+                          if (scrollDelta > 0 &&
+                              notification.metrics.extentAfter < 240) {
+                            unawaited(
+                              _loadNextSheetPagePreservingPosition(
+                                scrollController,
+                                itemExtent,
+                              ),
+                            );
                           }
                           return false;
                         },
@@ -230,12 +252,14 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                                 child: Center(child: Text('검색 결과가 없습니다')),
                               )
                             else
-                              SliverList.builder(
+                              SliverFixedExtentList.builder(
+                                itemExtent: itemExtent,
                                 itemCount: _sheetItems.length,
                                 itemBuilder: (context, index) {
                                   final model = _sheetItems[index];
                                   return WorldCupSheetItem(
                                     model: model,
+                                    itemExtent: itemExtent,
                                     onTap: () =>
                                         unawaited(_handleSheetItemTap(model)),
                                   );
@@ -344,6 +368,10 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
 
   Future<void> _openSearch(double minSheetSize) async {
     _vm.startSearch();
+    // 뒤로 밀린 시트 창은 전역 0 기준 검색 결과로 예열할 수
+    // 없다. 예열이 비었으면 스크롤 알림을 기다리지 말고 첫 페이지를
+    // 바로 조회해 '검색 결과가 없습니다'에 멈추는 상태를 피한다.
+    if (_vm.sheetItems.isEmpty) unawaited(_vm.runSearch());
     if (_sheetController.isAttached &&
         _sheetController.size <= minSheetSize + 0.05) {
       await _sheetController.animateTo(
@@ -476,6 +504,47 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
     await _vm.loadPreviousPagerPage(deferTrim: deferTrim);
     if (!mounted || (_pagerKey.currentState?.isScrolling ?? false)) return;
     _vm.trimDeferredPagerWindow();
+  }
+
+  Future<void> _loadNextSheetPagePreservingPosition(
+    ScrollController controller,
+    double itemExtent,
+  ) async {
+    if (_isLoadingNextSheetPage) return;
+    _isLoadingNextSheetPage = true;
+    try {
+      final trimmedItems = await _vm.loadNextSheetPage();
+      if (!mounted || trimmedItems == 0 || !controller.hasClients) return;
+      _correctSheetPositionBy(controller, -trimmedItems * itemExtent);
+    } finally {
+      _isLoadingNextSheetPage = false;
+    }
+  }
+
+  Future<void> _loadPreviousSheetPagePreservingPosition(
+    ScrollController controller,
+    double itemExtent,
+  ) async {
+    if (_isLoadingPreviousSheetPage) return;
+    _isLoadingPreviousSheetPage = true;
+    try {
+      final prependedItems = await _vm.loadPreviousSheetPage();
+      if (!mounted || prependedItems == 0 || !controller.hasClients) return;
+      _correctSheetPositionBy(controller, prependedItems * itemExtent);
+    } finally {
+      _isLoadingPreviousSheetPage = false;
+    }
+  }
+
+  void _correctSheetPositionBy(ScrollController controller, double correction) {
+    if (!controller.hasClients) return;
+    final position = controller.position;
+    final correctedOffset = (position.pixels + correction).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    // jumpTo와 달리 현재 ScrollActivity를 교체하지 않아 플링 관성이 유지된다.
+    position.correctBy(correctedOffset - position.pixels);
   }
 
   void _movePagerToPage(int targetIndex) {
