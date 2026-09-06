@@ -111,6 +111,28 @@ void main() {
     });
   });
 
+  group('시트 페이징', () {
+    test('새로고침하면 누적된 목록 대신 첫 페이지만 다시 부른다', () async {
+      final repo = _FakeRepository(models(100));
+      final vm = WorldCupListViewModel(repo);
+      addTearDown(vm.dispose);
+      await vm.refresh();
+      for (var page = 1; page < 10; page++) {
+        await vm.loadNextSheetPage();
+      }
+      expect(vm.sheetItems, hasLength(100));
+
+      await vm.refresh();
+
+      expect(repo.requestedLimits.last, WorldCupListViewModel.pageSize);
+      expect(repo.requestedOffsets.last, 0);
+      expect(vm.sheetItems, hasLength(WorldCupListViewModel.pageSize));
+
+      await vm.loadNextSheetPage();
+      expect(vm.sheetItems, hasLength(WorldCupListViewModel.pageSize * 2));
+    });
+  });
+
   group('페이저 페이징', () {
     test('다음 페이지를 이어 붙인다', () async {
       final vm = WorldCupListViewModel(_FakeRepository(models(25)));
@@ -280,6 +302,7 @@ void main() {
 class _FakeRepository implements WorldCupRepository {
   List<WorldCupModel> models;
   int pageCalls = 0;
+  final List<int> requestedLimits = [];
   final List<int> requestedOffsets = [];
   Completer<void>? _gate;
   bool _gateArmed = false;
@@ -315,6 +338,7 @@ class _FakeRepository implements WorldCupRepository {
     String searchQuery = '',
   }) async {
     pageCalls++;
+    requestedLimits.add(limit);
     requestedOffsets.add(offset);
     if (_gateArmed) {
       // 한 번만 붙잡는다. 이후 호출은 그대로 통과시킨다.
