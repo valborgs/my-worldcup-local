@@ -70,6 +70,32 @@ void main() {
       expect(vm.sheetItems, latest, reason: '늦게 온 응답이 최신 결과를 덮어썼다');
     });
 
+    test('검색을 닫았다 다시 열면 이전 검색 응답이 덮어쓰지 않는다', () async {
+      // 닫기가 세대를 올리지 않으면, 다시 연 검색 화면을 이전 응답이 덮는다.
+      final repo = _FakeRepository(models(20));
+      final vm = WorldCupListViewModel(repo);
+      addTearDown(vm.dispose);
+      await vm.refresh();
+
+      vm.startSearch();
+      repo.blockNextPage();
+      vm.updateQuery('오래된 질의');
+      final stale = vm.runSearch();
+
+      vm.stopSearch();
+      vm.startSearch();
+      final afterReopen = vm.sheetItems;
+
+      repo.releaseBlocked();
+      await stale;
+
+      expect(
+        vm.sheetItems,
+        afterReopen,
+        reason: '닫기 전에 보낸 검색 응답이 다시 연 화면을 덮어썼다',
+      );
+    });
+
     test('검색 결과 페이지를 이어 붙인다', () async {
       final repo = _FakeRepository(models(25));
       final vm = WorldCupListViewModel(repo);
@@ -156,6 +182,26 @@ void main() {
       await vm.refresh();
 
       expect(await vm.locateInPager(9999), isNull);
+    });
+  });
+
+  group('dispose 이후', () {
+    test('진행 중이던 조회가 끝나도 알리지 않는다', () async {
+      // 화면을 닫으면 ViewModel도 곧바로 dispose된다. 그때 DB 응답이 돌아오면
+      // ChangeNotifier가 "used after being disposed" 로 던진다.
+      final repo = _FakeRepository(models(20));
+      final vm = WorldCupListViewModel(repo);
+      var notified = 0;
+      vm.addListener(() => notified++);
+
+      repo.blockNextPage();
+      final pending = vm.refresh();
+      vm.dispose();
+      repo.releaseBlocked();
+
+      await pending;
+
+      expect(notified, 0);
     });
   });
 

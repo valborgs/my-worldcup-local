@@ -19,6 +19,25 @@ class WorldCupListViewModel extends ChangeNotifier {
     : _pagerItems = List.of(initialItems ?? const []),
       _sheetItems = List.of(initialItems ?? const []);
 
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  /// 이미 dispose 됐으면 알리지 않는다.
+  ///
+  /// 화면을 닫으면 ViewModel도 곧바로 dispose되는데, 그때 DB 조회가 아직
+  /// 진행 중일 수 있다. 응답이 돌아와 그대로 알리면 ChangeNotifier가
+  /// "used after being disposed"로 던진다. 위젯 시절의 mounted 검사가
+  /// 하던 역할이다.
+  void _notify() {
+    if (_disposed) return;
+    notifyListeners();
+  }
+
   // --- 페이저 ---
   List<WorldCupModel> _pagerItems;
   int _pagerOffset = 0;
@@ -85,6 +104,8 @@ class WorldCupListViewModel extends ChangeNotifier {
       _repository.count(),
       _repository.page(limit: firstPageLimit, offset: 0),
     ]);
+    if (_disposed) return;
+
     final totalCount = results[0] as int;
     final firstPageItems = results[1] as List<WorldCupModel>;
 
@@ -100,12 +121,14 @@ class WorldCupListViewModel extends ChangeNotifier {
             offset: refreshedPagerOffset,
           );
 
+    if (_disposed) return;
+
     _totalCount = totalCount;
     _pagerOffset = refreshedPagerOffset;
     _pagerItems = refreshedPagerItems;
     _sheetItems = firstPageItems.take(sheetLimit).toList();
     _clearSearchState();
-    notifyListeners();
+    _notify();
   }
 
   /// [worldCupIdx]가 페이저의 어느 자리인지 찾는다. 없으면 그 주변 창을
@@ -130,12 +153,13 @@ class WorldCupListViewModel extends ChangeNotifier {
       limit: pageSize,
       offset: windowOffset,
     );
+    if (_disposed) return null;
     targetIndex = window.indexWhere((m) => m.idx == worldCupIdx);
     if (targetIndex < 0) return null;
 
     _pagerOffset = windowOffset;
     _pagerItems = window;
-    notifyListeners();
+    _notify();
     return PagerTarget(targetIndex, replacedWindow: true);
   }
 
@@ -149,9 +173,11 @@ class WorldCupListViewModel extends ChangeNotifier {
     final loadedCount = _pagerItems.length;
     try {
       final nextPage = await _repository.page(limit: pageSize, offset: offset);
-      if (_pagerOffset == pagerOffset && _pagerItems.length == loadedCount) {
+      if (!_disposed &&
+          _pagerOffset == pagerOffset &&
+          _pagerItems.length == loadedCount) {
         _pagerItems = [..._pagerItems, ...nextPage];
-        notifyListeners();
+        _notify();
       }
     } finally {
       _isLoadingPagerPage = false;
@@ -169,10 +195,10 @@ class WorldCupListViewModel extends ChangeNotifier {
         limit: pagerOffset - previousOffset,
         offset: previousOffset,
       );
-      if (_pagerOffset == pagerOffset) {
+      if (!_disposed && _pagerOffset == pagerOffset) {
         _pagerOffset = previousOffset;
         _pagerItems = [...previousPage, ..._pagerItems];
-        notifyListeners();
+        _notify();
       }
     } finally {
       _isLoadingPagerPage = false;
@@ -188,9 +214,9 @@ class WorldCupListViewModel extends ChangeNotifier {
     _isLoadingSheetPage = true;
     try {
       final nextPage = await _repository.page(limit: pageSize, offset: offset);
-      if (_sheetItems.length == offset) {
+      if (!_disposed && _sheetItems.length == offset) {
         _sheetItems = [..._sheetItems, ...nextPage];
-        notifyListeners();
+        _notify();
       }
     } finally {
       _isLoadingSheetPage = false;
@@ -210,12 +236,13 @@ class WorldCupListViewModel extends ChangeNotifier {
         searchQuery: query,
       );
       // 조회 중에 질의가 바뀌었으면 결과를 버린다.
-      if (_isSearching &&
+      if (!_disposed &&
+          _isSearching &&
           generation == _queryGeneration &&
           query == _query &&
           _searchResults.length == offset) {
         _searchResults = [..._searchResults, ...nextPage];
-        notifyListeners();
+        _notify();
       }
     } finally {
       _isLoadingSearchPage = false;
@@ -233,14 +260,14 @@ class WorldCupListViewModel extends ChangeNotifier {
     _isSearching = true;
     _searchResults = List.of(_sheetItems);
     _searchTotalCount = _totalCount;
-    notifyListeners();
+    _notify();
   }
 
   /// 검색 모드를 끝낸다. 실제로 끝냈으면 참을 돌려준다.
   bool stopSearch() {
     if (!_isSearching) return false;
     _clearSearchState();
-    notifyListeners();
+    _notify();
     return true;
   }
 
@@ -250,7 +277,7 @@ class WorldCupListViewModel extends ChangeNotifier {
     final trimmed = value.trim();
     if (trimmed == _query) return;
     _query = trimmed;
-    notifyListeners();
+    _notify();
   }
 
   /// 현재 검색어로 첫 페이지를 불러온다.
@@ -262,13 +289,16 @@ class WorldCupListViewModel extends ChangeNotifier {
       _repository.page(limit: pageSize, offset: 0, searchQuery: query),
     ]);
     // 뒤늦게 도착한 응답이 최신 질의 결과를 덮어쓰지 않도록 한다.
-    if (!_isSearching || generation != _queryGeneration) return;
+    if (_disposed || !_isSearching || generation != _queryGeneration) return;
     _searchTotalCount = results[0] as int;
     _searchResults = results[1] as List<WorldCupModel>;
-    notifyListeners();
+    _notify();
   }
 
   void _clearSearchState() {
+    // 세대를 올려 진행 중인 검색 응답을 무효화한다. 올리지 않으면 검색을
+    // 닫았다 다시 열었을 때 닫기 전 응답이 새 화면을 덮어쓴다.
+    _queryGeneration++;
     _isSearching = false;
     _query = '';
     _searchResults = [];

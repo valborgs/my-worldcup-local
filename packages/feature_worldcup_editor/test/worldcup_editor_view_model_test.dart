@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:feature_worldcup_editor/src/state/worldcup_editor_view_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
@@ -184,6 +186,25 @@ void main() {
       expect(vm.isReady, isFalse);
     });
 
+    test('dispose 이후 load 응답이 와도 알리지 않는다', () async {
+      // 수정 화면에 들어가자마자 뒤로가기를 누르면 이 상황이 된다.
+      final repo = _FakeRepository()
+        ..worldCups[7] = WorldCupModel(7, 't', 'i', DateTime(2026), 'p', 4);
+      final vm = WorldCupEditorViewModel(repo, editWorldCupId: 7);
+      var notified = 0;
+      vm.addListener(() => notified++);
+
+      repo.blockNextRead();
+      final pending = vm.load();
+      final before = notified;
+      vm.dispose();
+      repo.releaseBlocked();
+
+      await pending;
+
+      expect(notified, before);
+    });
+
     test('새로 만드는 중이면 load가 아무 일도 하지 않는다', () async {
       final repo = _FakeRepository();
       final vm = WorldCupEditorViewModel(repo);
@@ -209,10 +230,27 @@ class _FakeRepository implements WorldCupRepository {
   final List<_SavedWorldCup> added = [];
   final List<_SavedWorldCup> updated = [];
   int findCalls = 0;
+  Completer<void>? _gate;
+  bool _gateArmed = false;
+
+  /// 다음 findById 호출을 [releaseBlocked]가 불릴 때까지 붙잡아 둔다.
+  void blockNextRead() {
+    _gate = Completer<void>();
+    _gateArmed = true;
+  }
+
+  void releaseBlocked() {
+    final gate = _gate;
+    if (gate != null && !gate.isCompleted) gate.complete();
+  }
 
   @override
   Future<WorldCupModel?> findById(int idx) async {
     findCalls++;
+    if (_gateArmed) {
+      _gateArmed = false;
+      await _gate!.future;
+    }
     return worldCups[idx];
   }
 

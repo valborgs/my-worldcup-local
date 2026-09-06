@@ -69,6 +69,7 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
     _titleController.dispose();
     _infoController.dispose();
     _titleFocusNode.dispose();
+    _infoFocusNode.dispose();
     _vm.removeListener(_onViewModelChanged);
     _vm.dispose();
     super.dispose();

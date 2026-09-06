@@ -41,6 +41,24 @@ class WorldCupEditorViewModel extends ChangeNotifier {
 
   WorldCupEditorViewModel(this._repository, {this.editWorldCupId});
 
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  /// 이미 dispose 됐으면 알리지 않는다.
+  ///
+  /// 수정 화면에 들어가자마자 뒤로가기를 누르면 원본을 불러오는 도중에
+  /// ViewModel이 dispose된다. 응답이 돌아와 그대로 알리면 ChangeNotifier가
+  /// "used after being disposed"로 던진다.
+  void _notify() {
+    if (_disposed) return;
+    notifyListeners();
+  }
+
   List<EditorItem> _items = [];
 
   /// 수정 모드에서 불러온 원본. 제목 / 설명 / 등록일을 유지하는 데 쓴다.
@@ -73,11 +91,12 @@ class WorldCupEditorViewModel extends ChangeNotifier {
     if (id == null) return;
 
     _isLoading = true;
-    notifyListeners();
+    _notify();
     try {
       final model = await _repository.findById(id);
-      if (model == null) return;
+      if (_disposed || model == null) return;
       final items = await _repository.items(id);
+      if (_disposed) return;
       _original = model;
       _items = [
         for (final item in items)
@@ -85,13 +104,13 @@ class WorldCupEditorViewModel extends ChangeNotifier {
       ];
     } finally {
       _isLoading = false;
-      notifyListeners();
+      _notify();
     }
   }
 
   void addItem(EditorItem item) {
     _items = [..._items, item];
-    notifyListeners();
+    _notify();
   }
 
   void replaceItem(int index, EditorItem item) {
@@ -99,14 +118,14 @@ class WorldCupEditorViewModel extends ChangeNotifier {
     final next = [..._items];
     next[index] = item;
     _items = next;
-    notifyListeners();
+    _notify();
   }
 
   void removeItemAt(int index) {
     if (index < 0 || index >= _items.length) return;
     final next = [..._items]..removeAt(index);
     _items = next;
-    notifyListeners();
+    _notify();
   }
 
   /// 새 월드컵을 저장하고 만들어진 id를 돌려준다.
