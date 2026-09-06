@@ -16,10 +16,24 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.13+28
+version: 1.1.0+29
 
 environment:
-  sdk: '>=3.4.1 <4.0.0'
+  sdk: ^3.13.0
+
+# pub workspace: 하위 패키지를 한 번의 `flutter pub get`으로 함께 해결한다.
+# 단일 pubspec.lock을 공유하므로 패키지 간 버전 스큐가 생기지 않는다.
+# 여기에 나열된 패키지는 각자 pubspec에 `resolution: workspace`를 선언해야 한다.
+workspace:
+  - packages/worldcup_core
+  - packages/worldcup_domain
+  - packages/worldcup_data
+  - packages/worldcup_ui_kit
+  - packages/worldcup_nearby_transfer
+  - packages/feature_worldcup_list
+  - packages/feature_worldcup_play
+  - packages/feature_worldcup_editor
+  - packages/feature_worldcup_share
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -36,7 +50,6 @@ dependencies:
   flutter_dotenv: ^5.1.0 # api key 보관을 위한 패키지
   http: ^1.2.1 # api 사용을 위한 http 통신 패키지
   kakao_flutter_sdk_share: ^1.10.0 # 카카오톡 공유 API 패키지
-  provider: ^6.1.2 # 프로바이더
   confetti: ^0.7.0 # 팡파레 효과
   smooth_page_indicator: ^1.1.0 # 로딩 인디케이터
   expandable_page_view: ^1.0.17 # 뷰페이저
@@ -50,6 +63,23 @@ dependencies:
   path_provider: ^2.1.3 # 파일 경로
   worldcup_nearby_transfer:
     path: packages/worldcup_nearby_transfer
+  worldcup_core:
+    path: packages/worldcup_core
+  worldcup_domain:
+    path: packages/worldcup_domain
+  worldcup_data:
+    path: packages/worldcup_data
+  worldcup_ui_kit:
+    path: packages/worldcup_ui_kit
+  feature_worldcup_play:
+    path: packages/feature_worldcup_play
+  feature_worldcup_list:
+    path: packages/feature_worldcup_list
+  feature_worldcup_editor:
+    path: packages/feature_worldcup_editor
+  feature_worldcup_share:
+    path: packages/feature_worldcup_share
+  flutter_riverpod: ^3.0.0 # DI + 상태관리
   flutter:
     sdk: flutter
 
@@ -94,6 +124,9 @@ flutter:
   assets:
     - assets/images/
     - assets/icon/
+    # 디렉터리 항목은 재귀적이지 않다. 하위 폴더는 따로 적어야 하고,
+    # assets/sample/ 은 그 폴더에 바로 있는 sample_worldcups.json을 담는다.
+    - assets/sample/
     - assets/sample/female/
     - assets/sample/male/
     - .env

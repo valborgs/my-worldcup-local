@@ -1,0 +1,15 @@
+name: worldcup_core
+description: Pure Dart foundation for My World Cup — failures, routing contract, logging port.
+version: 1.0.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# 순수 Dart 패키지. dependencies에 flutter를 추가하지 말 것.
+# (CI의 pure-dart 경계 검사가 lib/ 안의 package:flutter import를 차단한다)
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0

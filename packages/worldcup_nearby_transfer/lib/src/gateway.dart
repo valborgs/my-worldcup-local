@@ -50,16 +50,17 @@ class MethodChannelNearbyTransferGateway implements NearbyTransferGateway {
   MethodChannelNearbyTransferGateway({
     MethodChannel? methods,
     EventChannel? eventChannel,
-  })  : _methods = methods ?? const MethodChannel(NearbyProtocol.methodChannel),
-        _eventChannel =
-            eventChannel ?? const EventChannel(NearbyProtocol.eventChannel);
+  }) : _methods = methods ?? const MethodChannel(NearbyProtocol.methodChannel),
+       _eventChannel =
+           eventChannel ?? const EventChannel(NearbyProtocol.eventChannel);
 
   @override
-  Stream<NearbyEvent> get events =>
-      _events ??= _eventChannel.receiveBroadcastStream(<String, Object>{
+  Stream<NearbyEvent> get events => _events ??= _eventChannel
+      .receiveBroadcastStream(<String, Object>{
         'version': NearbyProtocol.version,
         'serviceId': NearbyProtocol.serviceId,
-      }).map(NearbyEvent.fromMap);
+      })
+      .map(NearbyEvent.fromMap);
 
   Map<String, Object> _arguments([Map<String, Object>? values]) =>
       <String, Object>{
@@ -75,13 +76,15 @@ class MethodChannelNearbyTransferGateway implements NearbyTransferGateway {
   @override
   Future<NearbyAvailability> checkAvailability() async {
     return NearbyAvailability.fromMap(
-        await _invoke<Object>('checkAvailability'));
+      await _invoke<Object>('checkAvailability'),
+    );
   }
 
   @override
   Future<NearbyAvailability> requestPermissions() async {
     return NearbyAvailability.fromMap(
-        await _invoke<Object>('requestPermissions'));
+      await _invoke<Object>('requestPermissions'),
+    );
   }
 
   @override
@@ -105,11 +108,10 @@ class MethodChannelNearbyTransferGateway implements NearbyTransferGateway {
   Future<void> requestConnection({
     required String endpointId,
     required String displayName,
-  }) =>
-      _invoke<void>('requestConnection', {
-        'endpointId': endpointId,
-        'displayName': displayName,
-      });
+  }) => _invoke<void>('requestConnection', {
+    'endpointId': endpointId,
+    'displayName': displayName,
+  });
 
   @override
   Future<void> acceptConnection(String endpointId) =>
@@ -124,12 +126,11 @@ class MethodChannelNearbyTransferGateway implements NearbyTransferGateway {
     required String endpointId,
     required String path,
     required String name,
-  }) =>
-      _invoke<void>('sendFile', {
-        'endpointId': endpointId,
-        'path': path,
-        'name': name,
-      });
+  }) => _invoke<void>('sendFile', {
+    'endpointId': endpointId,
+    'path': path,
+    'name': name,
+  });
 
   @override
   Future<void> cancelTransfer() => _invoke<void>('cancelTransfer');

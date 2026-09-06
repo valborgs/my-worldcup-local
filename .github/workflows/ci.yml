@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.1
+          channel: stable
+          cache: true
+
+      # pub workspace라서 루트에서 한 번만 받으면 전체 패키지가 해결된다.
+      - name: Install dependencies
+        run: flutter pub get
+
+      # .env는 저장소에 커밋하지 않으므로, 분석/테스트가 통과하도록 빈 값으로 만든다.
+      - name: Create placeholder .env
+        run: |
+          cat > .env <<'ENV'
+          kakao_nativeAppKey=
+          kakao_javaScriptAppKey=
+          imgbb_apiKey=
+          ENV
+
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib packages test
+
+      - name: Analyze
+        run: flutter analyze
+
+      # `flutter test`는 실행한 패키지의 test/만 돈다. 워크스페이스 멤버의
+      # 테스트가 조용히 빠지지 않도록 앱과 각 패키지를 모두 돌린다.
+      - name: Test
+        run: |
+          set -e
+          flutter test
+          for dir in packages/*/; do
+            if [ -n "$(ls -A "$dir/test" 2>/dev/null)" ]; then
+              echo "::group::$dir"
+              flutter test "$dir"
+              echo "::endgroup::"
+            fi
+          done
+
+  # 아키텍처 경계를 CI에서 강제한다.
+  # 대부분의 경계는 pub 의존성 그래프가 컴파일 타임에 막아주지만,
+  # 아래 두 가지는 pubspec만으로는 막히지 않으므로 별도로 검사한다.
+  boundaries:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # worldcup_core와 worldcup_domain은 순수 Dart여야 한다.
+      # (dev_dependencies의 flutter_test를 통해 flutter가 transitively 보이므로
+      #  pubspec만으로는 막을 수 없다)
+      - name: Domain layer must stay pure Dart
+        run: |
+          if grep -rn "package:flutter/" \
+              packages/worldcup_core/lib packages/worldcup_domain/lib; then
+            echo "::error::worldcup_core / worldcup_domain은 Flutter에 의존할 수 없습니다."
+            exit 1
+          fi
+
+      # feature 패키지끼리 서로 의존하면 브랜치 독립성이 깨진다.
+      # 화면 간 이동은 worldcup_core의 AppRoutes 계약으로만 한다.
+      - name: Feature packages must not depend on each other
+        run: |
+          status=0
+          for dir in packages/feature_*/; do
+            self="$(basename "$dir")"
+            hits="$(grep -n "feature_worldcup_" "$dir/pubspec.yaml" \
+                    | grep -v "^[0-9]*:name: $self\$" \
+                    | grep -v "description:" || true)"
+            if [ -n "$hits" ]; then
+              echo "::error file=$dir/pubspec.yaml::$self 가 다른 feature 패키지에 의존합니다:"
+              echo "$hits"
+              status=1
+            fi
+          done
+          exit $status
+
+      # feature 패키지는 도메인 포트로만 데이터에 닿는다. 구현을 직접 쓰면
+      # 저장소를 바꿀 때 화면까지 따라 바뀐다.
+      - name: Feature packages must not depend on the data layer
+        run: |
+          status=0
+          for dir in packages/feature_*/; do
+            self="$(basename "$dir")"
+            if grep -q "worldcup_data" "$dir/pubspec.yaml"; then
+              echo "::error file=$dir/pubspec.yaml::$self 가 worldcup_data에 의존합니다."
+              status=1
+            fi
+            hits="$(grep -rn "package:worldcup_data\|package:my_worldcup_local"                     "$dir/lib" "$dir/test" 2>/dev/null || true)"
+            if [ -n "$hits" ]; then
+              echo "::error::$self 소스가 데이터 / 앱 패키지를 참조합니다:"
+              echo "$hits"
+              status=1
+            fi
+          done
+          exit $status
+
+      # 앱 셸은 조립만 한다. 화면이 lib/에 남아 있으면 어느 feature에도
+      # 속하지 않아 담당자가 없는 코드가 된다.
+      - name: App shell must stay assembly-only
+        run: |
+          unexpected="$(find lib -name '*.dart'             -not -path 'lib/main.dart'             -not -path 'lib/app_router.dart'             -not -path 'lib/firebase_options.dart'             -not -path 'lib/di/*'             -not -path 'lib/screens/help_screen.dart')"
+          if [ -n "$unexpected" ]; then
+            echo "::error::lib/ 에는 부트스트랩 / DI / 라우터 / 온보딩만 둔다:"
+            echo "$unexpected"
+            exit 1
+          fi

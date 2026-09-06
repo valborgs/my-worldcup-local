@@ -2,9 +2,10 @@ name: worldcup_nearby_transfer
 description: Project-local Google Nearby Connections transport for My World Cup.
 version: 1.0.0
 publish_to: none
+resolution: workspace
 
 environment:
-  sdk: '>=3.4.1 <4.0.0'
+  sdk: ^3.13.0
   flutter: '>=3.24.0'
 
 dependencies:
@@ -14,6 +15,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  crypto: ^3.0.3 # 프로토콜 테스트가 네이티브 소스의 해시를 검증한다
   flutter_lints: ^4.0.0
 
 flutter:
