@@ -33,26 +33,65 @@ void main() {
       expect(TournamentRounds.defaultRound(16), 16);
     });
 
-    // 아래 두 테스트는 "옳은 동작"이 아니라 현재 동작을 박제한 것이다.
-    // TODO(round-mismatch)를 해결할 때 이 테스트가 실패해야 하며,
-    // 그때 기대값을 8 / 16으로 고친다.
-    test('알려진 버그: 항목 12개 이상에서 available()에 없는 값을 돌려준다', () {
-      expect(TournamentRounds.defaultRound(12), 12);
-      expect(TournamentRounds.available(12), [4, 8]);
-      expect(TournamentRounds.available(12), isNot(contains(12)));
-
-      expect(TournamentRounds.defaultRound(20), 20);
-      expect(TournamentRounds.available(20), [4, 8, 16]);
-      expect(TournamentRounds.available(20), isNot(contains(20)));
+    test('2의 거듭제곱이 아니면 그 이하의 가장 큰 2의 거듭제곱이다', () {
+      // 예전에는 4의 배수로만 내려서 12 / 20 을 돌려줬고, 그 값으로 게임을
+      // 시작하면 라운드 도중 항목이 홀수가 되어 앱이 죽었다.
+      expect(TournamentRounds.defaultRound(12), 8);
+      expect(TournamentRounds.defaultRound(15), 8);
+      expect(TournamentRounds.defaultRound(20), 16);
+      expect(TournamentRounds.defaultRound(31), 16);
     });
 
-    test('11개 이하에서는 available()과 일치한다', () {
-      for (var count = 4; count <= 11; count++) {
+    test('언제나 고를 수 있는 값이어야 한다', () {
+      // 이것이 지켜지지 않으면 사용자가 드롭다운에 없는 라운드로 게임을
+      // 시작하게 된다. 두 함수가 어긋나는 것을 막는 핵심 불변식이다.
+      for (var count = 4; count <= 200; count++) {
         expect(
           TournamentRounds.available(count),
           contains(TournamentRounds.defaultRound(count)),
-          reason: '항목 $count개',
+          reason: '항목 $count개의 기본값이 선택 목록에 없다',
         );
+      }
+    });
+
+    test('언제나 2의 거듭제곱이어야 한다', () {
+      // 2의 거듭제곱이 아니면 대진표를 끝까지 반으로 나눌 수 없다.
+      for (var count = 4; count <= 200; count++) {
+        final round = TournamentRounds.defaultRound(count);
+        expect(
+          round & (round - 1),
+          0,
+          reason: '항목 $count개의 기본값 $round 이(가) 2의 거듭제곱이 아니다',
+        );
+      }
+    });
+
+    test('항목 개수를 넘지 않는다', () {
+      for (var count = 4; count <= 200; count++) {
+        expect(
+          TournamentRounds.defaultRound(count),
+          lessThanOrEqualTo(count),
+          reason: '항목 $count개보다 큰 라운드를 기본값으로 잡았다',
+        );
+      }
+    });
+  });
+
+  group('대진표가 끝까지 진행된다', () {
+    // 기본 라운드로 시작했을 때 WorldCupGame의 라운드 축소가 항상 1까지
+    // 내려가야 한다. 홀수가 되는 순간 게임 화면이 남은 항목을 꺼내다 죽는다.
+    test('기본 라운드는 반씩 나눠 결승까지 도달한다', () {
+      for (var count = 4; count <= 200; count++) {
+        var remaining = TournamentRounds.defaultRound(count);
+        while (remaining > 1) {
+          expect(
+            remaining.isEven,
+            isTrue,
+            reason: '항목 $count개: 라운드가 $remaining 에서 홀수가 됐다',
+          );
+          remaining = remaining ~/ 2;
+        }
+        expect(remaining, 1, reason: '항목 $count개: 결승에 도달하지 못했다');
       }
     });
   });
