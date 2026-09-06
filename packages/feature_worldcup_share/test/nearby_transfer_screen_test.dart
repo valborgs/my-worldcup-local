@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:my_worldcup_local/screens/nearby_worldcup_transfer_screen.dart';
+import 'package:feature_worldcup_share/src/screens/nearby_worldcup_transfer_screen.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
-import 'package:worldcup_data/worldcup_data.dart';
+import 'package:feature_worldcup_share/src/state/nearby_transfer_controller.dart';
 import 'package:worldcup_core/worldcup_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

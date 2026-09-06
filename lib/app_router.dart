@@ -3,10 +3,10 @@ import 'package:worldcup_core/worldcup_core.dart';
 import 'package:feature_worldcup_editor/feature_worldcup_editor.dart';
 import 'package:feature_worldcup_list/feature_worldcup_list.dart';
 import 'package:feature_worldcup_play/feature_worldcup_play.dart';
+import 'package:feature_worldcup_share/feature_worldcup_share.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
 import 'screens/help_screen.dart';
-import 'screens/nearby_worldcup_transfer_screen.dart';
 
 /// 라우트 이름을 실제 화면에 묶는 유일한 곳.
 ///

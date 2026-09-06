@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:worldcup_nearby_transfer/worldcup_nearby_transfer.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
-import 'package:worldcup_data/worldcup_data.dart';
+import 'package:feature_worldcup_share/src/state/nearby_transfer_controller.dart';
 import 'package:worldcup_core/worldcup_core.dart';
 
 void main() {

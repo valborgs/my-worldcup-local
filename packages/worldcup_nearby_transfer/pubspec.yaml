@@ -15,6 +15,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  crypto: ^3.0.3 # 프로토콜 테스트가 네이티브 소스의 해시를 검증한다
   flutter_lints: ^4.0.0
 
 flutter:

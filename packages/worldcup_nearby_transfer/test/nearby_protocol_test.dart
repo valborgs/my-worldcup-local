@@ -134,7 +134,9 @@ void main() {
     );
     expect(android, contains('ConnectionsStatusCodes.getStatusCodeString'));
     expect(android, contains('Log.w('));
-    expect(android,
-        contains('result.error(\n            code,\n            message,'));
+    expect(
+      android,
+      contains('result.error(\n            code,\n            message,'),
+    );
   });
 }

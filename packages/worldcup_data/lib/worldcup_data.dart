@@ -8,7 +8,6 @@ export 'src/adapters/admob_ad_units.dart';
 export 'src/adapters/firebase_feature_flags.dart';
 export 'src/adapters/imgbb_image_uploader.dart';
 export 'src/adapters/kakao_share_adapter.dart';
-export 'src/adapters/nearby_transfer_controller.dart';
 export 'src/database/app_database.dart';
 export 'src/dto/worldcup_row.dart';
 export 'src/repositories/sqlite_worldcup_repository.dart';
