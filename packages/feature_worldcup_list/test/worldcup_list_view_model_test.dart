@@ -200,6 +200,120 @@ void main() {
     });
   });
 
+  group('새로고침 경합', () {
+    // 오프셋과 길이 비교만으로는 부족하다. 새로고침이 같은 자리에 같은
+    // 개수를 다시 채우면 두 검사를 모두 통과해, 새로고침 이전 기준으로
+    // 조회한 페이지가 새 창에 이어붙는다.
+    List<WorldCupModel> modelsWithoutFifth() => models(100)..removeAt(4);
+
+    test('조회 중 새로고침이 끝나면 낡은 시트 페이지를 버린다', () async {
+      final repo = _FakeRepository(models(100));
+      final vm = WorldCupListViewModel(repo);
+      addTearDown(vm.dispose);
+      await vm.refresh();
+      await vm.loadNextSheetPage();
+      await vm.loadNextSheetPage();
+      expect(vm.sheetItems, hasLength(WorldCupListViewModel.sheetWindowSize));
+      expect(vm.sheetOffset, 0);
+
+      // 응답을 붙잡아 둔 채로 항목이 지워지고 새로고침이 끝난다.
+      repo.blockNextPage();
+      final stale = vm.loadNextSheetPage();
+      repo.models = modelsWithoutFifth();
+      await vm.refresh();
+      final afterRefresh = vm.sheetItems;
+
+      repo.releaseBlocked();
+      await stale;
+
+      expect(vm.sheetOffset, 0);
+      expect(
+        vm.sheetItems,
+        afterRefresh,
+        reason: '새로고침 이전 기준으로 조회한 페이지가 이어붙었다',
+      );
+    });
+
+    test('조회 중 새로고침이 끝나면 낡은 앞쪽 시트 페이지를 버린다', () async {
+      final repo = _FakeRepository(models(100));
+      final vm = WorldCupListViewModel(repo);
+      addTearDown(vm.dispose);
+      await vm.refresh();
+      for (var page = 0; page < 4; page++) {
+        await vm.loadNextSheetPage();
+      }
+      expect(vm.sheetOffset, 20);
+
+      repo.blockNextPage();
+      final stale = vm.loadPreviousSheetPage();
+      repo.models = modelsWithoutFifth();
+      await vm.refresh();
+      final afterRefresh = vm.sheetItems;
+
+      repo.releaseBlocked();
+      await stale;
+
+      expect(vm.sheetOffset, 20);
+      expect(
+        vm.sheetItems,
+        afterRefresh,
+        reason: '새로고침 이전 기준으로 조회한 앞쪽 페이지가 앞에 붙었다',
+      );
+    });
+
+    test('조회 중 새로고침이 끝나면 낡은 페이저 페이지를 버린다', () async {
+      final repo = _FakeRepository(models(100));
+      final vm = WorldCupListViewModel(repo);
+      addTearDown(vm.dispose);
+      await vm.refresh();
+      await vm.loadNextPagerPage();
+      expect(vm.pagerItems, hasLength(WorldCupListViewModel.pageSize * 2));
+
+      repo.blockNextPage();
+      final stale = vm.loadNextPagerPage();
+      repo.models = modelsWithoutFifth();
+      await vm.refresh();
+      final afterRefresh = vm.pagerItems;
+
+      repo.releaseBlocked();
+      await stale;
+
+      expect(vm.pagerOffset, 0);
+      expect(
+        vm.pagerItems,
+        afterRefresh,
+        reason: '새로고침 이전 기준으로 조회한 페이지가 이어붙었다',
+      );
+    });
+
+    test('조회 중 새로고침이 끝나면 낡은 앞쪽 페이저 페이지를 버린다', () async {
+      final repo = _FakeRepository(models(100));
+      final vm = WorldCupListViewModel(repo);
+      addTearDown(vm.dispose);
+      await vm.refresh();
+      for (var page = 0; page < 3; page++) {
+        await vm.loadNextPagerPage();
+      }
+      expect(vm.pagerOffset, 10);
+
+      repo.blockNextPage();
+      final stale = vm.loadPreviousPagerPage();
+      repo.models = modelsWithoutFifth();
+      await vm.refresh();
+      final afterRefresh = vm.pagerItems;
+
+      repo.releaseBlocked();
+      await stale;
+
+      expect(vm.pagerOffset, 10);
+      expect(
+        vm.pagerItems,
+        afterRefresh,
+        reason: '새로고침 이전 기준으로 조회한 앞쪽 페이지가 앞에 붙었다',
+      );
+    });
+  });
+
   group('페이저 페이징', () {
     test('다음 페이지를 이어 붙인다', () async {
       final vm = WorldCupListViewModel(_FakeRepository(models(25)));
@@ -407,12 +521,15 @@ class _FakeRepository implements WorldCupRepository {
     pageCalls++;
     requestedLimits.add(limit);
     requestedOffsets.add(offset);
+    // 실제 DB처럼 호출 시점의 데이터로 결과를 확정한 뒤 붙잡는다. 그래야
+    // 붙잡힌 응답이 "조회 이후 바뀐 데이터"가 아니라 낡은 데이터가 된다.
+    final result = _matching(searchQuery).skip(offset).take(limit).toList();
     if (_gateArmed) {
       // 한 번만 붙잡는다. 이후 호출은 그대로 통과시킨다.
       _gateArmed = false;
       await _gate!.future;
     }
-    return _matching(searchQuery).skip(offset).take(limit).toList();
+    return result;
   }
 
   @override
