@@ -47,6 +47,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
   bool _isSearchCloseScheduled = false;
   bool _isHandlingSheetItemTap = false;
   bool _isPagerTransitionInFlight = false;
+  bool _isLoadingNextSheetPage = false;
   int _pagerNavigationRequest = 0;
   int? _pagerTargetPage;
   double _collapsedSheetSize = 0.1;
@@ -195,8 +196,15 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                       clipBehavior: Clip.antiAlias,
                       child: NotificationListener<ScrollNotification>(
                         onNotification: (notification) {
+                          if (notification.metrics.extentBefore < 240) {
+                            unawaited(_vm.loadPreviousSheetPage());
+                          }
                           if (notification.metrics.extentAfter < 240) {
-                            unawaited(_vm.loadNextSheetPage());
+                            unawaited(
+                              _loadNextSheetPagePreservingPosition(
+                                scrollController,
+                              ),
+                            );
                           }
                           return false;
                         },
@@ -230,7 +238,8 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                                 child: Center(child: Text('검색 결과가 없습니다')),
                               )
                             else
-                              SliverList.builder(
+                              SliverFixedExtentList.builder(
+                                itemExtent: WorldCupSheetItem.extent,
                                 itemCount: _sheetItems.length,
                                 itemBuilder: (context, index) {
                                   final model = _sheetItems[index];
@@ -476,6 +485,35 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
     await _vm.loadPreviousPagerPage(deferTrim: deferTrim);
     if (!mounted || (_pagerKey.currentState?.isScrolling ?? false)) return;
     _vm.trimDeferredPagerWindow();
+  }
+
+  Future<void> _loadNextSheetPagePreservingPosition(
+    ScrollController controller,
+  ) async {
+    if (_isLoadingNextSheetPage) return;
+    _isLoadingNextSheetPage = true;
+    final previousOffset = controller.hasClients ? controller.offset : null;
+    try {
+      final trimmedItems = await _vm.loadNextSheetPage();
+      if (!mounted ||
+          trimmedItems == 0 ||
+          previousOffset == null ||
+          !controller.hasClients) {
+        return;
+      }
+      // 창 앞쪽에서 잘라낸 높이만큼 오프셋을 줄여, 로드 전에
+      // 보던 항목이 같은 화면 위치에 남도록 한다.
+      final correctedOffset =
+          previousOffset - (trimmedItems * WorldCupSheetItem.extent);
+      controller.jumpTo(
+        correctedOffset.clamp(
+          controller.position.minScrollExtent,
+          controller.position.maxScrollExtent,
+        ),
+      );
+    } finally {
+      _isLoadingNextSheetPage = false;
+    }
   }
 
   void _movePagerToPage(int targetIndex) {

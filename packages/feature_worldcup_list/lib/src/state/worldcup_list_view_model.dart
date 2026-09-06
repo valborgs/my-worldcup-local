@@ -19,14 +19,22 @@ class WorldCupListViewModel extends ChangeNotifier {
   /// 경계에서 바로 다시 조회하지 않도록 3페이지를 유지한다.
   static const int pagerWindowSize = pageSize * 3;
 
+  /// 시트가 스크롤 위치 주변에 유지하는 기본 항목 수.
+  static const int sheetWindowSize = pageSize * 3;
+
   /// 부분 페이지를 포함한, 스크롤 정지 상태의 최대 창 크기.
   static const int _pagerWindowCapacity = pagerWindowSize + pageSize - 1;
+
+  /// 부분 페이지를 포함한 시트 창의 최대 크기.
+  static const int _sheetWindowCapacity = sheetWindowSize + pageSize - 1;
 
   final WorldCupRepository _repository;
 
   WorldCupListViewModel(this._repository, {List<WorldCupModel>? initialItems})
     : _pagerItems = List.of(initialItems ?? const []),
-      _sheetItems = List.of(initialItems ?? const []);
+      _sheetItems = List.of(
+        (initialItems ?? const <WorldCupModel>[]).take(pageSize),
+      );
 
   bool _disposed = false;
 
@@ -61,11 +69,15 @@ class WorldCupListViewModel extends ChangeNotifier {
 
   // --- 시트 ---
   List<WorldCupModel> _sheetItems;
+  int _sheetOffset = 0;
   int _totalCount = 0;
   bool _isLoadingSheetPage = false;
 
   /// 전체 월드컵 개수.
   int get totalCount => _totalCount;
+
+  /// [sheetItems]의 첫 항목이 전체 목록에서 몇 번째인지.
+  int get sheetOffset => _sheetOffset;
 
   // --- 검색 ---
   bool _isSearching = false;
@@ -99,38 +111,44 @@ class WorldCupListViewModel extends ChangeNotifier {
   /// 페이저가 보고 있던 위치를 최대한 유지한다. 항목을 추가한 직후에도
   /// 보던 카드가 그대로 있어야 하기 때문이다.
   Future<void> refresh() async {
-    // 시트가 이전에 몇 페이지를 불러왔든 새로고침은 첫 페이지부터 다시
-    // 시작한다. 누적 길이를 limit으로 쓰면 100개까지 스크롤한 뒤의 모든
-    // 새로고침이 100개 단일 조회로 굳어진다.
-    const sheetLimit = pageSize;
-    // initialItems는 현재 1페이지지만, 외부 주입이 늘어나도 새로고침
-    // 조회 범위가 부분 페이지를 포함한 창 상한을 넘지 않도록 방어한다.
+    // 현재 창의 크기와 오프셋을 유지해 스크롤 extent가 급격히 줄지
+    // 않게 한다. 대신 조회량은 부분 페이지를 포함한 창 상한으로 제한한다.
+    final sheetLimit = _sheetItems.length.clamp(
+      pageSize,
+      _sheetWindowCapacity,
+    );
     final pagerLimit = _pagerItems.length.clamp(pageSize, _pagerWindowCapacity);
-    // 페이저가 첫 페이지를 보고 있고 더 많이 필요하면 한 번의 조회로 합친다.
-    final firstPageLimit = _pagerOffset == 0 && pagerLimit > sheetLimit
-        ? pagerLimit
-        : sheetLimit;
 
-    final results = await Future.wait([
-      _repository.count(),
-      _repository.page(limit: firstPageLimit, offset: 0),
-    ]);
+    final totalCount = await _repository.count();
     if (_disposed) return;
-
-    final totalCount = results[0] as int;
-    final firstPageItems = results[1] as List<WorldCupModel>;
 
     final maxPagerOffset = totalCount > pagerLimit
         ? totalCount - pagerLimit
         : 0;
     final refreshedPagerOffset = _pagerOffset.clamp(0, maxPagerOffset);
-    final refreshedPagerItems =
-        refreshedPagerOffset == 0 && firstPageLimit >= pagerLimit
-        ? firstPageItems.take(pagerLimit).toList()
-        : await _repository.page(
-            limit: pagerLimit,
-            offset: refreshedPagerOffset,
-          );
+    final maxSheetOffset = totalCount > sheetLimit
+        ? totalCount - sheetLimit
+        : 0;
+    final refreshedSheetOffset = _sheetOffset.clamp(0, maxSheetOffset);
+
+    late final List<WorldCupModel> refreshedPagerItems;
+    late final List<WorldCupModel> refreshedSheetItems;
+    if (refreshedPagerOffset == refreshedSheetOffset) {
+      // 두 창이 같은 지점을 보면 큰 범위 한 번만 조회한다.
+      final sharedItems = await _repository.page(
+        limit: pagerLimit > sheetLimit ? pagerLimit : sheetLimit,
+        offset: refreshedPagerOffset,
+      );
+      refreshedPagerItems = sharedItems.take(pagerLimit).toList();
+      refreshedSheetItems = sharedItems.take(sheetLimit).toList();
+    } else {
+      final windows = await Future.wait([
+        _repository.page(limit: pagerLimit, offset: refreshedPagerOffset),
+        _repository.page(limit: sheetLimit, offset: refreshedSheetOffset),
+      ]);
+      refreshedPagerItems = windows[0];
+      refreshedSheetItems = windows[1];
+    }
 
     if (_disposed) return;
 
@@ -138,7 +156,8 @@ class WorldCupListViewModel extends ChangeNotifier {
     _pagerOffset = refreshedPagerOffset;
     _pagerItems = refreshedPagerItems;
     _deferredPagerTrimSide = null;
-    _sheetItems = firstPageItems.take(sheetLimit).toList();
+    _sheetOffset = refreshedSheetOffset;
+    _sheetItems = refreshedSheetItems;
     _clearSearchState();
     _notify();
   }
@@ -255,21 +274,70 @@ class WorldCupListViewModel extends ChangeNotifier {
   }
 
   /// 시트(또는 검색 결과)의 다음 페이지를 이어 붙인다.
-  Future<void> loadNextSheetPage() async {
-    if (_isSearching) return _loadNextSearchPage();
+  Future<int> loadNextSheetPage() async {
+    if (_isSearching) {
+      await _loadNextSearchPage();
+      return 0;
+    }
 
-    final offset = _sheetItems.length;
-    if (_isLoadingSheetPage || offset >= _totalCount) return;
+    final offset = _sheetOffset + _sheetItems.length;
+    if (_isLoadingSheetPage || offset >= _totalCount) return 0;
     _isLoadingSheetPage = true;
+    final sheetOffset = _sheetOffset;
+    final loadedCount = _sheetItems.length;
     try {
       final nextPage = await _repository.page(limit: pageSize, offset: offset);
-      if (!_disposed && _sheetItems.length == offset) {
+      if (!_disposed &&
+          _sheetOffset == sheetOffset &&
+          _sheetItems.length == loadedCount) {
         _sheetItems = [..._sheetItems, ...nextPage];
+        final trimCount = _trimSheetWindowFrom(_WindowTrimSide.start);
+        _notify();
+        return trimCount;
+      }
+      return 0;
+    } finally {
+      _isLoadingSheetPage = false;
+    }
+  }
+
+  /// 시트 창 앞쪽 페이지를 이어 붙인다.
+  Future<void> loadPreviousSheetPage() async {
+    if (_isSearching || _isLoadingSheetPage || _sheetOffset <= 0) return;
+    _isLoadingSheetPage = true;
+    final sheetOffset = _sheetOffset;
+    final previousOffset = sheetOffset > pageSize
+        ? sheetOffset - pageSize
+        : 0;
+    try {
+      final previousPage = await _repository.page(
+        limit: sheetOffset - previousOffset,
+        offset: previousOffset,
+      );
+      if (!_disposed && _sheetOffset == sheetOffset) {
+        _sheetOffset = previousOffset;
+        _sheetItems = [...previousPage, ..._sheetItems];
+        _trimSheetWindowFrom(_WindowTrimSide.end);
         _notify();
       }
     } finally {
       _isLoadingSheetPage = false;
     }
+  }
+
+  /// 페이지 정렬을 유지하며 시트 창의 완전한 페이지만 잘라낸다.
+  int _trimSheetWindowFrom(_WindowTrimSide trimSide) {
+    final overflow = _sheetItems.length - sheetWindowSize;
+    final trimCount = (overflow ~/ pageSize) * pageSize;
+    if (trimCount < pageSize) return 0;
+
+    if (trimSide == _WindowTrimSide.start) {
+      _sheetOffset += trimCount;
+      _sheetItems = _sheetItems.sublist(trimCount);
+    } else {
+      _sheetItems = _sheetItems.take(_sheetItems.length - trimCount).toList();
+    }
+    return trimCount;
   }
 
   Future<void> _loadNextSearchPage() async {
@@ -356,6 +424,8 @@ class WorldCupListViewModel extends ChangeNotifier {
 }
 
 enum _PagerTrimSide { start, end }
+
+enum _WindowTrimSide { start, end }
 
 /// 페이저에서 어떤 카드로 갈지, 그리고 창을 교체했는지.
 class PagerTarget {

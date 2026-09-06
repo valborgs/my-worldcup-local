@@ -36,6 +36,9 @@ class SheetHeaderDelegate extends SliverPersistentHeaderDelegate {
 }
 
 class WorldCupSheetItem extends StatelessWidget {
+  /// 창 트리밍 시 스크롤 오프셋을 정확히 보정하기 위한 고정 높이.
+  static const double extent = 84;
+
   final WorldCupModel model;
   final VoidCallback onTap;
 
@@ -52,20 +55,23 @@ class WorldCupSheetItem extends StatelessWidget {
         : model.idx < 0
         ? Image.asset(model.titleImageSrc, fit: BoxFit.cover)
         : Image.file(File(model.titleImageSrc), fit: BoxFit.cover);
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      leading: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(width: 64, height: 64, child: image),
-      ),
-      title: Text(
-        model.idx < 0 ? '(샘플) ${model.title}' : model.title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        '최대 라운드 : ${TournamentRounds.defaultRound(model.maxRound)}강',
+    return SizedBox(
+      height: extent,
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        leading: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: SizedBox(width: 64, height: 64, child: image),
+        ),
+        title: Text(
+          model.idx < 0 ? '(샘플) ${model.title}' : model.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          '최대 라운드 : ${TournamentRounds.defaultRound(model.maxRound)}강',
+        ),
       ),
     );
   }

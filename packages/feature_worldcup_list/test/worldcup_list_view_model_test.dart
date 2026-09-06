@@ -112,7 +112,39 @@ void main() {
   });
 
   group('시트 페이징', () {
-    test('새로고침하면 누적된 목록 대신 첫 페이지만 다시 부른다', () async {
+    test('깊게 로드해도 창 상한을 유지한다', () async {
+      final repo = _FakeRepository(models(100));
+      final vm = WorldCupListViewModel(repo);
+      addTearDown(vm.dispose);
+      await vm.refresh();
+      var trimmedItems = 0;
+      for (var page = 1; page < 10; page++) {
+        trimmedItems = await vm.loadNextSheetPage();
+      }
+
+      expect(trimmedItems, WorldCupListViewModel.pageSize);
+      expect(vm.sheetItems, hasLength(WorldCupListViewModel.sheetWindowSize));
+      expect(vm.sheetOffset, 70);
+      expect(vm.sheetItems.first.idx, 71);
+      expect(vm.sheetItems.last.idx, 100);
+    });
+
+    test('마지막 부분 페이지는 완전한 페이지가 될 때까지 잘라내지 않는다', () async {
+      final vm = WorldCupListViewModel(_FakeRepository(models(31)));
+      addTearDown(vm.dispose);
+      await vm.refresh();
+
+      await vm.loadNextSheetPage();
+      await vm.loadNextSheetPage();
+      final trimmedItems = await vm.loadNextSheetPage();
+
+      expect(trimmedItems, 0);
+      expect(vm.sheetItems, hasLength(31));
+      expect(vm.sheetOffset, 0);
+      expect(vm.sheetItems.last.idx, 31);
+    });
+
+    test('새로고침해도 현재 시트 창을 다시 불러 위치를 유지한다', () async {
       final repo = _FakeRepository(models(100));
       final vm = WorldCupListViewModel(repo);
       addTearDown(vm.dispose);
@@ -120,16 +152,34 @@ void main() {
       for (var page = 1; page < 10; page++) {
         await vm.loadNextSheetPage();
       }
-      expect(vm.sheetItems, hasLength(100));
 
       await vm.refresh();
 
-      expect(repo.requestedLimits.last, WorldCupListViewModel.pageSize);
-      expect(repo.requestedOffsets.last, 0);
-      expect(vm.sheetItems, hasLength(WorldCupListViewModel.pageSize));
+      expect(repo.requestedLimits.last, WorldCupListViewModel.sheetWindowSize);
+      expect(repo.requestedOffsets.last, 70);
+      expect(vm.sheetItems, hasLength(WorldCupListViewModel.sheetWindowSize));
+      expect(vm.sheetOffset, 70);
+      expect(vm.sheetItems.first.idx, 71);
+      expect(vm.sheetItems.last.idx, 100);
+    });
 
-      await vm.loadNextSheetPage();
-      expect(vm.sheetItems, hasLength(WorldCupListViewModel.pageSize * 2));
+    test('앞쪽 페이지를 다시 불러도 창 상한을 넘지 않는다', () async {
+      final repo = _FakeRepository(models(100));
+      final vm = WorldCupListViewModel(repo);
+      addTearDown(vm.dispose);
+      await vm.refresh();
+      for (var page = 0; page < 4; page++) {
+        await vm.loadNextSheetPage();
+      }
+
+      expect(vm.sheetOffset, 20);
+
+      await vm.loadPreviousSheetPage();
+
+      expect(vm.sheetItems, hasLength(WorldCupListViewModel.sheetWindowSize));
+      expect(vm.sheetOffset, 10);
+      expect(vm.sheetItems.first.idx, 11);
+      expect(vm.sheetItems.last.idx, 40);
     });
   });
 
