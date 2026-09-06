@@ -17,12 +17,23 @@ abstract final class AppRoutes {
   /// 월드컵 게임 진행. 인자: [PlayArgs].
   static const play = '/worldcup/play';
 
-  /// 게임 결과. 인자: [ResultArgs].
-  static const result = '/worldcup/result';
-
   /// 주변 기기로 보내기. 인자: [NearbySendArgs].
   static const nearbySend = '/share/nearby/send';
 
   /// 주변 기기에서 받기. 인자 없음.
   static const nearbyReceive = '/share/nearby/receive';
+
+  /// 선언된 모든 라우트 이름.
+  ///
+  /// 새 라우트를 추가하면 여기에도 넣는다. 앱의 라우터 테스트가 이 목록을
+  /// 돌면서 전부 화면을 만드는지 확인하므로, 이름만 선언하고 라우터에
+  /// 연결하지 않는 실수를 잡아준다.
+  static const all = <String>[
+    list,
+    help,
+    editor,
+    play,
+    nearbySend,
+    nearbyReceive,
+  ];
 }

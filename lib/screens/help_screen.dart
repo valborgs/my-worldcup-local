@@ -3,7 +3,6 @@ import 'package:introduction_screen/introduction_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:worldcup_core/worldcup_core.dart';
 
-
 class HelpScreen extends StatefulWidget {
   final bool isFirstShow;
   final bool enableBottomSheetSelectionPagerTransition;

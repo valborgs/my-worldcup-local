@@ -211,8 +211,10 @@ final class NearbyConnectionChanged extends NearbyEvent {
   final String endpointId;
   final NearbyConnectionState state;
 
-  const NearbyConnectionChanged(
-      {required this.endpointId, required this.state});
+  const NearbyConnectionChanged({
+    required this.endpointId,
+    required this.state,
+  });
 }
 
 final class NearbyTransferProgress extends NearbyEvent {
@@ -282,9 +284,7 @@ Map<Object?, Object?> _map(Object? value, {required String context}) {
 
 void _requireVersion(Map<Object?, Object?> map) {
   if (map['version'] != NearbyProtocol.version) {
-    throw const NearbyProtocolException(
-      '지원하지 않는 Nearby 프로토콜 버전입니다.',
-    );
+    throw const NearbyProtocolException('지원하지 않는 Nearby 프로토콜 버전입니다.');
   }
 }
 
@@ -316,11 +316,7 @@ T _enumByName<T extends Enum>(List<T> values, String name, T fallback) {
   return values.where((value) => value.name == name).firstOrNull ?? fallback;
 }
 
-T _requiredEnum<T extends Enum>(
-  List<T> values,
-  String name,
-  String context,
-) {
+T _requiredEnum<T extends Enum>(List<T> values, String name, String context) {
   for (final value in values) {
     if (value.name == name) return value;
   }

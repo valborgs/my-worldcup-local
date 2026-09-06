@@ -14,21 +14,30 @@ void main() {
     );
   }
 
-  test('선언된 모든 라우트 이름이 화면을 만든다', () {
-    final cases = <String, Object?>{
-      AppRoutes.list: null,
-      AppRoutes.help: null,
-      AppRoutes.editor: const EditorArgs(),
-      AppRoutes.play: const PlayArgs(worldCupId: 1, round: 8),
-      AppRoutes.nearbySend: const NearbySendArgs(worldCupId: 1),
-      AppRoutes.nearbyReceive: null,
-    };
+  // 라우트마다 필요한 인자. AppRoutes.all에 이름을 넣고 여기에 인자를
+  // 빠뜨리면 아래 테스트가 그것도 잡아준다.
+  const argumentsFor = <String, Object?>{
+    AppRoutes.list: null,
+    AppRoutes.help: null,
+    AppRoutes.editor: EditorArgs(),
+    AppRoutes.play: PlayArgs(worldCupId: 1, round: 8),
+    AppRoutes.nearbySend: NearbySendArgs(worldCupId: 1),
+    AppRoutes.nearbyReceive: null,
+  };
 
-    for (final entry in cases.entries) {
+  test('선언된 모든 라우트 이름이 화면을 만든다', () {
+    // 하드코딩한 목록이 아니라 계약 자체를 돌린다. 이름만 선언하고 라우터에
+    // 연결하지 않으면 여기서 걸린다.
+    for (final name in AppRoutes.all) {
       expect(
-        generate(entry.key, entry.value),
+        argumentsFor.containsKey(name),
+        isTrue,
+        reason: '$name 의 테스트 인자가 없다. argumentsFor에 추가할 것',
+      );
+      expect(
+        generate(name, argumentsFor[name]),
         isNotNull,
-        reason: '${entry.key} 라우트가 처리되지 않았다',
+        reason: '$name 라우트가 라우터에서 처리되지 않았다',
       );
     }
   });

@@ -34,14 +34,8 @@ jobs:
           imgbb_apiKey=
           ENV
 
-      # 포맷 검사는 새 패키지에만 적용한다.
-      # 기존 lib/의 32개 파일이 미포맷 상태인데, 지금 일괄 포맷하면
-      # churn 상위 파일이 전부 바뀌어 진행 중인 브랜치와 전부 충돌한다.
-      # 각 Phase에서 파일을 옮길 때 함께 포맷하고, Phase 8에서 이 목록을
-      # `lib packages`로 넓힌다.
-      - name: Check formatting (new packages)
-        run: |
-          dart format --output=none --set-exit-if-changed             packages/worldcup_core             packages/worldcup_domain             packages/worldcup_data             packages/worldcup_ui_kit             packages/feature_worldcup_list             packages/feature_worldcup_play             packages/feature_worldcup_editor             packages/feature_worldcup_share
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed lib packages test
 
       - name: Analyze
         run: flutter analyze
@@ -96,3 +90,34 @@ jobs:
             fi
           done
           exit $status
+
+      # feature 패키지는 도메인 포트로만 데이터에 닿는다. 구현을 직접 쓰면
+      # 저장소를 바꿀 때 화면까지 따라 바뀐다.
+      - name: Feature packages must not depend on the data layer
+        run: |
+          status=0
+          for dir in packages/feature_*/; do
+            self="$(basename "$dir")"
+            if grep -q "worldcup_data" "$dir/pubspec.yaml"; then
+              echo "::error file=$dir/pubspec.yaml::$self 가 worldcup_data에 의존합니다."
+              status=1
+            fi
+            hits="$(grep -rn "package:worldcup_data\|package:my_worldcup_local"                     "$dir/lib" "$dir/test" 2>/dev/null || true)"
+            if [ -n "$hits" ]; then
+              echo "::error::$self 소스가 데이터 / 앱 패키지를 참조합니다:"
+              echo "$hits"
+              status=1
+            fi
+          done
+          exit $status
+
+      # 앱 셸은 조립만 한다. 화면이 lib/에 남아 있으면 어느 feature에도
+      # 속하지 않아 담당자가 없는 코드가 된다.
+      - name: App shell must stay assembly-only
+        run: |
+          unexpected="$(find lib -name '*.dart'             -not -path 'lib/main.dart'             -not -path 'lib/app_router.dart'             -not -path 'lib/firebase_options.dart'             -not -path 'lib/di/*'             -not -path 'lib/screens/help_screen.dart')"
+          if [ -n "$unexpected" ]; then
+            echo "::error::lib/ 에는 부트스트랩 / DI / 라우터 / 온보딩만 둔다:"
+            echo "$unexpected"
+            exit 1
+          fi

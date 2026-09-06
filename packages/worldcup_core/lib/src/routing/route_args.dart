@@ -28,23 +28,6 @@ class PlayArgs {
   const PlayArgs({required this.worldCupId, required this.round});
 }
 
-/// [AppRoutes.result] 인자.
-class ResultArgs {
-  final int worldCupId;
-
-  /// 우승한 항목의 id.
-  final int winnerItemId;
-
-  /// 이 게임을 시작한 라운드. "다시 하기"에서 같은 라운드로 재시작할 때 쓴다.
-  final int round;
-
-  const ResultArgs({
-    required this.worldCupId,
-    required this.winnerItemId,
-    required this.round,
-  });
-}
-
 /// [AppRoutes.nearbySend] 인자.
 class NearbySendArgs {
   final int worldCupId;

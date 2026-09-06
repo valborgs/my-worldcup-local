@@ -42,8 +42,11 @@ void main() {
   test('항목 개수가 maxRound와 일치한다', () {
     for (final raw in worldCups) {
       final items = raw['items'] as List;
-      expect(items, hasLength(raw['maxRound'] as int),
-          reason: '${raw['title']}');
+      expect(
+        items,
+        hasLength(raw['maxRound'] as int),
+        reason: '${raw['title']}',
+      );
     }
   });
 
@@ -66,8 +69,11 @@ void main() {
       final images = [
         for (final item in raw['items'] as List) item['image'] as String,
       ];
-      expect(images, contains(raw['titleImage'] as String),
-          reason: '${raw['title']}');
+      expect(
+        images,
+        contains(raw['titleImage'] as String),
+        reason: '${raw['title']}',
+      );
     }
   });
 
