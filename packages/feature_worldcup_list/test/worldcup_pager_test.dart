@@ -304,6 +304,11 @@ void main() {
     // 시트용 조회와 페이저용 조회를 하나로 합쳐 한 번만 물어봐야 한다.
     expect(dao.requestedLimits, [30]);
     expect(dao.requestedOffsets, [0]);
+    expect(
+      viewModel.sheetItems,
+      hasLength(WorldCupListViewModel.pageSize),
+      reason: '페이저가 필요한 30개를 공유 조회해도 시트는 첫 페이지만 유지해야 한다',
+    );
   });
 
   testWidgets('반복 새로고침해도 페이저 로드 범위가 계속 늘어나지 않는다', (tester) async {
