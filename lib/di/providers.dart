@@ -11,6 +11,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_data/worldcup_data.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
+import 'package:worldcup_in_app_update/worldcup_in_app_update.dart';
 
 /// 샘플 월드컵 시드 JSON의 에셋 경로.
 ///
@@ -80,3 +81,12 @@ final portOverrides = [
 final featureFlagProvider = Provider<FeatureFlagPort>((ref) {
   throw UnimplementedError('buildPortOverrides()로 override 해야 합니다.');
 });
+
+/// Play In-App Update 채널. 앱 셸에서만 쓰이므로 도메인 포트로 올리지 않고
+/// 플러그인이 제공하는 인터페이스를 그대로 쓴다(worldcup_nearby_transfer와 같은 방식).
+///
+/// 안드로이드가 아니면 플러그인 게이트웨이가 채널을 건드리지 않고
+/// "쓸 수 없음"을 돌려주므로 플랫폼 분기는 여기서 하지 않는다.
+final inAppUpdateGatewayProvider = Provider<InAppUpdateGateway>(
+  (ref) => MethodChannelInAppUpdateGateway(),
+);

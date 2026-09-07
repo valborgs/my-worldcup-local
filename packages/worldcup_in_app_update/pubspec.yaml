@@ -1,0 +1,27 @@
+name: worldcup_in_app_update
+description: Project-local Google Play In-App Update (flexible flow) channel for My World Cup.
+version: 1.0.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+  flutter: '>=3.24.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+# 인앱 업데이트는 Play 스토어가 배포한 앱에서만 동작한다. iOS 구현은 없고,
+# Dart 게이트웨이가 안드로이드가 아닌 플랫폼에서 조용히 no-op으로 동작한다.
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: org.comon.worldcup_in_app_update
+        pluginClass: WorldcupInAppUpdatePlugin

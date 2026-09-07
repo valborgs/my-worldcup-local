@@ -18,6 +18,7 @@ import 'app_router.dart';
 import 'di/providers.dart';
 import 'firebase_options.dart';
 import 'screens/help_screen.dart';
+import 'update/in_app_update_host.dart';
 
 // 이 너비(dp) 이상을 '대화면'(폴더블 내부화면, 태블릿 등)으로 간주하여 회전을 허용한다.
 const double _kLargeScreenWidth = 600.0;
@@ -157,7 +158,9 @@ class _MyWorldCupState extends State<MyWorldCup> {
       theme: AppTheme.light(),
       builder: (context, child) {
         _applyOrientationPolicy(context);
-        return child!;
+        // 유연한 업데이트를 이끄는 호스트. 화면을 바꿔도 살아 있도록
+        // 라우터 위에 두고, 안내는 루트 ScaffoldMessenger로 띄운다.
+        return InAppUpdateHost(child: child!);
       },
       onGenerateRoute: router.onGenerateRoute,
       // 첫 화면만 여기서 만든다. 목록 화면은 미리 불러온 목록을 받아

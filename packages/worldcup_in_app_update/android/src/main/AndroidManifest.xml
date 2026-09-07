@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Play In-App Update는 Play 스토어 앱과 통신하므로 별도 권한이 필요 없다.
+         app-update 라이브러리가 필요한 항목을 자체 매니페스트로 병합한다. -->
+</manifest>
