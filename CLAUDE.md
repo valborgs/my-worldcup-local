@@ -92,6 +92,17 @@ Screens do not construct each other. `worldcup_core` owns route names
 (`AppRoutes`) and typed argument classes; `lib/app_router.dart` is the only
 place that binds a route name to a widget.
 
+**Never set `MaterialApp.home`.** `WidgetsApp` resolves `'/'` to `home`
+whenever it is non-null and never consults `onGenerateRoute` for that name
+(`widgets/app.dart`, `_onGenerateRoute`). `AppRoutes.list` *is* `'/'`, so with a
+`home` the onboarding screen could not hand off to the list: finishing it
+replaced `'/'` with `home` — the onboarding screen again — and a first-time user
+could never leave it. The app starts through `initialRoute` +
+`onGenerateInitialRoutes` instead, and the preloaded first page rides on
+`AppRouter.initialWorldCupList`. `onGenerateInitialRoutes` is explicit because
+the default splits `'/onboarding'` into `['/', '/onboarding']` and builds the
+list underneath.
+
 Route arguments carry **ids, not entities**. `worldcup_core` sits below
 `worldcup_domain`, so it cannot reference entity types. Destination screens
 load what they need from the repository.

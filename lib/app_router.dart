@@ -19,7 +19,17 @@ class AppRouter {
   /// 아직 화면 생성자를 통해 내려보낸다. 이후 단계에서 DI로 옮긴다.
   final bool enableBottomSheetSelectionPagerTransition;
 
-  const AppRouter({required this.enableBottomSheetSelectionPagerTransition});
+  /// 부팅 중에 미리 읽어 둔 첫 페이지.
+  ///
+  /// 목록 화면이 빈 상태로 잠깐 보였다가 채워지는 깜빡임을 없앤다.
+  /// 예전에는 `MaterialApp.home`이 이 값을 들고 있었지만, `home`이 있으면
+  /// `WidgetsApp`이 '/'를 가로채 이 라우터에 닿지 않는다(AppRoutes.onboarding 참고).
+  final List<WorldCupModel>? initialWorldCupList;
+
+  const AppRouter({
+    required this.enableBottomSheetSelectionPagerTransition,
+    this.initialWorldCupList,
+  });
 
   Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -27,8 +37,22 @@ class AppRouter {
         return MaterialPageRoute<void>(
           settings: settings,
           builder: (_) => MainWorldCupScreen(
+            initialWorldCupList: initialWorldCupList,
             enableBottomSheetSelectionPagerTransition:
                 enableBottomSheetSelectionPagerTransition,
+          ),
+        );
+
+      case AppRoutes.onboarding:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => Semantics(
+            label: "도움말, 소개 화면",
+            child: HelpScreen(
+              true,
+              enableBottomSheetSelectionPagerTransition:
+                  enableBottomSheetSelectionPagerTransition,
+            ),
           ),
         );
 

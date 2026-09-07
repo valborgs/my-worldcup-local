@@ -8,8 +8,16 @@ abstract final class AppRoutes {
   /// 월드컵 목록 (앱 시작 화면).
   static const list = '/';
 
-  /// 앱 소개 / 도움말.
+  /// 앱 소개 / 도움말. 목록 화면에서 다시 열어 보는 용도라 닫으면 pop 한다.
   static const help = '/help';
+
+  /// 첫 실행 온보딩. [help]와 화면은 같지만 끝나면 [list]로 replace 한다.
+  ///
+  /// 온보딩을 [list]('/')의 `home`으로 두면 안 된다. `WidgetsApp`은 `home`이
+  /// 있으면 '/'를 무조건 `home`으로 해석하고 앱의 `onGenerateRoute`를 거치지
+  /// 않는다. 그러면 온보딩이 끝나며 '/'로 replace 해도 온보딩이 다시 열려
+  /// 첫 실행에서 빠져나갈 수 없다.
+  static const onboarding = '/onboarding';
 
   /// 월드컵 생성 및 수정. 인자: [EditorArgs].
   static const editor = '/worldcup/editor';
@@ -31,6 +39,7 @@ abstract final class AppRoutes {
   static const all = <String>[
     list,
     help,
+    onboarding,
     editor,
     play,
     nearbySend,
