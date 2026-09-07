@@ -9,19 +9,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:kakao_flutter_sdk_share/kakao_flutter_sdk_share.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:worldcup_core/worldcup_core.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
-
-import 'package:feature_worldcup_list/feature_worldcup_list.dart';
 
 import 'app_router.dart';
 import 'di/providers.dart';
 import 'firebase_options.dart';
-import 'screens/help_screen.dart';
 import 'update/in_app_update_host.dart';
 
 // 이 너비(dp) 이상을 '대화면'(폴더블 내부화면, 태블릿 등)으로 간주하여 회전을 허용한다.
 const double _kLargeScreenWidth = 600.0;
+
+/// 앱을 어떤 화면으로 열지 정한다. 온보딩은 처음 여는 사람에게만 보여 준다.
+///
+/// 값을 못 읽었을 때(null)는 아직 본 적 없다고 본다. 온보딩을 한 번 더 보는
+/// 쪽이, 앱 소개를 못 본 채로 목록을 마주하는 쪽보다 낫다.
+@visibleForTesting
+String startRouteFor({required bool? isAlreadyShownHelp}) {
+  return isAlreadyShownHelp == true ? AppRoutes.list : AppRoutes.onboarding;
+}
 
 Future<void> main() async {
   // runApp() 호출 전 Flutter SDK 초기화를 위해 바인딩을 가장 먼저 준비한다.
@@ -149,6 +156,7 @@ class _MyWorldCupState extends State<MyWorldCup> {
     final router = AppRouter(
       enableBottomSheetSelectionPagerTransition:
           widget.enableBottomSheetSelectionPagerTransition,
+      initialWorldCupList: widget.initialWorldCupList,
     );
 
     return MaterialApp(
@@ -163,22 +171,19 @@ class _MyWorldCupState extends State<MyWorldCup> {
         return InAppUpdateHost(child: child!);
       },
       onGenerateRoute: router.onGenerateRoute,
-      // 첫 화면만 여기서 만든다. 목록 화면은 미리 불러온 목록을 받아
-      // 첫 프레임의 깜빡임을 없애기 때문에 라우터를 거치지 않는다.
-      home: (widget.isAlreadyShownHelp == true)
-          ? MainWorldCupScreen(
-              initialWorldCupList: widget.initialWorldCupList,
-              enableBottomSheetSelectionPagerTransition:
-                  widget.enableBottomSheetSelectionPagerTransition,
-            )
-          : Semantics(
-              label: "도움말, 소개 화면",
-              child: HelpScreen(
-                true,
-                enableBottomSheetSelectionPagerTransition:
-                    widget.enableBottomSheetSelectionPagerTransition,
-              ),
-            ),
+      // 첫 화면도 라우터를 거친다. `home`을 쓰면 WidgetsApp이 '/'를 그 위젯으로
+      // 가로채고 onGenerateRoute를 부르지 않는데, 그러면 온보딩이 끝나며
+      // AppRoutes.list('/')로 replace 해도 온보딩이 다시 열려 첫 실행에서
+      // 빠져나갈 수 없다. 미리 읽어 둔 목록은 라우터가 들고 있다.
+      initialRoute: startRouteFor(
+        isAlreadyShownHelp: widget.isAlreadyShownHelp,
+      ),
+      // 기본 구현은 '/onboarding' 같은 이름을 ['/', '/onboarding']으로 쪼개
+      // 목록 화면까지 함께 쌓는다. 첫 실행에 목록을 미리 만들 이유가 없고,
+      // 온보딩이 끝나며 '/'로 replace 하면 목록이 두 장 남는다. 한 장만 만든다.
+      onGenerateInitialRoutes: (initialRouteName) => <Route<dynamic>>[
+        router.onGenerateRoute(RouteSettings(name: initialRouteName))!,
+      ],
     );
   }
 }

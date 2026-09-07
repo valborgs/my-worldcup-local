@@ -16,7 +16,9 @@ import com.google.android.play.core.appupdate.AppUpdateOptions
 import com.google.android.play.core.install.InstallState
 import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.ActivityResult
+import com.google.android.play.core.install.InstallException
 import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.InstallErrorCode
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -167,9 +169,25 @@ class WorldcupInAppUpdatePlugin :
         manager.appUpdateInfo
             .addOnSuccessListener { info -> result.success(infoToMap(info)) }
             .addOnFailureListener { error ->
-                Log.w(TAG, "업데이트 정보를 가져오지 못했습니다.", error)
+                logCheckFailure(error)
                 result.error("update_check_failed", error.message, null)
             }
+    }
+
+    /**
+     * ERROR_APP_NOT_OWNED(-10)은 Play 스토어가 설치하지 않은 빌드에서 늘 나온다.
+     * `flutter run`으로 올린 빌드, 직접 설치한 apk가 전부 여기 해당한다.
+     * 고칠 것이 없는 정상 상태이므로 경고로 남기지 않는다. 스택 트레이스까지
+     * 찍히면 개발 중에 진짜 문제인 줄 알고 쫓게 된다.
+     */
+    private fun logCheckFailure(error: Exception) {
+        val notOwned = error is InstallException &&
+            error.errorCode == InstallErrorCode.ERROR_APP_NOT_OWNED
+        if (notOwned) {
+            Log.i(TAG, "Play 스토어가 설치한 앱이 아니라 인앱 업데이트를 쓸 수 없습니다.")
+        } else {
+            Log.w(TAG, "업데이트 정보를 가져오지 못했습니다.", error)
+        }
     }
 
     private fun startUpdateFlow(type: Int, result: MethodChannel.Result) {
@@ -206,7 +224,7 @@ class WorldcupInAppUpdatePlugin :
                 }
             }
             .addOnFailureListener { error ->
-                Log.w(TAG, "업데이트 정보를 가져오지 못했습니다.", error)
+                logCheckFailure(error)
                 result.error("update_check_failed", error.message, null)
             }
     }
