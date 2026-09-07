@@ -113,9 +113,11 @@ jobs:
 
       # 앱 셸은 조립만 한다. 화면이 lib/에 남아 있으면 어느 feature에도
       # 속하지 않아 담당자가 없는 코드가 된다.
+      # lib/update/ 는 예외다. 인앱 업데이트는 화면이 아니라 앱 전체를 감싸는
+      # 부팅 동작이라 어느 feature에도 속하지 않는다.
       - name: App shell must stay assembly-only
         run: |
-          unexpected="$(find lib -name '*.dart'             -not -path 'lib/main.dart'             -not -path 'lib/app_router.dart'             -not -path 'lib/firebase_options.dart'             -not -path 'lib/di/*'             -not -path 'lib/screens/help_screen.dart')"
+          unexpected="$(find lib -name '*.dart'             -not -path 'lib/main.dart'             -not -path 'lib/app_router.dart'             -not -path 'lib/firebase_options.dart'             -not -path 'lib/di/*'             -not -path 'lib/screens/help_screen.dart'             -not -path 'lib/update/*')"
           if [ -n "$unexpected" ]; then
             echo "::error::lib/ 에는 부트스트랩 / DI / 라우터 / 온보딩만 둔다:"
             echo "$unexpected"

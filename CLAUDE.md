@@ -51,13 +51,14 @@ not in its `pubspec.yaml`.
 
 ```
 my-worldcup-local/            # pub workspace root = app shell
-├─ lib/                       # assembly only: bootstrap + DI + router
+├─ lib/                       # assembly only: bootstrap + DI + router + in-app update host
 ├─ packages/
 │  ├─ worldcup_core/          # pure Dart. Failures, routing contract, logging port
 │  ├─ worldcup_domain/        # pure Dart. Entities, ports, port providers
 │  ├─ worldcup_data/          # port implementations (sqflite, ImgBB, Kakao, AdMob, Firebase)
 │  ├─ worldcup_ui_kit/        # shared widgets and theme
 │  ├─ worldcup_nearby_transfer/  # Nearby Connections platform channel plugin
+│  ├─ worldcup_in_app_update/   # Play In-App Update (flexible) platform channel plugin
 │  ├─ feature_worldcup_list/     # tournament list, cover-flow pager, bottom sheet, search
 │  ├─ feature_worldcup_play/     # gameplay and result screens
 │  ├─ feature_worldcup_editor/   # create and edit screens
@@ -160,6 +161,14 @@ constructors so they stay testable.
 - **Assets stay in the app package.** Moving them under `packages/` would change
   asset paths to `packages/<name>/...`, and those path strings are stored in the
   user's SQLite rows.
+- **In-app updates** use `worldcup_in_app_update`, a project-local plugin around
+  `com.google.android.play:app-update`. Only the **flexible** flow is exposed —
+  the immediate flow blocks the app, which is the opposite of what this feature
+  is for. `InAppUpdateController` (`lib/update/`) drives it and `InAppUpdateHost`
+  sits in `MaterialApp.builder`, so the restart prompt can appear on any screen.
+  The check fails on any build the Play Store did not install (`flutter run`
+  included); that failure is logged and swallowed on purpose. Verify the real
+  flow through Play's internal app sharing.
 - Asset directory entries in `pubspec.yaml` are **not recursive**. Listing
   `assets/sample/female/` does not bundle `assets/sample/sample_worldcups.json`;
   the parent directory has to be listed too.

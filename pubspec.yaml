@@ -30,6 +30,7 @@ workspace:
   - packages/worldcup_data
   - packages/worldcup_ui_kit
   - packages/worldcup_nearby_transfer
+  - packages/worldcup_in_app_update
   - packages/feature_worldcup_list
   - packages/feature_worldcup_play
   - packages/feature_worldcup_editor
@@ -63,6 +64,9 @@ dependencies:
   path_provider: ^2.1.3 # 파일 경로
   worldcup_nearby_transfer:
     path: packages/worldcup_nearby_transfer
+  # Play 인앱 업데이트(유연한 업데이트) 플랫폼 채널
+  worldcup_in_app_update:
+    path: packages/worldcup_in_app_update
   worldcup_core:
     path: packages/worldcup_core
   worldcup_domain:
