@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -26,9 +28,11 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.PluginRegistry
 
 /**
- * Google Play In-App Update의 유연한(Flexible) 업데이트만 다루는 플러그인.
+ * Google Play In-App Update를 감싸는 플러그인.
  *
- * 즉시(Immediate) 업데이트는 앱 사용 흐름을 끊으므로 의도적으로 노출하지 않는다.
+ * 평소에는 유연한(Flexible) 업데이트만 쓴다. 즉시(Immediate) 업데이트는 앱을
+ * 통째로 막으므로, Dart 쪽이 "이 버전은 반드시 올려야 한다"고 판단했을 때만
+ * 따로 요청한다.
  */
 class WorldcupInAppUpdatePlugin :
     FlutterPlugin,
@@ -152,7 +156,8 @@ class WorldcupInAppUpdatePlugin :
         }
         when (call.method) {
             "checkForUpdate" -> checkForUpdate(result)
-            "startFlexibleUpdate" -> startFlexibleUpdate(result)
+            "startFlexibleUpdate" -> startUpdateFlow(AppUpdateType.FLEXIBLE, result)
+            "startImmediateUpdate" -> startUpdateFlow(AppUpdateType.IMMEDIATE, result)
             "completeUpdate" -> completeUpdate(result)
             else -> result.notImplemented()
         }
@@ -167,14 +172,14 @@ class WorldcupInAppUpdatePlugin :
             }
     }
 
-    private fun startFlexibleUpdate(result: MethodChannel.Result) {
+    private fun startUpdateFlow(type: Int, result: MethodChannel.Result) {
         val activity = this.activity
         if (activity == null) {
-            result.error("no_activity", "화면이 없어 업데이트 동의 창을 띄울 수 없습니다.", null)
+            result.error("no_activity", "화면이 없어 업데이트 창을 띄울 수 없습니다.", null)
             return
         }
         if (pendingFlowResult != null) {
-            result.error("already_in_progress", "이미 업데이트 동의 창이 떠 있습니다.", null)
+            result.error("already_in_progress", "이미 업데이트 창이 떠 있습니다.", null)
             return
         }
 
@@ -182,9 +187,7 @@ class WorldcupInAppUpdatePlugin :
         // 조회 결과를 캐시하지 않고 시작 직전에 새로 받아 온다.
         manager.appUpdateInfo
             .addOnSuccessListener { info ->
-                if (info.updateAvailability() != UpdateAvailability.UPDATE_AVAILABLE ||
-                    !info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
-                ) {
+                if (!canStart(info, type)) {
                     result.success("unavailable")
                     return@addOnSuccessListener
                 }
@@ -193,12 +196,12 @@ class WorldcupInAppUpdatePlugin :
                     val started = manager.startUpdateFlowForResult(
                         info,
                         activity,
-                        AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build(),
+                        AppUpdateOptions.newBuilder(type).build(),
                         UPDATE_REQUEST,
                     )
                     if (!started) finishPendingFlow("failed")
                 } catch (error: IntentSender.SendIntentException) {
-                    Log.w(TAG, "업데이트 동의 창을 띄우지 못했습니다.", error)
+                    Log.w(TAG, "업데이트 창을 띄우지 못했습니다.", error)
                     finishPendingFlow("failed")
                 }
             }
@@ -206,6 +209,19 @@ class WorldcupInAppUpdatePlugin :
                 Log.w(TAG, "업데이트 정보를 가져오지 못했습니다.", error)
                 result.error("update_check_failed", error.message, null)
             }
+    }
+
+    private fun canStart(info: AppUpdateInfo, type: Int): Boolean {
+        // 시작해 둔 즉시 업데이트가 멈춘 채 남아 있으면 다시 띄워야 한다.
+        // 이때 updateAvailability()는 UPDATE_AVAILABLE이 아니다.
+        if (type == AppUpdateType.IMMEDIATE &&
+            info.updateAvailability() ==
+            UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
+        ) {
+            return true
+        }
+        return info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
+            info.isUpdateTypeAllowed(type)
     }
 
     private fun completeUpdate(result: MethodChannel.Result) {
@@ -248,10 +264,35 @@ class WorldcupInAppUpdatePlugin :
             "availability" to availabilityName(info.updateAvailability()),
             "installStatus" to installStatusName(info.installStatus()),
             "flexibleAllowed" to info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE),
+            "immediateAllowed" to info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE),
             "availableVersionCode" to if (versionCode > 0) versionCode else null,
+            "installedVersionCode" to installedVersionCode(),
             "clientVersionStalenessDays" to info.clientVersionStalenessDays(),
             "updatePriority" to info.updatePriority(),
         )
+    }
+
+    /**
+     * 지금 깔려 있는 앱의 versionCode.
+     *
+     * Play가 주는 값이 아니라 PackageManager에서 읽는다. Dart가 최소 요구
+     * 버전과 비교할 때 쓰므로, 왕복을 한 번 더 하지 않도록 조회 응답에 함께
+     * 실어 보낸다.
+     */
+    private fun installedVersionCode(): Long? {
+        return try {
+            val info = context.packageManager.getPackageInfo(context.packageName, 0)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                info.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                info.versionCode.toLong()
+            }
+        } catch (error: PackageManager.NameNotFoundException) {
+            // 일어날 수 없는 경우지만, 여기서 터지면 조회 전체가 실패한다.
+            Log.w(TAG, "설치된 앱 버전을 읽지 못했습니다.", error)
+            null
+        }
     }
 
     private fun availabilityName(value: Int): String = when (value) {

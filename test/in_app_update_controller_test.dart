@@ -2,18 +2,25 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_worldcup_local/update/in_app_update_controller.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:worldcup_in_app_update/worldcup_in_app_update.dart';
+
+const _installedVersionCode = 30;
 
 InAppUpdateInfo _info({
   InAppUpdateAvailability availability = InAppUpdateAvailability.available,
   InAppUpdateInstallStatus installStatus = InAppUpdateInstallStatus.unknown,
   bool flexibleAllowed = true,
+  bool immediateAllowed = true,
+  int? installedVersionCode = _installedVersionCode,
 }) {
   return InAppUpdateInfo(
     availability: availability,
     installStatus: installStatus,
     flexibleAllowed: flexibleAllowed,
+    immediateAllowed: immediateAllowed,
     availableVersionCode: 31,
+    installedVersionCode: installedVersionCode,
     clientVersionStalenessDays: null,
     updatePriority: 0,
   );
@@ -43,10 +50,11 @@ class _FakeGateway implements InAppUpdateGateway {
   /// 값을 넣으면 조회가 이 future를 그대로 돌려준다. 늦게 오는 응답을 흉내낸다.
   Completer<InAppUpdateInfo>? pendingCheck;
 
-  /// 값을 넣으면 동의 창이 열린 채로 멈춘다.
+  /// 값을 넣으면 Play 창이 열린 채로 멈춘다.
   Completer<InAppUpdateFlowResult>? pendingFlow;
 
   InAppUpdateFlowResult flowResult = InAppUpdateFlowResult.accepted;
+  InAppUpdateFlowResult immediateResult = InAppUpdateFlowResult.accepted;
   Object? checkError;
   Object? completeError;
 
@@ -64,10 +72,18 @@ class _FakeGateway implements InAppUpdateGateway {
 
   @override
   Future<InAppUpdateFlowResult> startFlexibleUpdate() {
-    calls.add('start');
+    calls.add('flexible');
     final pending = pendingFlow;
     if (pending != null) return pending.future;
     return Future<InAppUpdateFlowResult>.value(flowResult);
+  }
+
+  @override
+  Future<InAppUpdateFlowResult> startImmediateUpdate() {
+    calls.add('immediate');
+    final pending = pendingFlow;
+    if (pending != null) return pending.future;
+    return Future<InAppUpdateFlowResult>.value(immediateResult);
   }
 
   @override
@@ -78,15 +94,38 @@ class _FakeGateway implements InAppUpdateGateway {
   }
 }
 
+/// Remote Config 자리를 대신한다. 실제 포트처럼 예외를 던지지 않는다.
+class _FakeFeatureFlags implements FeatureFlagPort {
+  /// 0은 "아무도 강제하지 않는다". 각 테스트가 필요할 때 올려 쓴다.
+  int minRequiredVersionCode = 0;
+  int reads = 0;
+
+  @override
+  Future<bool> getBool(String key, {required bool defaultValue}) async =>
+      defaultValue;
+
+  @override
+  Future<int> getInt(String key, {required int defaultValue}) async {
+    if (key != FeatureFlags.minRequiredVersionCode) return defaultValue;
+    reads++;
+    return minRequiredVersionCode;
+  }
+}
+
 Future<void> _settle() => Future<void>.delayed(Duration.zero);
 
 void main() {
   late _FakeGateway gateway;
+  late _FakeFeatureFlags featureFlags;
   late InAppUpdateController controller;
 
   setUp(() {
     gateway = _FakeGateway();
-    controller = InAppUpdateController(gateway: gateway);
+    featureFlags = _FakeFeatureFlags();
+    controller = InAppUpdateController(
+      gateway: gateway,
+      featureFlags: featureFlags,
+    );
   });
 
   tearDown(() {
@@ -94,159 +133,289 @@ void main() {
     gateway.states.close();
   });
 
-  test('새 버전이 있으면 동의 창을 띄우고, 수락하면 조용히 내려받는다', () async {
-    await controller.start();
+  group('유연한 업데이트', () {
+    test('새 버전이 있으면 동의 창을 띄우고, 수락하면 조용히 내려받는다', () async {
+      await controller.start();
 
-    expect(gateway.calls, <String>['check', 'start']);
-    expect(controller.phase, InAppUpdatePhase.downloading);
-    expect(controller.shouldPromptInstall, isFalse);
+      expect(gateway.calls, <String>['check', 'flexible']);
+      expect(controller.phase, InAppUpdatePhase.downloading);
+      expect(controller.shouldPromptInstall, isFalse);
+      expect(controller.isUpdateRequired, isFalse);
+    });
+
+    test('업데이트가 없으면 아무것도 하지 않는다', () async {
+      gateway.info = _info(availability: InAppUpdateAvailability.notAvailable);
+
+      await controller.start();
+
+      expect(gateway.calls, <String>['check']);
+      expect(controller.phase, InAppUpdatePhase.idle);
+    });
+
+    test('유연한 업데이트가 허용되지 않으면 동의 창을 띄우지 않는다', () async {
+      gateway.info = _info(flexibleAllowed: false);
+
+      await controller.start();
+
+      expect(gateway.calls, <String>['check']);
+      expect(controller.phase, InAppUpdatePhase.idle);
+    });
+
+    test('조회가 실패해도 앱은 멀쩡하다', () async {
+      gateway.checkError = Exception('Play 스토어로 설치한 앱이 아닙니다');
+
+      await controller.start();
+
+      expect(controller.phase, InAppUpdatePhase.idle);
+    });
+
+    test('사용자가 동의 창을 닫으면 이번 실행에서는 다시 묻지 않는다', () async {
+      gateway.flowResult = InAppUpdateFlowResult.canceled;
+
+      await controller.start();
+      expect(controller.phase, InAppUpdatePhase.available);
+
+      await controller.resume();
+
+      expect(gateway.calls, <String>['check', 'flexible', 'check']);
+      expect(controller.phase, InAppUpdatePhase.available);
+    });
+
+    test('이미 받아 둔 업데이트가 있으면 곧바로 재시작을 권한다', () async {
+      gateway.info = _info(installStatus: InAppUpdateInstallStatus.downloaded);
+
+      await controller.start();
+
+      expect(gateway.calls, <String>['check']);
+      expect(controller.phase, InAppUpdatePhase.readyToInstall);
+      expect(controller.shouldPromptInstall, isTrue);
+    });
+
+    test('내려받는 동안에는 진행률만 갱신한다', () async {
+      await controller.start();
+
+      gateway.states.add(
+        _state(
+          InAppUpdateInstallStatus.downloading,
+          bytesDownloaded: 30,
+          totalBytesToDownload: 120,
+        ),
+      );
+      await _settle();
+
+      expect(controller.phase, InAppUpdatePhase.downloading);
+      expect(controller.downloadProgress, 0.25);
+      expect(controller.shouldPromptInstall, isFalse);
+    });
+
+    test('내려받기가 끝나면 재시작을 권한다', () async {
+      await controller.start();
+
+      gateway.states.add(_state(InAppUpdateInstallStatus.downloaded));
+      await _settle();
+
+      expect(controller.phase, InAppUpdatePhase.readyToInstall);
+      expect(controller.shouldPromptInstall, isTrue);
+    });
+
+    test('안내를 닫으면 사라지지만, 앱에 돌아오면 다시 권한다', () async {
+      gateway.info = _info(installStatus: InAppUpdateInstallStatus.downloaded);
+      await controller.start();
+
+      controller.dismissInstallPrompt();
+      expect(controller.shouldPromptInstall, isFalse);
+      expect(controller.phase, InAppUpdatePhase.readyToInstall);
+
+      await controller.resume();
+
+      expect(controller.shouldPromptInstall, isTrue);
+    });
+
+    test('재시작을 누르면 설치를 시작한다', () async {
+      gateway.info = _info(installStatus: InAppUpdateInstallStatus.downloaded);
+      await controller.start();
+
+      await controller.installNow();
+
+      expect(gateway.calls.last, 'complete');
+      expect(controller.phase, InAppUpdatePhase.installing);
+      expect(controller.shouldPromptInstall, isFalse);
+    });
+
+    test('설치가 실패하면 한 번만 알리고 다시 받아 둔 상태로 돌아간다', () async {
+      gateway.info = _info(installStatus: InAppUpdateInstallStatus.downloaded);
+      gateway.completeError = Exception('Play 서비스 오류');
+      await controller.start();
+
+      await controller.installNow();
+
+      expect(controller.phase, InAppUpdatePhase.readyToInstall);
+      expect(controller.hasUnseenInstallFailure, isTrue);
+
+      controller.acknowledgeInstallFailure();
+      expect(controller.hasUnseenInstallFailure, isFalse);
+      // 실패 직후 같은 안내를 다시 띄워 아무 일도 없었던 것처럼 보이게 하지 않는다.
+      expect(controller.shouldPromptInstall, isFalse);
+    });
+
+    test('Play 창이 떠 있는 동안 앱에 돌아와도 사용자의 선택을 놓치지 않는다', () async {
+      // Play 창이 뜨면 앱이 잠깐 백그라운드로 내려갔다가 복귀한다.
+      // 이때 조회를 새로 시작하면 세대 번호가 올라가 결과가 버려진다.
+      gateway.pendingFlow = Completer<InAppUpdateFlowResult>();
+
+      unawaited(controller.start());
+      await _settle();
+      expect(gateway.calls, <String>['check', 'flexible']);
+
+      await controller.resume();
+      expect(gateway.calls, <String>['check', 'flexible']);
+
+      gateway.pendingFlow!.complete(InAppUpdateFlowResult.accepted);
+      await _settle();
+
+      expect(controller.phase, InAppUpdatePhase.downloading);
+    });
+
+    test('dispose 뒤에 도착한 조회 응답은 무시한다', () async {
+      gateway.pendingCheck = Completer<InAppUpdateInfo>();
+
+      unawaited(controller.start());
+      await _settle();
+
+      controller.dispose();
+      gateway.pendingCheck!.complete(_info());
+      await _settle();
+
+      expect(controller.phase, InAppUpdatePhase.idle);
+      // tearDown의 두 번째 dispose가 터지지 않도록 새 컨트롤러로 바꿔 둔다.
+      controller = InAppUpdateController(
+        gateway: gateway,
+        featureFlags: featureFlags,
+      );
+    });
   });
 
-  test('업데이트가 없으면 아무것도 하지 않는다', () async {
-    gateway.info = _info(availability: InAppUpdateAvailability.notAvailable);
+  group('강제 업데이트', () {
+    test('최소 요구 버전에 못 미치면 유연한 흐름 대신 즉시 업데이트를 띄운다', () async {
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
 
-    await controller.start();
+      await controller.start();
 
-    expect(gateway.calls, <String>['check']);
-    expect(controller.phase, InAppUpdatePhase.idle);
-  });
+      expect(gateway.calls, <String>['check', 'immediate']);
+      expect(controller.phase, InAppUpdatePhase.installing);
+    });
 
-  test('유연한 업데이트가 허용되지 않으면 동의 창을 띄우지 않는다', () async {
-    gateway.info = _info(flexibleAllowed: false);
+    test('기본값 0이면 아무도 강제하지 않는다', () async {
+      // Remote Config를 못 읽었을 때도 이 경로로 떨어진다.
+      featureFlags.minRequiredVersionCode = 0;
 
-    await controller.start();
+      await controller.start();
 
-    expect(gateway.calls, <String>['check']);
-    expect(controller.phase, InAppUpdatePhase.idle);
-  });
+      expect(gateway.calls, <String>['check', 'flexible']);
+    });
 
-  test('조회가 실패해도 앱은 멀쩡하다', () async {
-    gateway.checkError = Exception('Play 스토어로 설치한 앱이 아닙니다');
+    test('최소 요구 버전을 이미 만족하면 평소대로 유연한 흐름을 쓴다', () async {
+      featureFlags.minRequiredVersionCode = _installedVersionCode;
 
-    await controller.start();
+      await controller.start();
 
-    expect(controller.phase, InAppUpdatePhase.idle);
-  });
+      expect(gateway.calls, <String>['check', 'flexible']);
+    });
 
-  test('사용자가 동의 창을 닫으면 이번 실행에서는 다시 묻지 않는다', () async {
-    gateway.flowResult = InAppUpdateFlowResult.canceled;
+    test('Play가 즉시 업데이트를 줄 수 없으면 앱을 막지 않는다', () async {
+      // 막아 놓고 업데이트도 못 하면 사용자가 빠져나갈 길이 없다.
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.info = _info(immediateAllowed: false);
 
-    await controller.start();
-    expect(controller.phase, InAppUpdatePhase.available);
+      await controller.start();
 
-    await controller.resume();
+      expect(gateway.calls, <String>['check', 'flexible']);
+      expect(controller.isUpdateRequired, isFalse);
+    });
 
-    expect(gateway.calls, <String>['check', 'start', 'check']);
-    expect(controller.phase, InAppUpdatePhase.available);
-  });
+    test('설치된 버전을 모르면 앱을 막지 않는다', () async {
+      featureFlags.minRequiredVersionCode = 999;
+      gateway.info = _info(installedVersionCode: null);
 
-  test('이미 받아 둔 업데이트가 있으면 곧바로 재시작을 권한다', () async {
-    gateway.info = _info(installStatus: InAppUpdateInstallStatus.downloaded);
+      await controller.start();
 
-    await controller.start();
+      expect(gateway.calls, <String>['check', 'flexible']);
+      expect(controller.isUpdateRequired, isFalse);
+    });
 
-    expect(gateway.calls, <String>['check']);
-    expect(controller.phase, InAppUpdatePhase.readyToInstall);
-    expect(controller.shouldPromptInstall, isTrue);
-  });
+    test('사용자가 즉시 업데이트를 닫으면 앱을 막는다', () async {
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.immediateResult = InAppUpdateFlowResult.canceled;
 
-  test('내려받는 동안에는 진행률만 갱신한다', () async {
-    await controller.start();
+      await controller.start();
 
-    gateway.states.add(
-      _state(
-        InAppUpdateInstallStatus.downloading,
-        bytesDownloaded: 30,
-        totalBytesToDownload: 120,
-      ),
-    );
-    await _settle();
+      expect(controller.isUpdateRequired, isTrue);
+      expect(controller.shouldPromptInstall, isFalse);
+    });
 
-    expect(controller.phase, InAppUpdatePhase.downloading);
-    expect(controller.downloadProgress, 0.25);
-    expect(controller.shouldPromptInstall, isFalse);
-  });
+    test('막힌 상태에서 앱에 돌아오면 다시 요구한다', () async {
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.immediateResult = InAppUpdateFlowResult.canceled;
+      await controller.start();
+      expect(controller.isUpdateRequired, isTrue);
 
-  test('내려받기가 끝나면 재시작을 권한다', () async {
-    await controller.start();
+      await controller.resume();
 
-    gateway.states.add(_state(InAppUpdateInstallStatus.downloaded));
-    await _settle();
+      // 유연한 흐름과 달리 복귀할 때마다 다시 띄운다.
+      expect(gateway.calls, <String>[
+        'check',
+        'immediate',
+        'check',
+        'immediate',
+      ]);
+      expect(controller.isUpdateRequired, isTrue);
+    });
 
-    expect(controller.phase, InAppUpdatePhase.readyToInstall);
-    expect(controller.shouldPromptInstall, isTrue);
-  });
+    test('막힌 화면에서 업데이트를 다시 누르면 Play 창을 다시 띄운다', () async {
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.immediateResult = InAppUpdateFlowResult.canceled;
+      await controller.start();
 
-  test('안내를 닫으면 사라지지만, 앱에 돌아오면 다시 권한다', () async {
-    gateway.info = _info(installStatus: InAppUpdateInstallStatus.downloaded);
-    await controller.start();
+      gateway.immediateResult = InAppUpdateFlowResult.accepted;
+      await controller.retryRequiredUpdate();
 
-    controller.dismissInstallPrompt();
-    expect(controller.shouldPromptInstall, isFalse);
-    expect(controller.phase, InAppUpdatePhase.readyToInstall);
+      expect(gateway.calls, <String>['check', 'immediate', 'immediate']);
+      expect(controller.phase, InAppUpdatePhase.installing);
+    });
 
-    await controller.resume();
+    test('강제 업데이트 중에는 재시작 스낵바를 띄우지 않는다', () async {
+      // Play의 전체 화면이 진행 상황을 맡는다. 막아 둔 화면 뒤에서
+      // "재시작하시겠어요?"가 올라오면 안 된다.
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.immediateResult = InAppUpdateFlowResult.canceled;
+      await controller.start();
 
-    expect(controller.shouldPromptInstall, isTrue);
-  });
+      gateway.states.add(_state(InAppUpdateInstallStatus.downloaded));
+      await _settle();
 
-  test('재시작을 누르면 설치를 시작한다', () async {
-    gateway.info = _info(installStatus: InAppUpdateInstallStatus.downloaded);
-    await controller.start();
+      expect(controller.shouldPromptInstall, isFalse);
+      expect(controller.isUpdateRequired, isTrue);
+    });
 
-    await controller.installNow();
+    test('Play가 올릴 게 없다고 하면 막지 않고 풀어 준다', () async {
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.immediateResult = InAppUpdateFlowResult.unavailable;
 
-    expect(gateway.calls.last, 'complete');
-    expect(controller.phase, InAppUpdatePhase.installing);
-    expect(controller.shouldPromptInstall, isFalse);
-  });
+      await controller.start();
 
-  test('설치가 실패하면 한 번만 알리고 다시 받아 둔 상태로 돌아간다', () async {
-    gateway.info = _info(installStatus: InAppUpdateInstallStatus.downloaded);
-    gateway.completeError = Exception('Play 서비스 오류');
-    await controller.start();
+      expect(controller.isUpdateRequired, isFalse);
+      expect(controller.phase, InAppUpdatePhase.idle);
+    });
 
-    await controller.installNow();
+    test('최소 요구 버전은 한 번만 읽는다', () async {
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.immediateResult = InAppUpdateFlowResult.canceled;
 
-    expect(controller.phase, InAppUpdatePhase.readyToInstall);
-    expect(controller.hasUnseenInstallFailure, isTrue);
+      await controller.start();
+      await controller.resume();
+      await controller.resume();
 
-    controller.acknowledgeInstallFailure();
-    expect(controller.hasUnseenInstallFailure, isFalse);
-    // 실패 직후 같은 안내를 다시 띄워 아무 일도 없었던 것처럼 보이게 하지 않는다.
-    expect(controller.shouldPromptInstall, isFalse);
-  });
-
-  test('동의 창이 떠 있는 동안 앱에 돌아와도 사용자의 선택을 놓치지 않는다', () async {
-    // Play 동의 창이 뜨면 앱이 잠깐 백그라운드로 내려갔다가 복귀한다.
-    // 이때 조회를 새로 시작하면 세대 번호가 올라가 동의 결과가 버려진다.
-    gateway.pendingFlow = Completer<InAppUpdateFlowResult>();
-
-    unawaited(controller.start());
-    await _settle();
-    expect(gateway.calls, <String>['check', 'start']);
-
-    await controller.resume();
-    expect(gateway.calls, <String>['check', 'start']);
-
-    gateway.pendingFlow!.complete(InAppUpdateFlowResult.accepted);
-    await _settle();
-
-    expect(controller.phase, InAppUpdatePhase.downloading);
-  });
-
-  test('dispose 뒤에 도착한 조회 응답은 무시한다', () async {
-    gateway.pendingCheck = Completer<InAppUpdateInfo>();
-
-    unawaited(controller.start());
-    await _settle();
-
-    controller.dispose();
-    gateway.pendingCheck!.complete(_info());
-    await _settle();
-
-    expect(controller.phase, InAppUpdatePhase.idle);
-    // tearDown의 두 번째 dispose가 터지지 않도록 새 컨트롤러로 바꿔 둔다.
-    controller = InAppUpdateController(gateway: gateway);
+      expect(featureFlags.reads, 1);
+    });
   });
 }

@@ -17,6 +17,10 @@ abstract final class InAppUpdateProtocol {
   /// 사용자가 선택을 끝낸 뒤에야 완료되고, 결과는 [InAppUpdateFlowResult]다.
   static const String startFlexibleUpdate = 'startFlexibleUpdate';
 
+  /// 즉시(강제) 업데이트 흐름을 띄운다. Play가 전체 화면을 덮고 앱을 막는다.
+  /// 중요한 버전에만 쓴다. 결과는 [startFlexibleUpdate]와 같은 형식이다.
+  static const String startImmediateUpdate = 'startImmediateUpdate';
+
   /// 내려받기가 끝난 업데이트를 설치하고 앱을 재시작한다.
   static const String completeUpdate = 'completeUpdate';
 }

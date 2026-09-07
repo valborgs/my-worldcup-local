@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../di/providers.dart';
 import 'in_app_update_controller.dart';
 
-/// 앱 전체를 감싸고 유연한 업데이트를 이끄는 위젯.
+/// 앱 전체를 감싸고 인앱 업데이트를 이끄는 위젯.
 ///
 /// [MaterialApp.builder] 안에 두므로 화면을 바꿔도 살아 있고,
 /// 루트 [ScaffoldMessenger]를 통해 어느 화면에서든 안내를 띄울 수 있다.
@@ -29,6 +29,7 @@ class _InAppUpdateHostState extends ConsumerState<InAppUpdateHost>
     super.initState();
     _controller = InAppUpdateController(
       gateway: ref.read(inAppUpdateGatewayProvider),
+      featureFlags: ref.read(featureFlagProvider),
     );
     _controller.addListener(_onControllerChanged);
     WidgetsBinding.instance.addObserver(this);
@@ -51,6 +52,7 @@ class _InAppUpdateHostState extends ConsumerState<InAppUpdateHost>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
     // 지난 실행에서 받아 두고 설치하지 않은 업데이트를 여기서 찾는다.
+    // 강제 업데이트가 필요한 상태라면 여기서 다시 요구한다.
     _controller.resume();
   }
 
@@ -111,5 +113,81 @@ class _InAppUpdateHostState extends ConsumerState<InAppUpdateHost>
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        widget.child,
+        // 막는 화면만 컨트롤러를 구독한다. child는 같은 위젯 인스턴스라
+        // 여기서 다시 만들어도 아래 트리는 리빌드되지 않는다.
+        ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => _controller.isUpdateRequired
+              ? RequiredUpdateOverlay(onUpdate: _controller.retryRequiredUpdate)
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+}
+
+/// 반드시 올려야 하는 버전인데 사용자가 Play 화면을 닫았을 때 앱을 막는 화면.
+///
+/// Play의 즉시 업데이트 화면을 다시 띄우는 것 말고는 할 수 있는 일이 없다.
+/// 뒤로 가기로 화면을 벗어나도 이 막이 계속 덮고 있으므로, 사용자가 할 수
+/// 있는 선택은 업데이트하거나 앱을 닫는 것뿐이다.
+@visibleForTesting
+class RequiredUpdateOverlay extends StatelessWidget {
+  final VoidCallback onUpdate;
+
+  const RequiredUpdateOverlay({required this.onUpdate, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      label: '업데이트 필요',
+      child: Stack(
+        children: [
+          // 아래 화면으로 가는 터치를 모두 막는다.
+          const ModalBarrier(dismissible: false, color: Colors.black54),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          '업데이트가 필요합니다',
+                          style: theme.textTheme.titleLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          '이 버전에서는 앱을 계속 사용할 수 없습니다.\n'
+                          '최신 버전으로 업데이트해 주세요.',
+                          style: theme.textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 24),
+                        FilledButton(
+                          onPressed: onUpdate,
+                          child: const Text('업데이트'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -31,7 +31,9 @@ void main() {
           'availability': 'available',
           'installStatus': 'unknown',
           'flexibleAllowed': true,
+          'immediateAllowed': true,
           'availableVersionCode': 31,
+          'installedVersionCode': 30,
           'clientVersionStalenessDays': 4,
           'updatePriority': 3,
         },
@@ -45,7 +47,9 @@ void main() {
       expect(info.availability, InAppUpdateAvailability.available);
       expect(info.flexibleAllowed, isTrue);
       expect(info.canStartFlexibleUpdate, isTrue);
+      expect(info.canStartImmediateUpdate, isTrue);
       expect(info.availableVersionCode, 31);
+      expect(info.installedVersionCode, 30);
       expect(info.clientVersionStalenessDays, 4);
       expect(info.updatePriority, 3);
       expect(calls.single.method, InAppUpdateProtocol.checkForUpdate);
@@ -62,6 +66,7 @@ void main() {
           'availability': 'available',
           'installStatus': 'unknown',
           'flexibleAllowed': true,
+          'immediateAllowed': true,
         },
       );
 
@@ -98,6 +103,20 @@ void main() {
       );
     });
 
+    test('즉시 업데이트는 별도의 네이티브 메서드를 부른다', () async {
+      mockMethods((call) async => 'accepted');
+
+      final gateway = MethodChannelInAppUpdateGateway(
+        isSupportedPlatform: true,
+      );
+
+      expect(
+        await gateway.startImmediateUpdate(),
+        InAppUpdateFlowResult.accepted,
+      );
+      expect(calls.single.method, InAppUpdateProtocol.startImmediateUpdate);
+    });
+
     test('안드로이드가 아니면 채널을 건드리지 않는다', () async {
       mockMethods((call) async => fail('채널을 호출하면 안 된다'));
 
@@ -110,9 +129,62 @@ void main() {
         await gateway.startFlexibleUpdate(),
         InAppUpdateFlowResult.unavailable,
       );
+      expect(
+        await gateway.startImmediateUpdate(),
+        InAppUpdateFlowResult.unavailable,
+      );
       await gateway.completeUpdate();
       expect(await gateway.installStates.isEmpty, isTrue);
       expect(calls, isEmpty);
+    });
+  });
+
+  group('InAppUpdateInfo', () {
+    InAppUpdateInfo info({
+      InAppUpdateAvailability availability = InAppUpdateAvailability.available,
+      bool immediateAllowed = true,
+      int? installedVersionCode = 30,
+    }) {
+      return InAppUpdateInfo(
+        availability: availability,
+        installStatus: InAppUpdateInstallStatus.unknown,
+        flexibleAllowed: true,
+        immediateAllowed: immediateAllowed,
+        availableVersionCode: 31,
+        installedVersionCode: installedVersionCode,
+        clientVersionStalenessDays: null,
+        updatePriority: 0,
+      );
+    }
+
+    test('깔린 버전이 최소 요구 버전보다 낮으면 참이다', () {
+      expect(info().isBelowRequiredVersion(31), isTrue);
+    });
+
+    test('최소 요구 버전과 같으면 거짓이다', () {
+      expect(info().isBelowRequiredVersion(30), isFalse);
+    });
+
+    test('깔린 버전을 모르면 사용자를 막지 않는다', () {
+      // 근거가 없을 때 앱을 잠그면 빠져나갈 길이 없다.
+      expect(
+        info(installedVersionCode: null).isBelowRequiredVersion(99),
+        isFalse,
+      );
+    });
+
+    test('멈춰 있는 즉시 업데이트는 다시 띄울 수 있다', () {
+      // Play가 DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS를 돌려주는 경우.
+      final stalled = info(
+        availability: InAppUpdateAvailability.inProgress,
+        immediateAllowed: false,
+      );
+      expect(stalled.canStartImmediateUpdate, isTrue);
+      expect(stalled.canStartFlexibleUpdate, isFalse);
+    });
+
+    test('즉시 업데이트가 허용되지 않으면 띄우지 않는다', () {
+      expect(info(immediateAllowed: false).canStartImmediateUpdate, isFalse);
     });
   });
 

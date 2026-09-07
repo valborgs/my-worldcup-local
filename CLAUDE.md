@@ -169,6 +169,15 @@ constructors so they stay testable.
   The check fails on any build the Play Store did not install (`flutter run`
   included); that failure is logged and swallowed on purpose. Verify the real
   flow through Play's internal app sharing.
+- **Forced updates key off Remote Config, not `updatePriority`.** Play's own
+  priority field cannot be set in the Play Console UI — only through the
+  Publishing API — and it is frozen once a release rolls out. This project
+  uploads the aab by hand, so that field always arrives as 0. Instead
+  `FeatureFlags.minRequiredVersionCode` carries the decision, which also means
+  it can be changed *after* a release, when a bad bug usually surfaces.
+  Every gate fails open: no installed version code, no immediate update
+  offered by Play, or an unreadable flag all mean "do not block". Blocking the
+  app when the update cannot actually be installed would leave no way out.
 - Asset directory entries in `pubspec.yaml` are **not recursive**. Listing
   `assets/sample/female/` does not bundle `assets/sample/sample_worldcups.json`;
   the parent directory has to be listed too.

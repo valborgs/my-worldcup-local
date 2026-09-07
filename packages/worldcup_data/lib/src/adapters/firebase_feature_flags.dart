@@ -19,13 +19,30 @@ class FirebaseFeatureFlags implements FeatureFlagPort {
     this._logger = const DeveloperLogger('remote_config'),
   }) : _remoteConfig = remoteConfig ?? FirebaseRemoteConfig.instance;
 
-  bool _initialized = false;
+  bool _fetched = false;
+
+  /// 지금까지 조회한 키의 기본값. `setDefaults`는 기존 맵을 대체하므로,
+  /// 키가 늘 때마다 이 맵 전체를 다시 넘겨야 앞서 등록한 기본값이 살아남는다.
+  final Map<String, Object?> _defaults = <String, Object?>{};
 
   @override
   Future<bool> getBool(String key, {required bool defaultValue}) async {
+    return _read(key, defaultValue: defaultValue, read: _remoteConfig.getBool);
+  }
+
+  @override
+  Future<int> getInt(String key, {required int defaultValue}) async {
+    return _read(key, defaultValue: defaultValue, read: _remoteConfig.getInt);
+  }
+
+  Future<T> _read<T extends Object>(
+    String key, {
+    required T defaultValue,
+    required T Function(String key) read,
+  }) async {
     try {
-      await _ensureInitialized({key: defaultValue});
-      return _remoteConfig.getBool(key);
+      await _ensureReady(key, defaultValue);
+      return read(key);
     } catch (error, stackTrace) {
       _logger.error(
         'Remote Config를 읽지 못해 기본값을 사용합니다: $key',
@@ -36,9 +53,13 @@ class FirebaseFeatureFlags implements FeatureFlagPort {
     }
   }
 
-  Future<void> _ensureInitialized(Map<String, Object?> defaults) async {
-    if (_initialized) return;
-    await _remoteConfig.setDefaults(defaults);
+  Future<void> _ensureReady(String key, Object value) async {
+    if (_defaults[key] != value) {
+      _defaults[key] = value;
+      await _remoteConfig.setDefaults(Map<String, Object?>.from(_defaults));
+    }
+    if (_fetched) return;
+
     await _remoteConfig.setConfigSettings(
       RemoteConfigSettings(
         fetchTimeout: _fetchTimeout,
@@ -55,6 +76,6 @@ class FirebaseFeatureFlags implements FeatureFlagPort {
         stackTrace: stackTrace,
       );
     }
-    _initialized = true;
+    _fetched = true;
   }
 }

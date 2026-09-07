@@ -19,6 +19,12 @@ abstract interface class InAppUpdateGateway {
   /// 사용자가 선택을 끝낸 뒤에 완료된다.
   Future<InAppUpdateFlowResult> startFlexibleUpdate();
 
+  /// 즉시(강제) 업데이트 흐름을 띄운다.
+  ///
+  /// Play가 전체 화면을 덮고 내려받기와 설치, 재시작까지 맡는다.
+  /// 앱을 막으므로 반드시 필요한 버전에만 쓴다.
+  Future<InAppUpdateFlowResult> startImmediateUpdate();
+
   /// 내려받아 둔 업데이트를 설치한다. 성공하면 Play가 앱을 재시작한다.
   Future<void> completeUpdate();
 }
@@ -68,12 +74,16 @@ class MethodChannelInAppUpdateGateway implements InAppUpdateGateway {
   }
 
   @override
-  Future<InAppUpdateFlowResult> startFlexibleUpdate() async {
+  Future<InAppUpdateFlowResult> startFlexibleUpdate() =>
+      _startUpdate(InAppUpdateProtocol.startFlexibleUpdate);
+
+  @override
+  Future<InAppUpdateFlowResult> startImmediateUpdate() =>
+      _startUpdate(InAppUpdateProtocol.startImmediateUpdate);
+
+  Future<InAppUpdateFlowResult> _startUpdate(String method) async {
     if (!_supported) return InAppUpdateFlowResult.unavailable;
-    final result = await _methods.invokeMethod<String>(
-      InAppUpdateProtocol.startFlexibleUpdate,
-      _arguments,
-    );
+    final result = await _methods.invokeMethod<String>(method, _arguments);
     for (final value in InAppUpdateFlowResult.values) {
       if (value.name == result) return value;
     }

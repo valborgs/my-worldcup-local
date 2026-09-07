@@ -45,7 +45,18 @@ class InAppUpdateInfo {
   /// 이 기기에서 유연한 업데이트가 허용되는지. Play가 판단한다.
   final bool flexibleAllowed;
 
+  /// 이 기기에서 즉시(강제) 업데이트가 허용되는지. Play가 판단한다.
+  final bool immediateAllowed;
+
   final int? availableVersionCode;
+
+  /// 지금 기기에 깔려 있는 앱의 versionCode.
+  ///
+  /// Play가 주는 값이 아니라 PackageManager에서 읽어 같은 응답에 실어 보낸다.
+  /// "지금 버전이 최소 요구 버전에 못 미치는가"를 판단하려면 이 값이
+  /// 필요한데, 그것만을 위해 왕복을 한 번 더 하거나 패키지를 하나 더 넣을
+  /// 이유가 없다.
+  final int? installedVersionCode;
 
   /// 업데이트가 Play에 올라온 뒤 지난 일수. Play가 모르면 null이다.
   final int? clientVersionStalenessDays;
@@ -57,7 +68,9 @@ class InAppUpdateInfo {
     required this.availability,
     required this.installStatus,
     required this.flexibleAllowed,
+    required this.immediateAllowed,
     required this.availableVersionCode,
+    required this.installedVersionCode,
     required this.clientVersionStalenessDays,
     required this.updatePriority,
   });
@@ -67,7 +80,9 @@ class InAppUpdateInfo {
     availability: InAppUpdateAvailability.unknown,
     installStatus: InAppUpdateInstallStatus.unknown,
     flexibleAllowed: false,
+    immediateAllowed: false,
     availableVersionCode: null,
+    installedVersionCode: null,
     clientVersionStalenessDays: null,
     updatePriority: 0,
   );
@@ -87,7 +102,9 @@ class InAppUpdateInfo {
         InAppUpdateInstallStatus.unknown,
       ),
       flexibleAllowed: _bool(map, 'flexibleAllowed'),
+      immediateAllowed: _bool(map, 'immediateAllowed'),
       availableVersionCode: _optionalInt(map, 'availableVersionCode'),
+      installedVersionCode: _optionalInt(map, 'installedVersionCode'),
       clientVersionStalenessDays: _optionalInt(
         map,
         'clientVersionStalenessDays',
@@ -100,8 +117,26 @@ class InAppUpdateInfo {
   bool get canStartFlexibleUpdate =>
       availability == InAppUpdateAvailability.available && flexibleAllowed;
 
+  /// 지금 즉시(강제) 업데이트 흐름을 띄울 수 있는 상태인지.
+  ///
+  /// 시작해 둔 즉시 업데이트가 멈춘 채로 남은 경우도 포함한다. 안드로이드
+  /// 가이드가 앱 복귀 시 그 상태를 다시 띄우라고 안내하는 경우다.
+  bool get canStartImmediateUpdate =>
+      (availability == InAppUpdateAvailability.available && immediateAllowed) ||
+      availability == InAppUpdateAvailability.inProgress;
+
   /// 이미 받아둔 업데이트가 있어 재시작만 하면 되는 상태인지.
   bool get isDownloaded => installStatus == InAppUpdateInstallStatus.downloaded;
+
+  /// 깔려 있는 버전이 [minRequiredVersionCode]에 못 미치는지.
+  ///
+  /// 설치된 버전을 모르면(안드로이드가 아니거나 조회 실패) false다.
+  /// 판단 근거가 없을 때 사용자를 잠그지 않기 위해서다.
+  bool isBelowRequiredVersion(int minRequiredVersionCode) {
+    final installed = installedVersionCode;
+    if (installed == null) return false;
+    return installed < minRequiredVersionCode;
+  }
 }
 
 /// 내려받기/설치 진행 상황. Play의 `InstallState`를 옮긴 값이다.
