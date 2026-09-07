@@ -47,3 +47,8 @@ app.*.map.json
 *.lock
 pubspec.lock
 /android/app/google-services.json
+
+# Claude Code
+# settings.local.json은 각자의 로컬 설정(권한 허용 목록 등)이라 공유하지 않는다.
+# 공유할 설정은 .claude/settings.json에 둔다.
+.claude/settings.local.json
