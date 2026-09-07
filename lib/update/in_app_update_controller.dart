@@ -83,6 +83,14 @@ class InAppUpdateController extends ChangeNotifier {
   /// 응답이 늦게 도착한 조회가 최신 상태를 덮어쓰지 못하게 한다.
   int _generation = 0;
 
+  /// 설치 이벤트가 상태를 바꿀 때마다 오른다.
+  ///
+  /// 세대 번호는 조회끼리만 비교하므로, 조회를 기다리는 사이에 도착한 설치
+  /// 이벤트는 막지 못한다. 그 사이 `downloaded`가 들어와 재시작 안내를 띄웠는데
+  /// 늦게 온 조회 스냅샷이 `downloading`을 말하면 안내가 사라져 버린다.
+  /// 이벤트가 언제나 더 최신이므로, 응답을 적용하기 전에 이 값이 그대로인지 본다.
+  int _installRevision = 0;
+
   StreamSubscription<InAppUpdateInstallState>? _subscription;
 
   InAppUpdateController({required this._gateway, required this._featureFlags});
@@ -134,7 +142,7 @@ class InAppUpdateController extends ChangeNotifier {
   Future<void> retryRequiredUpdate() async {
     if (_disposed || _updateFlowInFlight) return;
     if (_phase != InAppUpdatePhase.updateRequired) return;
-    await _startRequiredUpdate(++_generation);
+    await _startRequiredUpdate(++_generation, _installRevision);
   }
 
   /// 재시작 안내를 사용자가 닫았다.
@@ -172,6 +180,7 @@ class InAppUpdateController extends ChangeNotifier {
 
   Future<void> _check({required bool allowConsentPrompt}) async {
     final generation = ++_generation;
+    final installRevision = _installRevision;
 
     final InAppUpdateInfo info;
     try {
@@ -194,11 +203,15 @@ class InAppUpdateController extends ChangeNotifier {
     // 의도한 동작이다. 앱 복귀 때마다 요구해야 "강제"가 성립한다.
     if (await _isForcedUpdateNeeded(info)) {
       if (_disposed || generation != _generation) return;
-      await _startRequiredUpdate(generation);
+      await _startRequiredUpdate(generation, installRevision);
       return;
     }
     if (_disposed || generation != _generation) return;
     _forcedUpdate = false;
+
+    // 조회를 기다리는 사이 설치 이벤트가 상태를 바꿨다면 그쪽이 더 최신이다.
+    // 낡은 스냅샷으로 "받기 완료"를 "받는 중"으로 되돌리지 않는다.
+    if (_installRevision != installRevision) return;
 
     if (info.isDownloaded) {
       _downloadProgress = 1;
@@ -223,7 +236,7 @@ class InAppUpdateController extends ChangeNotifier {
       return;
     }
 
-    await _requestConsent(generation);
+    await _requestConsent(generation, installRevision);
   }
 
   /// 지금 깔린 버전이 최소 요구 버전에 못 미치고, 즉시 업데이트도 가능한지.
@@ -248,23 +261,29 @@ class InAppUpdateController extends ChangeNotifier {
     return _minRequiredVersionCode = value;
   }
 
-  Future<void> _startRequiredUpdate(int generation) async {
+  Future<void> _startRequiredUpdate(int generation, int installRevision) async {
     _forcedUpdate = true;
     final result = await _runUpdateFlow(
       generation,
       _gateway.startImmediateUpdate,
-      onError: InAppUpdatePhase.updateRequired,
     );
     if (result == null) return;
+    if (_installRevision != installRevision) return;
 
     switch (result) {
       case InAppUpdateFlowResult.accepted:
         // Play가 전체 화면을 덮고 설치까지 맡는다. 보통 곧 앱이 재시작된다.
         _apply(InAppUpdatePhase.installing);
       case InAppUpdateFlowResult.canceled:
-      case InAppUpdateFlowResult.failed:
-        // 사용자가 빠져나갔다. 앱을 막고 다시 권한다.
+        // 사용자가 직접 빠져나갔다. 이때만 앱을 막고 다시 권한다.
         _apply(InAppUpdatePhase.updateRequired);
+      case InAppUpdateFlowResult.failed:
+        // 창을 띄우지 못했다. 사용자의 거절이 아니라 기술적 실패다.
+        // (네이티브가 흐름 직전에 다시 조회하는데, 그 조회가 실패하면 여기로 온다)
+        // 업데이트를 실제로 줄 수 있는지 확인하지 못한 상태이므로 막지 않는다.
+        // 막아 놓고 올릴 방법도 없으면 사용자가 빠져나갈 길이 없다.
+        _forcedUpdate = false;
+        _apply(InAppUpdatePhase.available);
       case InAppUpdateFlowResult.unavailable:
         // Play가 더 이상 올릴 게 없다고 한다. 막아 둘 이유가 없다.
         _forcedUpdate = false;
@@ -272,20 +291,21 @@ class InAppUpdateController extends ChangeNotifier {
     }
   }
 
-  Future<void> _requestConsent(int generation) async {
+  Future<void> _requestConsent(int generation, int installRevision) async {
     final result = await _runUpdateFlow(
       generation,
       _gateway.startFlexibleUpdate,
-      onError: InAppUpdatePhase.available,
     );
     if (result == null) return;
+
+    // 거절 기록은 상태와 별개로 남긴다. 이 실행에서 다시 묻지 않기 위해서다.
+    if (result == InAppUpdateFlowResult.canceled) _declinedThisSession = true;
+    if (_installRevision != installRevision) return;
 
     switch (result) {
       case InAppUpdateFlowResult.accepted:
         _apply(InAppUpdatePhase.downloading);
       case InAppUpdateFlowResult.canceled:
-        _declinedThisSession = true;
-        _apply(InAppUpdatePhase.available);
       case InAppUpdateFlowResult.failed:
         _apply(InAppUpdatePhase.available);
       case InAppUpdateFlowResult.unavailable:
@@ -295,13 +315,13 @@ class InAppUpdateController extends ChangeNotifier {
 
   /// Play 창을 띄우고 결과를 기다린다.
   ///
-  /// 결과를 적용하면 안 되는 상황(실패 / dispose / 세대 교체)에서는 null을
-  /// 돌려주고, 실패한 경우에만 [onError] 단계로 옮긴다.
+  /// 결과를 적용하면 안 되는 상황(dispose / 세대 교체)에서만 null이다.
+  /// 채널 오류는 [InAppUpdateFlowResult.failed]로 옮긴다. "창을 띄우지 못했다"와
+  /// 같은 뜻이고, 사용자의 거절과 구분되어야 하기 때문이다.
   Future<InAppUpdateFlowResult?> _runUpdateFlow(
     int generation,
-    Future<InAppUpdateFlowResult> Function() start, {
-    required InAppUpdatePhase onError,
-  }) async {
+    Future<InAppUpdateFlowResult> Function() start,
+  ) async {
     _updateFlowInFlight = true;
     try {
       final result = await start();
@@ -315,8 +335,7 @@ class InAppUpdateController extends ChangeNotifier {
         name: 'in_app_update',
       );
       if (_disposed || generation != _generation) return null;
-      _apply(onError);
-      return null;
+      return InAppUpdateFlowResult.failed;
     } finally {
       _updateFlowInFlight = false;
     }
@@ -331,30 +350,40 @@ class InAppUpdateController extends ChangeNotifier {
     }
     switch (state.status) {
       case InAppUpdateInstallStatus.pending:
-        _apply(InAppUpdatePhase.downloading);
+        _applyFromInstallState(InAppUpdatePhase.downloading);
       case InAppUpdateInstallStatus.downloading:
         _downloadProgress = state.progress;
-        _apply(InAppUpdatePhase.downloading);
+        _applyFromInstallState(InAppUpdatePhase.downloading);
       case InAppUpdateInstallStatus.downloaded:
         _downloadProgress = 1;
         // 새로 받아 놓은 업데이트다. 이전에 닫은 안내와는 별개로 다시 알린다.
         _installPromptDismissed = false;
-        _apply(InAppUpdatePhase.readyToInstall);
+        _applyFromInstallState(InAppUpdatePhase.readyToInstall);
       case InAppUpdateInstallStatus.installing:
-        _apply(InAppUpdatePhase.installing);
+        _applyFromInstallState(InAppUpdatePhase.installing);
       case InAppUpdateInstallStatus.installed:
         _forcedUpdate = false;
-        _apply(InAppUpdatePhase.idle);
+        _applyFromInstallState(InAppUpdatePhase.idle);
       case InAppUpdateInstallStatus.canceled:
         _downloadProgress = null;
-        _apply(InAppUpdatePhase.idle);
+        _applyFromInstallState(InAppUpdatePhase.idle);
       case InAppUpdateInstallStatus.failed:
         _downloadProgress = null;
-        _apply(InAppUpdatePhase.failed);
+        _applyFromInstallState(InAppUpdatePhase.failed);
       case InAppUpdateInstallStatus.requiresUiIntent:
       case InAppUpdateInstallStatus.unknown:
+        // 상태를 바꾸지 않으므로 리비전도 올리지 않는다.
         break;
     }
+  }
+
+  /// 설치 이벤트로 상태를 바꾼다.
+  ///
+  /// 리비전을 올려, 이 시점 이전에 시작된 조회나 Play 창의 응답이 뒤늦게
+  /// 도착해 여기서 정한 상태를 되돌리지 못하게 한다.
+  void _applyFromInstallState(InAppUpdatePhase phase) {
+    _installRevision++;
+    _apply(phase);
   }
 
   void _apply(InAppUpdatePhase phase) {

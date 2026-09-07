@@ -178,6 +178,10 @@ constructors so they stay testable.
   Every gate fails open: no installed version code, no immediate update
   offered by Play, or an unreadable flag all mean "do not block". Blocking the
   app when the update cannot actually be installed would leave no way out.
+  The same rule covers the flow itself — only an explicit user cancel blocks.
+  The native side re-queries `appUpdateInfo` right before launching, and a
+  failure there arrives as an exception; treating that as a refusal would lock
+  users out on a flaky network, before they ever saw a dialog.
 - Asset directory entries in `pubspec.yaml` are **not recursive**. Listing
   `assets/sample/female/` does not bundle `assets/sample/sample_worldcups.json`;
   the parent directory has to be listed too.
@@ -189,6 +193,16 @@ constructors so they stay testable.
 - **Logging**: Never use `print()` in `lib/` or `packages/*/lib/`. Use `dart:developer`'s `log(message, error: e, name: 'source_name')`, or `AppLogger` from `worldcup_core` in the data layer. If a file also imports `dart:math`, hide its `log` to avoid an `ambiguous_import` error: `import 'dart:math' hide log;`.
 - **Widget fields**: All `StatelessWidget`/`StatefulWidget` instance fields must be declared `final`, and their constructors should be `const` whenever every field can be const-initialized. Do not add mutable fields to a widget class — put mutable state in the corresponding `State` class instead.
 - **BuildContext across async gaps**: After any `await` inside a method that later uses `context` (navigation, `showDialog`, `ScaffoldMessenger`, etc.), guard with a mounted check before the first post-await context use: `if (!mounted) return;` inside a `State` method, or `if (!context.mounted) return;` when `context` is a parameter (e.g., a free function or a loop awaiting multiple times — check on every iteration).
+- **Singletons in adapter constructors**: `FirebaseRemoteConfig.instance` (and
+  friends) throw when the default Firebase app was never created. `main()`
+  deliberately survives a Firebase failure, so an adapter that resolves such a
+  singleton in its *constructor* turns a survivable startup into a crash — the
+  adapter's own try/catch never runs. Resolve them lazily at the point of use,
+  inside the guard. Watch for method tear-offs too: passing `_remoteConfig.getBool`
+  as a callback evaluates `_remoteConfig` at the call site, outside the try.
+- **Widgets above the router**: anything mounted in `MaterialApp.builder` wraps
+  every screen, so an exception in its `initState` blanks the whole app rather
+  than one page. Such a widget must build its dependencies defensively.
 - **Riverpod lifecycle**: Never modify a provider during a widget lifecycle callback (`initState`, `build`, `dispose`) — Riverpod throws. Do it from an async callback or an event handler instead.
 - **Null-coalescing with `ref.read`**: `widget.something ?? ref.read(provider)` infers a nullable `T` from the left operand and makes the whole expression nullable. Annotate the local explicitly: `final MyPort port = widget.something ?? ref.read(provider);`
 - **Moving widget logic into a view model**: a `State` protects its async work with

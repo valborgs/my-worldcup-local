@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_worldcup_local/update/in_app_update_controller.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
@@ -58,6 +59,9 @@ class _FakeGateway implements InAppUpdateGateway {
   Object? checkError;
   Object? completeError;
 
+  /// 네이티브가 흐름 직전에 다시 조회하다 실패하는 경우를 흉내낸다.
+  Object? startError;
+
   @override
   Stream<InAppUpdateInstallState> get installStates => states.stream;
 
@@ -81,6 +85,9 @@ class _FakeGateway implements InAppUpdateGateway {
   @override
   Future<InAppUpdateFlowResult> startImmediateUpdate() {
     calls.add('immediate');
+    if (startError != null) {
+      return Future<InAppUpdateFlowResult>.error(startError!);
+    }
     final pending = pendingFlow;
     if (pending != null) return pending.future;
     return Future<InAppUpdateFlowResult>.value(immediateResult);
@@ -276,6 +283,65 @@ void main() {
       expect(controller.phase, InAppUpdatePhase.downloading);
     });
 
+    test('늦게 온 조회 응답이 내려받기 완료를 되돌리지 않는다', () async {
+      await controller.start();
+      expect(controller.phase, InAppUpdatePhase.downloading);
+
+      // 복귀 조회를 띄워 둔 상태에서 내려받기가 끝난다.
+      gateway.pendingCheck = Completer<InAppUpdateInfo>();
+      unawaited(controller.resume());
+      await _settle();
+
+      gateway.states.add(_state(InAppUpdateInstallStatus.downloaded));
+      await _settle();
+      expect(controller.shouldPromptInstall, isTrue);
+
+      // 그제서야 도착한 조회 스냅샷은 아직 '받는 중'을 말한다.
+      gateway.pendingCheck!.complete(
+        _info(installStatus: InAppUpdateInstallStatus.downloading),
+      );
+      await _settle();
+
+      expect(controller.phase, InAppUpdatePhase.readyToInstall);
+      expect(controller.shouldPromptInstall, isTrue);
+    });
+
+    test('늦게 온 동의 결과가 내려받기 완료를 되돌리지 않는다', () async {
+      gateway.pendingFlow = Completer<InAppUpdateFlowResult>();
+      unawaited(controller.start());
+      await _settle();
+
+      gateway.states.add(_state(InAppUpdateInstallStatus.downloaded));
+      await _settle();
+      expect(controller.shouldPromptInstall, isTrue);
+
+      gateway.pendingFlow!.complete(InAppUpdateFlowResult.accepted);
+      await _settle();
+
+      expect(controller.phase, InAppUpdatePhase.readyToInstall);
+      expect(controller.shouldPromptInstall, isTrue);
+    });
+
+    test('늦게 온 거절 결과는 상태를 되돌리지 않되 거절은 기억한다', () async {
+      gateway.pendingFlow = Completer<InAppUpdateFlowResult>();
+      unawaited(controller.start());
+      await _settle();
+
+      gateway.states.add(_state(InAppUpdateInstallStatus.downloaded));
+      await _settle();
+
+      gateway.pendingFlow!.complete(InAppUpdateFlowResult.canceled);
+      await _settle();
+      expect(controller.shouldPromptInstall, isTrue);
+
+      // 거절 기록은 남아 있어야 한다. 복귀해도 동의 창을 다시 띄우지 않는다.
+      gateway.pendingFlow = null;
+      gateway.info = _info();
+      await controller.resume();
+
+      expect(gateway.calls.where((call) => call == 'flexible').length, 1);
+    });
+
     test('dispose 뒤에 도착한 조회 응답은 무시한다', () async {
       gateway.pendingCheck = Completer<InAppUpdateInfo>();
 
@@ -405,6 +471,45 @@ void main() {
 
       expect(controller.isUpdateRequired, isFalse);
       expect(controller.phase, InAppUpdatePhase.idle);
+    });
+
+    test('흐름 시작 중 조회 오류가 나면 앱을 막지 않는다', () async {
+      // 네이티브는 흐름을 띄우기 직전에 appUpdateInfo를 다시 조회한다.
+      // 그 두 번째 조회가 실패하면 사용자가 창을 보기도 전에 예외가 온다.
+      // 업데이트를 실제로 줄 수 있는지 확인하지 못한 상태이므로 막으면 안 된다.
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.startError = PlatformException(code: 'update_check_failed');
+
+      await controller.start();
+
+      expect(controller.isUpdateRequired, isFalse);
+      expect(controller.phase, InAppUpdatePhase.available);
+    });
+
+    test('창을 띄우지 못한 실패는 사용자 거절과 다르게 다룬다', () async {
+      // RESULT_IN_APP_UPDATE_FAILED 등 기술적 실패. 막아 놓고 올릴 방법도
+      // 없으면 사용자가 빠져나갈 길이 없다.
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.immediateResult = InAppUpdateFlowResult.failed;
+
+      await controller.start();
+
+      expect(controller.isUpdateRequired, isFalse);
+      expect(controller.phase, InAppUpdatePhase.available);
+    });
+
+    test('조회 오류로 풀린 뒤 앱에 돌아오면 다시 시도한다', () async {
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.startError = PlatformException(code: 'update_check_failed');
+      await controller.start();
+      expect(controller.isUpdateRequired, isFalse);
+
+      // 일시적인 오류였다면 복귀 시 정상적으로 강제할 수 있어야 한다.
+      gateway.startError = null;
+      gateway.immediateResult = InAppUpdateFlowResult.canceled;
+      await controller.resume();
+
+      expect(controller.isUpdateRequired, isTrue);
     });
 
     test('최소 요구 버전은 한 번만 읽는다', () async {

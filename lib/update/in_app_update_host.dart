@@ -1,5 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:worldcup_domain/worldcup_domain.dart';
+import 'package:worldcup_in_app_update/worldcup_in_app_update.dart';
 
 import '../di/providers.dart';
 import 'in_app_update_controller.dart';
@@ -27,10 +31,7 @@ class _InAppUpdateHostState extends ConsumerState<InAppUpdateHost>
   @override
   void initState() {
     super.initState();
-    _controller = InAppUpdateController(
-      gateway: ref.read(inAppUpdateGatewayProvider),
-      featureFlags: ref.read(featureFlagProvider),
-    );
+    _controller = _createController();
     _controller.addListener(_onControllerChanged);
     WidgetsBinding.instance.addObserver(this);
     // 첫 프레임 전에는 ScaffoldMessenger가 없고, 조회가 시작을 늦출 이유도 없다.
@@ -38,6 +39,33 @@ class _InAppUpdateHostState extends ConsumerState<InAppUpdateHost>
       if (!mounted) return;
       _controller.start();
     });
+  }
+
+  /// 의존성을 만들지 못해도 앱은 그대로 떠야 한다.
+  ///
+  /// 이 위젯은 라우터 위에 있어서, 여기서 예외가 나면 화면이 통째로 뜨지 않는다.
+  /// 예컨대 `main()`이 Firebase 초기화 실패를 잡고 앱을 계속 띄운 경우,
+  /// Remote Config 포트를 만드는 것만으로도 예외가 날 수 있다.
+  /// 그런 상황에서는 아무것도 하지 않는 컨트롤러로 대신한다.
+  InAppUpdateController _createController() {
+    try {
+      return InAppUpdateController(
+        gateway: ref.read(inAppUpdateGatewayProvider),
+        featureFlags: ref.read(featureFlagProvider),
+      );
+    } catch (error, stackTrace) {
+      log(
+        '인앱 업데이트를 준비하지 못해 업데이트 안내 없이 계속합니다.',
+        error: error,
+        stackTrace: stackTrace,
+        name: 'in_app_update',
+      );
+      return InAppUpdateController(
+        // 채널을 건드리지 않는 게이트웨이. 모든 조회가 "쓸 수 없음"으로 끝난다.
+        gateway: MethodChannelInAppUpdateGateway(isSupportedPlatform: false),
+        featureFlags: const _UnavailableFeatureFlags(),
+      );
+    }
   }
 
   @override
@@ -190,4 +218,17 @@ class RequiredUpdateOverlay extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 원격 설정을 쓸 수 없을 때 자리를 채우는 포트. 언제나 기본값을 돌려준다.
+class _UnavailableFeatureFlags implements FeatureFlagPort {
+  const _UnavailableFeatureFlags();
+
+  @override
+  Future<bool> getBool(String key, {required bool defaultValue}) async =>
+      defaultValue;
+
+  @override
+  Future<int> getInt(String key, {required int defaultValue}) async =>
+      defaultValue;
 }
