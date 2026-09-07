@@ -181,7 +181,15 @@ constructors so they stay testable.
   The same rule covers the flow itself — only an explicit user cancel blocks.
   The native side re-queries `appUpdateInfo` right before launching, and a
   failure there arrives as an exception; treating that as a refusal would lock
-  users out on a flaky network, before they ever saw a dialog.
+  users out on a flaky network, before they ever saw a dialog. A check that
+  fails *while already blocking* releases the block for the same reason: we no
+  longer know an update is even on offer.
+- **Freshness guards compare against the moment the request started, not the
+  moment its caller started.** `_installRevision` exists so a late response
+  cannot undo a newer install event. Passing the *check's* revision into the
+  update flow broke that: an event arriving before the Play dialog opened made
+  the controller discard the user's answer to that dialog. Capture the revision
+  immediately before the call it guards.
 - Asset directory entries in `pubspec.yaml` are **not recursive**. Listing
   `assets/sample/female/` does not bundle `assets/sample/sample_worldcups.json`;
   the parent directory has to be listed too.

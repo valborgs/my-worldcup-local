@@ -142,7 +142,7 @@ class InAppUpdateController extends ChangeNotifier {
   Future<void> retryRequiredUpdate() async {
     if (_disposed || _updateFlowInFlight) return;
     if (_phase != InAppUpdatePhase.updateRequired) return;
-    await _startRequiredUpdate(++_generation, _installRevision);
+    await _startRequiredUpdate(++_generation);
   }
 
   /// 재시작 안내를 사용자가 닫았다.
@@ -194,6 +194,8 @@ class InAppUpdateController extends ChangeNotifier {
         stackTrace: stackTrace,
         name: 'in_app_update',
       );
+      if (_disposed || generation != _generation) return;
+      _releaseBlockOnCheckFailure();
       return;
     }
     if (_disposed || generation != _generation) return;
@@ -203,7 +205,7 @@ class InAppUpdateController extends ChangeNotifier {
     // 의도한 동작이다. 앱 복귀 때마다 요구해야 "강제"가 성립한다.
     if (await _isForcedUpdateNeeded(info)) {
       if (_disposed || generation != _generation) return;
-      await _startRequiredUpdate(generation, installRevision);
+      await _startRequiredUpdate(generation);
       return;
     }
     if (_disposed || generation != _generation) return;
@@ -236,7 +238,18 @@ class InAppUpdateController extends ChangeNotifier {
       return;
     }
 
-    await _requestConsent(generation, installRevision);
+    await _requestConsent(generation);
+  }
+
+  /// 앱을 막아 둔 상태에서 조회가 실패하면 차단을 푼다.
+  ///
+  /// 조회가 실패했다는 것은 지금 올릴 수 있는 업데이트가 있는지조차 확인하지
+  /// 못했다는 뜻이다. 확인할 수 없는 동안 계속 막아 두면 망이 불안정한
+  /// 사용자는 앱에서 영영 빠져나갈 수 없다. 풀어 주고 다음 복귀에서 다시 본다.
+  void _releaseBlockOnCheckFailure() {
+    if (_phase != InAppUpdatePhase.updateRequired) return;
+    _forcedUpdate = false;
+    _apply(InAppUpdatePhase.idle);
   }
 
   /// 지금 깔린 버전이 최소 요구 버전에 못 미치고, 즉시 업데이트도 가능한지.
@@ -261,8 +274,12 @@ class InAppUpdateController extends ChangeNotifier {
     return _minRequiredVersionCode = value;
   }
 
-  Future<void> _startRequiredUpdate(int generation, int installRevision) async {
+  Future<void> _startRequiredUpdate(int generation) async {
     _forcedUpdate = true;
+    // 리비전은 창을 띄우기 직전에 잡는다. 흐름보다 **먼저** 일어난 이벤트는
+    // 이 흐름의 결과를 무효로 만들 근거가 아니다. 조회를 기다리는 사이 들어온
+    // downloading 이벤트 때문에 사용자의 취소를 버리면 강제가 성립하지 않는다.
+    final installRevision = _installRevision;
     final result = await _runUpdateFlow(
       generation,
       _gateway.startImmediateUpdate,
@@ -291,7 +308,8 @@ class InAppUpdateController extends ChangeNotifier {
     }
   }
 
-  Future<void> _requestConsent(int generation, int installRevision) async {
+  Future<void> _requestConsent(int generation) async {
+    final installRevision = _installRevision;
     final result = await _runUpdateFlow(
       generation,
       _gateway.startFlexibleUpdate,

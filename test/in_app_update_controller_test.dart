@@ -512,6 +512,94 @@ void main() {
       expect(controller.isUpdateRequired, isTrue);
     });
 
+    test('흐름보다 먼저 온 이벤트가 사용자의 취소를 무효로 만들지 않는다', () async {
+      // 유연한 내려받기가 진행 중인 앱을 다시 열어 강제 조건을 판단하는 경우.
+      // 조회를 기다리는 사이 downloading 이벤트가 오면 리비전이 오르는데,
+      // 그 뒤에 띄운 Play 창의 결과까지 버리면 강제가 성립하지 않는다.
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+
+      // 첫 조회에서는 즉시 업데이트가 불가해 유연한 흐름으로 간다.
+      gateway.info = _info(immediateAllowed: false);
+      await controller.start();
+      expect(controller.phase, InAppUpdatePhase.downloading);
+
+      gateway.pendingCheck = Completer<InAppUpdateInfo>();
+      unawaited(controller.resume());
+      await _settle();
+
+      // 조회 응답보다 먼저 도착하는 진행 이벤트.
+      gateway.states.add(
+        _state(
+          InAppUpdateInstallStatus.downloading,
+          bytesDownloaded: 10,
+          totalBytesToDownload: 100,
+        ),
+      );
+      await _settle();
+
+      // 이제 조회가 강제 조건을 만족하는 정보로 완료된다.
+      gateway.immediateResult = InAppUpdateFlowResult.canceled;
+      gateway.pendingCheck!.complete(_info());
+      await _settle();
+
+      expect(gateway.calls.last, 'immediate');
+      expect(controller.isUpdateRequired, isTrue);
+    });
+
+    test('흐름보다 먼저 온 이벤트가 실패 뒤의 정리를 건너뛰게 하지 않는다', () async {
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.info = _info(immediateAllowed: false);
+      await controller.start();
+
+      gateway.pendingCheck = Completer<InAppUpdateInfo>();
+      unawaited(controller.resume());
+      await _settle();
+      gateway.states.add(_state(InAppUpdateInstallStatus.downloading));
+      await _settle();
+
+      gateway.immediateResult = InAppUpdateFlowResult.failed;
+      gateway.pendingCheck!.complete(_info());
+      await _settle();
+
+      expect(controller.isUpdateRequired, isFalse);
+
+      // 강제 표시가 풀렸으므로 이후 완료 이벤트를 다시 받아야 한다.
+      gateway.states.add(_state(InAppUpdateInstallStatus.downloaded));
+      await _settle();
+
+      expect(controller.shouldPromptInstall, isTrue);
+    });
+
+    test('막힌 상태에서 복귀 조회가 실패하면 차단을 푼다', () async {
+      // 올릴 수 있는 업데이트가 있는지조차 확인하지 못한 상태다.
+      // 계속 막아 두면 망이 불안정한 사용자는 빠져나갈 길이 없다.
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.immediateResult = InAppUpdateFlowResult.canceled;
+      await controller.start();
+      expect(controller.isUpdateRequired, isTrue);
+
+      gateway.checkError = PlatformException(code: 'update_check_failed');
+      await controller.resume();
+
+      expect(controller.isUpdateRequired, isFalse);
+      expect(controller.phase, InAppUpdatePhase.idle);
+    });
+
+    test('조회가 회복되면 다시 막는다', () async {
+      featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
+      gateway.immediateResult = InAppUpdateFlowResult.canceled;
+      await controller.start();
+
+      gateway.checkError = PlatformException(code: 'update_check_failed');
+      await controller.resume();
+      expect(controller.isUpdateRequired, isFalse);
+
+      gateway.checkError = null;
+      await controller.resume();
+
+      expect(controller.isUpdateRequired, isTrue);
+    });
+
     test('최소 요구 버전은 한 번만 읽는다', () async {
       featureFlags.minRequiredVersionCode = _installedVersionCode + 1;
       gateway.immediateResult = InAppUpdateFlowResult.canceled;
