@@ -9,6 +9,7 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../state/worldcup_editor_view_model.dart';
 import '../widgets/worldcup_add_picture_dialog.dart';
+import '../widgets/worldcup_image_description_dialog.dart';
 
 class AddWorldCupScreen extends ConsumerStatefulWidget {
   /// 수정할 월드컵의 id. `null`이면 새로 만드는 화면이다.
@@ -516,64 +517,19 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
     if (result != null && result.files.isNotEmpty) {
       for (PlatformFile file in result.files) {
         if (!context.mounted) return;
-        if (file.path != null) {
-          TextEditingController controller = TextEditingController();
-          String? description = await showDialog<String>(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('이미지 설명'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Image.file(
-                      File(file.path!),
-                      height: 200,
-                      fit: BoxFit.contain,
-                      // 미리보기 높이(200dp) 이상으로 디코딩할 필요가 없다.
-                      cacheHeight:
-                          (200 * MediaQuery.of(context).devicePixelRatio)
-                              .round(),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: controller,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: '설명',
-                        hintText: '이미지에 대한 설명을 입력하세요',
-                      ),
-                      onSubmitted: (value) {
-                        Navigator.of(context)
-                            .pop(value.isNotEmpty ? value : '설명 없음');
-                      },
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('취소'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(
-                        controller.text.isNotEmpty ? controller.text : '설명 없음',
-                      );
-                    },
-                    child: const Text('확인'),
-                  ),
-                ],
-              );
-            },
-          );
+        final String? path = file.path;
+        if (path == null) continue;
 
-          if (!mounted) return;
-          if (description != null) {
-            _vm.addItem(
-              EditorItem(imagePath: file.path!, imageInfo: description),
-            );
-          }
+        // 설명 입력 규칙(20자 제한, 빈 값 금지)은 다이얼로그가 들고 있다.
+        // 컨트롤러도 다이얼로그가 소유하므로 여기서 해제하지 않는다.
+        final String? description = await showDialog<String>(
+          context: context,
+          builder: (context) => WorldCupImageDescriptionDialog(imagePath: path),
+        );
+
+        if (!mounted) return;
+        if (description != null) {
+          _vm.addItem(EditorItem(imagePath: path, imageInfo: description));
         }
       }
     }
