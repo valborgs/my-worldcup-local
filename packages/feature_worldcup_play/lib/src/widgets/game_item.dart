@@ -5,6 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../state/match_selection.dart';
+import 'item_description_text.dart';
+
+// 설명이 쓸 수 있는 항목 높이의 비율. 이 상자를 넘치면 글자 크기가 줄어든다.
+const double _maxTextHeightRatio = 0.4;
+
+// 설명 글자 크기를 여기까지만 줄인다.
+const double _minDescriptionFontSize = 12.0;
 
 // 게임 화면에서 대결하는 항목 하나를 표시하는 위젯.
 // 기존 ItemTop / ItemBottom을 통합한 것으로, position으로 위/아래(또는 좌/우) 역할을,
@@ -117,6 +124,9 @@ class _GameItemState extends ConsumerState<GameItem>
                 final shortestSide = constraints.biggest.shortestSide;
                 final fontSize = (shortestSide * 0.06).clamp(18.0, 34.0);
                 final bottomInset = shortestSide * 0.08;
+                // 설명이 이미지를 다 덮지 않도록 항목 높이의 일부만 내준다.
+                final maxTextHeight =
+                    constraints.maxHeight * _maxTextHeightRatio;
                 // BoxFit.contain 기준으로 가로/세로 중 어느 쪽이 제약이 될지 알 수 없으므로
                 // 박스의 긴 변을 기준으로 캐시 크기를 잡아 화질 저하 없이 상한만 둔다.
                 final cacheDimension =
@@ -146,11 +156,11 @@ class _GameItemState extends ConsumerState<GameItem>
                           left: 12,
                           right: 12,
                         ),
-                        child: Text(
+                        child: ItemDescriptionText(
                           widget.itemModel.imageInfo,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          maxWidth: constraints.maxWidth - 24,
+                          maxHeight: maxTextHeight,
+                          minFontSize: _minDescriptionFontSize,
                           style: TextStyle(
                             fontSize: fontSize,
                             color: Colors.white,
