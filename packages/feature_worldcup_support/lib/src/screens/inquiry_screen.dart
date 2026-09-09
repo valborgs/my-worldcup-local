@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show MaxLengthEnforcement;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
@@ -135,7 +136,7 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
   }
 
   Future<void> _leave() async {
-    if (_vm.busy || _picking || _confirmingLeave) return;
+    if (_vm.busy || _confirmingLeave || _leaving) return;
     if (_vm.receipt == null &&
         (_email.text.isNotEmpty ||
             _content.text.isNotEmpty ||
@@ -183,7 +184,7 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
         child: Scaffold(
           appBar: AppBar(
             title: const Text('문의함'),
-            leading: BackButton(onPressed: blocked ? null : _leave),
+            leading: BackButton(onPressed: _vm.busy ? null : _leave),
           ),
           body: SafeArea(
             child: receipt != null
@@ -248,6 +249,29 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
                           minLines: 7,
                           maxLines: 14,
                           maxLength: 5000,
+                          // Django validates Unicode code points, not grapheme clusters.
+                          // Keep pasted text intact and show the server's actual count.
+                          maxLengthEnforcement: MaxLengthEnforcement.none,
+                          buildCounter:
+                              (
+                                context, {
+                                required currentLength,
+                                required isFocused,
+                                required maxLength,
+                              }) {
+                                final length = _content.text
+                                    .trim()
+                                    .runes
+                                    .length;
+                                return Text(
+                                  '$length / 5000',
+                                  style: TextStyle(
+                                    color: length > 5000
+                                        ? Theme.of(context).colorScheme.error
+                                        : null,
+                                  ),
+                                );
+                              },
                           validator: (value) =>
                               InquiryViewModel.validateContent(value ?? ''),
                           decoration: const InputDecoration(
@@ -280,6 +304,7 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
                           Image.memory(
                             _vm.screenshot!,
                             height: 180,
+                            cacheHeight: 360,
                             fit: BoxFit.contain,
                             semanticLabel: '선택한 스크린샷',
                             errorBuilder: (context, error, stack) =>

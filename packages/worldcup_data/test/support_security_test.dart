@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:worldcup_data/worldcup_data.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:worldcup_core/worldcup_core.dart';
@@ -26,6 +27,37 @@ class RecordingClient extends http.BaseClient {
 }
 
 void main() {
+  test('legacy upload failures retain safe diagnostic type and stack, not raw secrets', () async {
+    final folder = await Directory.systemTemp.createTemp(
+      'worldcup-diagnostics-',
+    );
+    final file = await File('${folder.path}/image.png').writeAsBytes([1]);
+    addTearDown(() => folder.delete(recursive: true));
+    for (final parseError in [false, true]) {
+      final client = MockClient((_) async {
+        if (parseError) return http.Response('<private-secret>', 200);
+        throw http.ClientException('private-secret');
+      });
+      final uploader = ImgbbImageUploader(apiKey: 'key', client: client);
+      await expectLater(
+        uploader.uploadItemImage(WorldCupItemModel(1, file.path, '', 1)),
+        throwsA(
+          isA<NetworkFailure>()
+              .having(
+                (e) => e.cause.toString(),
+                'safe type',
+                contains(parseError ? 'FormatException' : 'ClientException'),
+              )
+              .having(
+                (e) => e.cause.toString(),
+                'no raw value',
+                isNot(contains('private-secret')),
+              )
+              .having((e) => e.stackTrace, 'stack', isNotNull),
+        ),
+      );
+    }
+  });
   test(
     'existing tournament uploader also blocks credential redirects',
     () async {

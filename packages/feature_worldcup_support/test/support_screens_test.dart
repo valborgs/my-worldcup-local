@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,6 +52,25 @@ class NoUpload implements InquiryImageUploadPort {
       throw StateError('Unexpected upload');
 }
 
+class PendingPicker extends FilePicker {
+  final result = Completer<FilePickerResult?>();
+  @override
+  Future<FilePickerResult?> pickFiles({
+    String? dialogTitle,
+    String? initialDirectory,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    Function(FilePickerStatus)? onFileLoading,
+    bool allowCompression = false,
+    int compressionQuality = 0,
+    bool allowMultiple = false,
+    bool withData = false,
+    bool withReadStream = false,
+    bool lockParentWindow = false,
+    bool readSequential = false,
+  }) => result.future;
+}
+
 Widget app(ScreenApi api, Widget screen) => ProviderScope(
   overrides: [
     supportProvider.overrideWithValue(api),
@@ -58,6 +80,11 @@ Widget app(ScreenApi api, Widget screen) => ProviderScope(
 );
 
 Future<void> send(WidgetTester tester) async {
+  await tester.scrollUntilVisible(
+    find.widgetWithText(FilledButton, '문의 등록'),
+    200,
+    scrollable: find.byType(Scrollable).first,
+  );
   await Scrollable.ensureVisible(
     tester.element(find.widgetWithText(FilledButton, '문의 등록')),
     alignment: 0.5,
@@ -68,6 +95,61 @@ Future<void> send(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets(
+    'a pending file picker does not trap the screen and late result is ignored',
+    (tester) async {
+      final picker = PendingPicker();
+      FilePicker.platform = picker;
+      addTearDown(() => FilePicker.platform = PendingPicker());
+      await tester.pumpWidget(
+        app(
+          ScreenApi(),
+          Builder(
+            builder: (context) => Scaffold(
+              body: TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const InquiryScreen(),
+                  ),
+                ),
+                child: const Text('열기'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('열기'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('스크린샷 첨부 (선택)'));
+      await tester.tap(find.text('스크린샷 첨부 (선택)'));
+      await tester.pumpAndSettle();
+      expect(find.text('이미지 선택 중…'), findsOneWidget);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(find.text('열기'), findsOneWidget);
+      picker.result.complete(null);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'emoji counter uses the same trimmed code point limit as validation',
+    (tester) async {
+      final api = ScreenApi();
+      await tester.pumpWidget(app(api, const InquiryScreen()));
+      await tester.enterText(
+        find.byType(TextFormField).last,
+        '  ${'👨‍👩‍👧' * 1001}  ',
+      );
+      await tester.pump();
+      expect(find.text('5005 / 5000'), findsOneWidget);
+      await send(tester);
+      expect(api.submitted, 0);
+      expect(find.text('문의 내용은 5,000자까지 입력할 수 있습니다.'), findsOneWidget);
+    },
+  );
   testWidgets('notice expansion, next/previous pagination, refresh', (
     tester,
   ) async {

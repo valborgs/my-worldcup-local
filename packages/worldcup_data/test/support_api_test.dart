@@ -19,6 +19,69 @@ http.Response jsonResponse(
 );
 
 void main() {
+  for (final status in [200, 201, 202]) {
+    test('successful inquiry $status accepts a valid receipt', () async {
+      final api = SupportApi(
+        apiKey: 'key',
+        baseUrl: 'https://api.example/v1/',
+        client: MockClient(
+          (_) async => jsonResponse({
+            'id': 1,
+            'created_at': '2026-09-09T04:00:00Z',
+          }, status),
+        ),
+      );
+      expect((await api.submitInquiry(content: '내용')).id, 1);
+      api.close();
+    });
+  }
+
+  test(
+    'successful status without a receipt keeps delivery uncertain',
+    () async {
+      final api = SupportApi(
+        apiKey: 'key',
+        baseUrl: 'https://api.example/v1/',
+        client: MockClient((_) async => http.Response('', 204)),
+      );
+      await expectLater(
+        api.submitInquiry(content: '내용'),
+        throwsA(
+          isA<SupportFailure>().having(
+            (e) => e.deliveryUncertain,
+            'uncertain',
+            true,
+          ),
+        ),
+      );
+      api.close();
+    },
+  );
+
+  test('503 Retry-After never prevents retry once server recovers', () async {
+    var calls = 0;
+    final api = SupportApi(
+      apiKey: 'key',
+      baseUrl: 'https://api.example/v1/',
+      client: MockClient(
+        (_) async => ++calls == 1
+            ? jsonResponse({}, 503, headers: {'retry-after': '3600'})
+            : jsonResponse({'count': 0, 'next': null, 'results': []}, 200),
+      ),
+    );
+    await expectLater(
+      api.fetchNotices(1),
+      throwsA(
+        isA<SupportFailure>().having(
+          (e) => e.retryAfterSeconds,
+          'no cooldown',
+          isNull,
+        ),
+      ),
+    );
+    expect((await api.fetchNotices(1)).count, 0);
+    api.close();
+  });
   test('notice request uses namespace/key/page and decodes Korean, image, dates', () async {
     final api = SupportApi(
       baseUrl: 'https://api.example/api/v1/my-worldcup/',
@@ -116,7 +179,11 @@ void main() {
                 'fields',
                 status == 400 ? ['올바른 이메일 주소를 입력해 주세요.'] : null,
               )
-              .having((e) => e.retryAfterSeconds, 'retry', 60)
+              .having(
+                (e) => e.retryAfterSeconds,
+                'retry',
+                status == 429 ? 60 : null,
+              )
               .having((e) => e.deliveryUncertain, 'uncertain', status >= 500),
         ),
       );
@@ -230,7 +297,13 @@ void main() {
       );
       await expectLater(
         uploader.uploadScreenshot(Uint8List.fromList([1])),
-        throwsA(isA<SupportFailure>()),
+        throwsA(
+          isA<SupportFailure>().having(
+            (e) => e.code,
+            'rejected response',
+            'image_response',
+          ),
+        ),
       );
       addTearDown(uploader.close);
     });

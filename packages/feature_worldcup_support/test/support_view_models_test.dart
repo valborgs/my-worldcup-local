@@ -50,6 +50,54 @@ NoticePage page(int id, {bool hasNext = false}) => NoticePage(
 );
 
 void main() {
+  test('a rejected uploaded URL is not repeatedly uploaded; removing attachment recovers', () async {
+    final api = FakeApi();
+    final uploader = FakeUploader()
+      ..onUpload = () async =>
+          throw const SupportFailure('image_response', '첨부 제거 필요');
+    final vm = InquiryViewModel(api, uploader)
+      ..setScreenshot(Uint8List.fromList([1]), 'a.png');
+    await vm.submit(content: '내용', email: '');
+    await vm.submit(content: '내용', email: '');
+    expect(uploader.calls, 1);
+    expect(api.submissions, isEmpty);
+    vm.setScreenshot(null, null);
+    await vm.submit(content: '내용', email: '');
+    expect(vm.receipt, isNotNull);
+    vm.dispose();
+  });
+
+  test(
+    'non-throttle failures never establish a cooldown in view models',
+    () async {
+      final api = FakeApi();
+      final notices = NoticesViewModel(api);
+      final first = notices.load(1);
+      api.pages[1]!.completeError(
+        const SupportFailure('server', '오류', retryAfterSeconds: 3600),
+      );
+      await first;
+      expect(notices.retryAt, isNull);
+      final second = notices.load(1);
+      api.pages[1]!.complete(page(1));
+      await second;
+      expect(notices.loaded, true);
+      notices.dispose();
+      api.onSubmit = () async => throw const SupportFailure(
+        'server',
+        '오류',
+        retryAfterSeconds: 3600,
+        deliveryUncertain: true,
+      );
+      final inquiry = InquiryViewModel(api, FakeUploader());
+      await inquiry.submit(content: '내용', email: '');
+      expect(inquiry.retryAt, isNull);
+      api.onSubmit = null;
+      await inquiry.submit(content: '내용', email: '', confirmResend: true);
+      expect(inquiry.receipt, isNotNull);
+      inquiry.dispose();
+    },
+  );
   test(
     'attachment stream rejects empty/oversized files and preserves bytes',
     () async {

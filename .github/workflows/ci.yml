@@ -32,6 +32,8 @@ jobs:
           kakao_nativeAppKey=
           kakao_javaScriptAppKey=
           imgbb_apiKey=
+          MY_WORLDCUP_APP_API_KEY=
+          MY_WORLDCUP_API_BASE_URL=
           ENV
 
       - name: Check formatting

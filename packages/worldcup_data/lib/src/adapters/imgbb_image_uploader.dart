@@ -57,8 +57,12 @@ class ImgbbImageUploader implements ImageUploadPort {
           .send(request)
           .then(http.Response.fromStream)
           .timeout(const Duration(seconds: 45));
-    } catch (_) {
-      throw const NetworkFailure('이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해주세요.');
+    } catch (error, stackTrace) {
+      throw NetworkFailure(
+        '이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해주세요.',
+        cause: error.runtimeType.toString(),
+        stackTrace: stackTrace,
+      );
     }
 
     if (response.statusCode != 200) {
@@ -73,8 +77,12 @@ class ImgbbImageUploader implements ImageUploadPort {
       final data = decoded['data'] as Map<String, Object?>?;
       final thumb = data?['thumb'] as Map<String, Object?>?;
       return thumb?['url'] as String?;
-    } catch (_) {
-      throw const NetworkFailure('이미지 업로드 응답을 해석하지 못했습니다.');
+    } catch (error, stackTrace) {
+      throw NetworkFailure(
+        '이미지 업로드 응답을 해석하지 못했습니다.',
+        cause: error.runtimeType.toString(),
+        stackTrace: stackTrace,
+      );
     }
   }
 }

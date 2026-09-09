@@ -56,7 +56,7 @@ class NoticesViewModel extends ChangeNotifier {
           ? failure
           : const SupportFailure('unknown', '공지사항을 불러오지 못했습니다.');
       final seconds = error?.retryAfterSeconds;
-      if (seconds != null && seconds > 0) {
+      if (error?.code == 'throttled' && seconds != null && seconds > 0) {
         retryAt = DateTime.now().add(Duration(seconds: seconds));
       }
     } finally {
@@ -85,6 +85,7 @@ class InquiryViewModel extends ChangeNotifier {
   String? screenshotName;
   String? _uploadedUrl;
   DateTime? _uploadedAt;
+  SupportFailure? _uploadResponseFailure;
   bool busy = false;
   bool uploading = false;
   bool deliveryUncertain = false;
@@ -119,6 +120,7 @@ class InquiryViewModel extends ChangeNotifier {
       screenshotName = name;
       _uploadedUrl = null;
       _uploadedAt = null;
+      _uploadResponseFailure = null;
       error = null;
     }
     notifyListeners();
@@ -180,6 +182,11 @@ class InquiryViewModel extends ChangeNotifier {
       return;
     }
     final fields = <String, List<String>>{};
+    if (screenshot != null && _uploadResponseFailure != null) {
+      error = _uploadResponseFailure;
+      notifyListeners();
+      return;
+    }
     final contentError = validateContent(content);
     final emailError = validateEmail(email);
     if (contentError != null) fields['content'] = [contentError];
@@ -228,9 +235,10 @@ class InquiryViewModel extends ChangeNotifier {
               deliveryUncertain: !uploading,
             );
       deliveryUncertain = deliveryUncertain || error!.deliveryUncertain;
+      if (error!.code == 'image_response') _uploadResponseFailure = error;
       if (error!.fields.containsKey('screenshot_url')) _uploadedUrl = null;
       final seconds = error!.retryAfterSeconds;
-      if (seconds != null && seconds > 0) {
+      if (error?.code == 'throttled' && seconds != null && seconds > 0) {
         retryAt = DateTime.now().add(Duration(seconds: seconds));
       }
     } finally {

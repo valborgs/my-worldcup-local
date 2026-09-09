@@ -64,7 +64,7 @@ class SupportApi implements SupportPort {
         deliveryUncertain: body != null,
       );
     }
-    final expected = body == null ? 200 : 201;
+    final succeeded = response.statusCode >= 200 && response.statusCode < 300;
     Map<String, dynamic>? json;
     try {
       json =
@@ -72,7 +72,7 @@ class SupportApi implements SupportPort {
     } catch (_) {
       // Reverse proxies can return non-JSON errors. Do not expose their body.
     }
-    if (response.statusCode != expected) {
+    if (!succeeded) {
       final rawError = json?['error'];
       final error = rawError is Map ? rawError : const {};
       final fields = <String, List<String>>{};
@@ -102,7 +102,9 @@ class SupportApi implements SupportPort {
         code,
         message,
         fields: fields,
-        retryAfterSeconds: int.tryParse(response.headers['retry-after'] ?? ''),
+        retryAfterSeconds: response.statusCode == 429
+            ? int.tryParse(response.headers['retry-after'] ?? '')
+            : null,
         deliveryUncertain: body != null && response.statusCode >= 500,
       );
     }

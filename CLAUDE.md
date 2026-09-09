@@ -152,6 +152,14 @@ positive ids and are never touched by seeding.
 
 - `kakao_nativeAppKey`, `kakao_javaScriptAppKey` — KakaoTalk
 - `imgbb_apiKey` — ImgBB uploads
+- `MY_WORLDCUP_APP_API_KEY` — required app key for notices and inquiries
+- `MY_WORLDCUP_API_BASE_URL` — required HTTPS backend namespace URL (no default;
+  no credentials, query or fragment). Both support settings can be supplied via
+  matching `--dart-define` keys, which take precedence over `.env`. Missing values
+  show a configuration error without making requests. Verify both before release;
+  CI uses placeholders and cannot validate production credentials. Never commit
+  real keys or production URLs. Bundled app settings are extractable and do not
+  replace server-side access controls.
 - `playstore_url` — link embedded in the shared Kakao card
 - `admob_*UnitId` — ad unit ids (falls back to Google test ids)
 
