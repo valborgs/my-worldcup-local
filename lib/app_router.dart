@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:feature_worldcup_support/feature_worldcup_support.dart';
 import 'package:worldcup_core/worldcup_core.dart';
 import 'package:feature_worldcup_editor/feature_worldcup_editor.dart';
 import 'package:feature_worldcup_list/feature_worldcup_list.dart';
@@ -33,6 +34,16 @@ class AppRouter {
 
   Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case AppRoutes.notices:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const NoticesScreen(),
+        );
+      case AppRoutes.inquiry:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const InquiryScreen(),
+        );
       case AppRoutes.list:
         return MaterialPageRoute<void>(
           settings: settings,

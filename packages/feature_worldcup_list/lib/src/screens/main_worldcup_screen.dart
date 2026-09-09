@@ -55,21 +55,15 @@ class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
         appBar: AppBar(
           scrolledUnderElevation: 0,
           surfaceTintColor: Colors.transparent,
-          leading: Semantics(
-            label: "도움말 버튼",
-            button: true,
-            enabled: true,
-            child: IconButton(
-              tooltip: "도움말",
-              onPressed: () {
-                Navigator.of(context).pushNamed<void>(AppRoutes.help);
-              },
-              icon: const Icon(
-                Icons.help_outline,
-                semanticLabel: "도움말",
-                size: 24,
-              ),
-            ),
+          leading: PopupMenuButton<String>(
+            tooltip: '도움말 및 소통 메뉴',
+            icon: const Icon(Icons.help_outline, size: 24),
+            onSelected: (route) => Navigator.of(context).pushNamed<void>(route),
+            itemBuilder: (_) => const [
+              PopupMenuItem(value: AppRoutes.help, child: Text('도움말')),
+              PopupMenuItem(value: AppRoutes.notices, child: Text('공지사항')),
+              PopupMenuItem(value: AppRoutes.inquiry, child: Text('문의함')),
+            ],
           ),
           title: const Text("내가 만든 월드컵", semanticsLabel: "내가 만든 월드컵 화면"),
           actions: [

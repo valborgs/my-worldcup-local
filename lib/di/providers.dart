@@ -46,6 +46,27 @@ final testWorldCupSeederProvider = Provider<TestWorldCupSeeder>((ref) {
 /// 반환 타입을 적지 않고 추론에 맡긴다. Riverpod 3은 `Override` 타입을
 /// 공개 export 하지 않아 이름으로 쓸 수 없다.
 final portOverrides = [
+  supportProvider.overrideWith((ref) {
+    const definedKey = String.fromEnvironment('MY_WORLDCUP_APP_API_KEY');
+    const definedUrl = String.fromEnvironment('MY_WORLDCUP_API_BASE_URL');
+    final api = SupportApi(
+      apiKey: definedKey.isNotEmpty
+          ? definedKey
+          : dotenv.env['MY_WORLDCUP_APP_API_KEY'] ?? '',
+      baseUrl: definedUrl.isNotEmpty
+          ? definedUrl
+          : dotenv.env['MY_WORLDCUP_API_BASE_URL'] ?? '',
+    );
+    ref.onDispose(api.close);
+    return api;
+  }),
+  inquiryImageUploadProvider.overrideWith((ref) {
+    final uploader = ImgbbInquiryUploader(
+      apiKey: dotenv.env['imgbb_apiKey'] ?? '',
+    );
+    ref.onDispose(uploader.close);
+    return uploader;
+  }),
   worldCupRepositoryProvider.overrideWith(
     (ref) => SqliteWorldCupRepository(ref.watch(appDatabaseProvider)),
   ),

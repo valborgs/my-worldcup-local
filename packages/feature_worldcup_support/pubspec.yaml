@@ -1,0 +1,19 @@
+name: feature_worldcup_support
+description: Notices and inquiry submission for My World Cup.
+version: 1.0.0
+publish_to: none
+resolution: workspace
+environment:
+  sdk: ^3.13.0
+  flutter: '>=3.24.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.0.0
+  file_picker: ^10.3.10
+  worldcup_domain:
+    path: ../worldcup_domain
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0

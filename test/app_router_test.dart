@@ -19,6 +19,8 @@ void main() {
   const argumentsFor = <String, Object?>{
     AppRoutes.list: null,
     AppRoutes.help: null,
+    AppRoutes.notices: null,
+    AppRoutes.inquiry: null,
     AppRoutes.onboarding: null,
     AppRoutes.editor: EditorArgs(),
     AppRoutes.play: PlayArgs(worldCupId: 1, round: 8),
