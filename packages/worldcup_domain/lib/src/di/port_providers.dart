@@ -10,11 +10,20 @@ library;
 
 import 'package:riverpod/riverpod.dart';
 
+import '../ports/support_port.dart';
+
 import '../ports/ad_unit_port.dart';
 import '../ports/image_upload_port.dart';
 import '../ports/social_share_port.dart';
 import '../ports/worldcup_package_port.dart';
 import '../repositories/worldcup_repository.dart';
+
+final supportProvider = Provider<SupportPort>(
+  (ref) => _missingOverride('supportProvider'),
+);
+final inquiryImageUploadProvider = Provider<InquiryImageUploadPort>(
+  (ref) => _missingOverride('inquiryImageUploadProvider'),
+);
 
 Never _missingOverride(String name) {
   throw UnimplementedError(

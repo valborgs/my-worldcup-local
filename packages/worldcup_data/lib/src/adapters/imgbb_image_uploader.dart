@@ -45,14 +45,22 @@ class ImgbbImageUploader implements ImageUploadPort {
   Future<String?> _upload(String base64Image) async {
     final http.Response response;
     try {
-      response = await _client.post(
-        Uri.https('api.imgbb.com', '1/upload'),
-        body: {'key': apiKey, 'image': base64Image, 'expiration': _expiration},
-      );
+      final request =
+          http.Request('POST', Uri.https('api.imgbb.com', '1/upload'))
+            ..followRedirects = false
+            ..bodyFields = {
+              'key': apiKey,
+              'image': base64Image,
+              'expiration': _expiration,
+            };
+      response = await _client
+          .send(request)
+          .then(http.Response.fromStream)
+          .timeout(const Duration(seconds: 45));
     } catch (error, stackTrace) {
       throw NetworkFailure(
         '이미지를 업로드하지 못했습니다. 잠시 후 다시 시도해주세요.',
-        cause: error,
+        cause: error.runtimeType.toString(),
         stackTrace: stackTrace,
       );
     }
@@ -72,7 +80,7 @@ class ImgbbImageUploader implements ImageUploadPort {
     } catch (error, stackTrace) {
       throw NetworkFailure(
         '이미지 업로드 응답을 해석하지 못했습니다.',
-        cause: error,
+        cause: error.runtimeType.toString(),
         stackTrace: stackTrace,
       );
     }

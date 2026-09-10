@@ -4,6 +4,9 @@
 /// 앱 셸(DI)만 이 패키지에 의존한다. feature 패키지는 의존하지 않는다.
 library;
 
+export 'src/adapters/support_api.dart';
+export 'src/adapters/imgbb_inquiry_uploader.dart';
+
 export 'src/adapters/admob_ad_units.dart';
 export 'src/adapters/firebase_feature_flags.dart';
 export 'src/adapters/imgbb_image_uploader.dart';

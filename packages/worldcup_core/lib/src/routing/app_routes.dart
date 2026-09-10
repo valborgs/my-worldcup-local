@@ -11,6 +11,9 @@ abstract final class AppRoutes {
   /// 앱 소개 / 도움말. 목록 화면에서 다시 열어 보는 용도라 닫으면 pop 한다.
   static const help = '/help';
 
+  static const notices = '/support/notices';
+  static const inquiry = '/support/inquiry';
+
   /// 첫 실행 온보딩. [help]와 화면은 같지만 끝나면 [list]로 replace 한다.
   ///
   /// 온보딩을 [list]('/')의 `home`으로 두면 안 된다. `WidgetsApp`은 `home`이
@@ -39,6 +42,8 @@ abstract final class AppRoutes {
   static const all = <String>[
     list,
     help,
+    notices,
+    inquiry,
     onboarding,
     editor,
     play,
