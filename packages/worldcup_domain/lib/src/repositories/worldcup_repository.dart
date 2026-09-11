@@ -10,9 +10,11 @@ abstract interface class WorldCupRepository {
   Future<int> count({String searchQuery = ''});
 
   /// 전체 목록에서 [idx] 월드컵이 몇 번째인지. 페이저 위치 계산용이다.
+  /// [page]와 같은 정렬 기준으로 계산한다.
   Future<int> indexOf(int idx);
 
   /// 최근 추가한 월드컵부터 `idx` 내림차순 한 페이지.
+  /// 이 정렬은 [indexOf]의 계산 기준과 반드시 일치해야 한다.
   Future<List<WorldCupModel>> page({
     required int limit,
     required int offset,

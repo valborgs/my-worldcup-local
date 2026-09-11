@@ -12,6 +12,30 @@ void main() {
       WorldCupModel(i, 'Game $i', '설명 $i', DateTime(2026), '', 4),
   ];
 
+  test('새 월드컵을 추가하면 첫 항목이며 뒤쪽 창에서도 첫 위치로 이동한다', () async {
+    final repo = _FakeRepository(models(40));
+    final vm = WorldCupListViewModel(repo);
+    addTearDown(vm.dispose);
+    await vm.refresh();
+
+    repo.models.addAll(models(1, from: 41));
+    await vm.refresh();
+    expect(vm.pagerItems.first.idx, 41);
+    expect(vm.sheetItems.first.idx, 41);
+    expect((await vm.locateInPager(41))!.index, 0);
+
+    await vm.loadNextPagerPage();
+    await vm.loadNextPagerPage();
+    await vm.loadNextPagerPage();
+    expect(vm.pagerOffset, greaterThan(0));
+    final target = await vm.locateInPager(41);
+    expect(target, isNotNull);
+    expect(target!.replacedWindow, isTrue);
+    expect(target.index, 0);
+    expect(vm.pagerOffset, 0);
+    expect(vm.pagerItems.first.idx, 41);
+  });
+
   group('검색', () {
     test('검색 모드에 들어가면 현재 시트 항목으로 미리 채운다', () async {
       final repo = _FakeRepository(models(20));
@@ -125,8 +149,8 @@ void main() {
       expect(trimmedItems, WorldCupListViewModel.pageSize);
       expect(vm.sheetItems, hasLength(WorldCupListViewModel.sheetWindowSize));
       expect(vm.sheetOffset, 70);
-      expect(vm.sheetItems.first.idx, 71);
-      expect(vm.sheetItems.last.idx, 100);
+      expect(vm.sheetItems.first.idx, 30);
+      expect(vm.sheetItems.last.idx, 1);
     });
 
     test('마지막 부분 페이지는 완전한 페이지가 될 때까지 잘라내지 않는다', () async {
@@ -141,7 +165,7 @@ void main() {
       expect(trimmedItems, 0);
       expect(vm.sheetItems, hasLength(31));
       expect(vm.sheetOffset, 0);
-      expect(vm.sheetItems.last.idx, 31);
+      expect(vm.sheetItems.last.idx, 1);
     });
 
     test('새로고침해도 현재 시트 창을 다시 불러 위치를 유지한다', () async {
@@ -159,8 +183,8 @@ void main() {
       expect(repo.requestedOffsets.last, 70);
       expect(vm.sheetItems, hasLength(WorldCupListViewModel.sheetWindowSize));
       expect(vm.sheetOffset, 70);
-      expect(vm.sheetItems.first.idx, 71);
-      expect(vm.sheetItems.last.idx, 100);
+      expect(vm.sheetItems.first.idx, 30);
+      expect(vm.sheetItems.last.idx, 1);
     });
 
     test('앞쪽 페이지를 다시 불러도 창 상한을 넘지 않는다', () async {
@@ -178,8 +202,8 @@ void main() {
 
       expect(vm.sheetItems, hasLength(WorldCupListViewModel.sheetWindowSize));
       expect(vm.sheetOffset, 10);
-      expect(vm.sheetItems.first.idx, 11);
-      expect(vm.sheetItems.last.idx, 40);
+      expect(vm.sheetItems.first.idx, 90);
+      expect(vm.sheetItems.last.idx, 61);
     });
 
     test('창이 뒤로 밀린 상태에서 검색을 열어도 중복 없이 이어진다', () async {
@@ -196,7 +220,10 @@ void main() {
 
       final ids = vm.sheetItems.map((model) => model.idx).toList();
       expect(ids.toSet(), hasLength(ids.length));
-      expect(ids, orderedEquals(models(10).map((model) => model.idx)));
+      expect(
+        ids,
+        orderedEquals(models(100).reversed.take(10).map((model) => model.idx)),
+      );
     });
   });
 
@@ -204,7 +231,8 @@ void main() {
     // 오프셋과 길이 비교만으로는 부족하다. 새로고침이 같은 자리에 같은
     // 개수를 다시 채우면 두 검사를 모두 통과해, 새로고침 이전 기준으로
     // 조회한 페이지가 새 창에 이어붙는다.
-    List<WorldCupModel> modelsWithoutFifth() => models(100)..removeAt(4);
+    List<WorldCupModel> modelsWithoutFifth() =>
+        models(100)..removeWhere((model) => model.idx == 96);
 
     test('조회 중 새로고침이 끝나면 낡은 시트 페이지를 버린다', () async {
       final repo = _FakeRepository(models(100));
@@ -363,15 +391,15 @@ void main() {
 
       expect(vm.pagerItems, hasLength(WorldCupListViewModel.pagerWindowSize));
       expect(vm.pagerOffset, 10);
-      expect(vm.pagerItems.first.idx, 11);
-      expect(vm.pagerItems.last.idx, 40);
+      expect(vm.pagerItems.first.idx, 90);
+      expect(vm.pagerItems.last.idx, 61);
 
       await vm.loadPreviousPagerPage();
 
       expect(vm.pagerItems, hasLength(WorldCupListViewModel.pagerWindowSize));
       expect(vm.pagerOffset, 0);
-      expect(vm.pagerItems.first.idx, 1);
-      expect(vm.pagerItems.last.idx, 30);
+      expect(vm.pagerItems.first.idx, 100);
+      expect(vm.pagerItems.last.idx, 71);
       expect(
         repo.requestedOffsets.last,
         0,
@@ -390,14 +418,14 @@ void main() {
 
       expect(vm.pagerItems, hasLength(31));
       expect(vm.pagerOffset, 0);
-      expect(vm.pagerItems.first.idx, 1);
-      expect(vm.pagerItems.last.idx, 31);
+      expect(vm.pagerItems.first.idx, 31);
+      expect(vm.pagerItems.last.idx, 1);
 
       await vm.refresh();
 
       expect(vm.pagerItems, hasLength(31));
       expect(vm.pagerOffset, 0);
-      expect(vm.pagerItems.last.idx, 31);
+      expect(vm.pagerItems.last.idx, 1);
     });
   });
 
@@ -407,7 +435,7 @@ void main() {
       addTearDown(vm.dispose);
       await vm.refresh();
 
-      final target = await vm.locateInPager(3);
+      final target = await vm.locateInPager(28);
 
       expect(target, isNotNull);
       expect(target!.replacedWindow, isFalse);
@@ -419,11 +447,11 @@ void main() {
       addTearDown(vm.dispose);
       await vm.refresh();
 
-      final target = await vm.locateInPager(25);
+      final target = await vm.locateInPager(6);
 
       expect(target, isNotNull);
       expect(target!.replacedWindow, isTrue);
-      expect(vm.pagerItems[target.index].idx, 25);
+      expect(vm.pagerItems[target.index].idx, 6);
       // 찾은 항목이 창 가운데쯤에 오도록 자른다.
       expect(vm.pagerOffset, greaterThan(0));
     });
@@ -523,7 +551,9 @@ class _FakeRepository implements WorldCupRepository {
     requestedOffsets.add(offset);
     // 실제 DB처럼 호출 시점의 데이터로 결과를 확정한 뒤 붙잡는다. 그래야
     // 붙잡힌 응답이 "조회 이후 바뀐 데이터"가 아니라 낡은 데이터가 된다.
-    final result = _matching(searchQuery).skip(offset).take(limit).toList();
+    final sorted = List.of(_matching(searchQuery))
+      ..sort((a, b) => b.idx.compareTo(a.idx));
+    final result = sorted.skip(offset).take(limit).toList();
     if (_gateArmed) {
       // 한 번만 붙잡는다. 이후 호출은 그대로 통과시킨다.
       _gateArmed = false;
@@ -533,7 +563,7 @@ class _FakeRepository implements WorldCupRepository {
   }
 
   @override
-  Future<int> indexOf(int idx) async => models.where((m) => m.idx < idx).length;
+  Future<int> indexOf(int idx) async => models.where((m) => m.idx > idx).length;
 
   @override
   Future<WorldCupModel?> findById(int idx) async {

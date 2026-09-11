@@ -33,6 +33,7 @@ class SqliteWorldCupRepository implements WorldCupRepository {
       final db = await _db.database;
       final result = await db.rawQuery(
         'SELECT COUNT(*) AS itemIndex FROM ${AppDatabase.worldCupTable} '
+        // page()의 idx DESC 순서에서 앞선 항목은 자신보다 큰 ID들이다.
         'WHERE idx > ?',
         [idx],
       );
@@ -53,6 +54,7 @@ class SqliteWorldCupRepository implements WorldCupRepository {
         AppDatabase.worldCupTable,
         where: query.isEmpty ? null : 'title LIKE ? OR info LIKE ?',
         whereArgs: query.isEmpty ? null : ['%$query%', '%$query%'],
+        // indexOf()의 위치 계산과 같은 정렬 기준을 유지한다.
         orderBy: 'idx DESC',
         limit: limit,
         offset: offset,
