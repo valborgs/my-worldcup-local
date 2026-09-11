@@ -1,4 +1,5 @@
 import '../database/app_database.dart';
+import 'seed_ids.dart';
 
 /// 무한 스크롤 UI를 확인하기 위한 개발 전용 테스트 데이터 생성기입니다.
 ///
@@ -10,8 +11,8 @@ class TestWorldCupSeeder {
 
   const TestWorldCupSeeder(this._db);
 
-  static const int _firstWorldCupIdx = -1019;
-  static const int _lastWorldCupIdx = -1000;
+  static const int _firstWorldCupIdx = firstDebugWorldCupIdx;
+  static const int _lastWorldCupIdx = lastDebugWorldCupIdx;
   static const int _worldCupCount = 20;
 
   static const List<String> _sampleImages = [

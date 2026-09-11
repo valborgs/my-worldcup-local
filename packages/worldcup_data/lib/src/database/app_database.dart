@@ -11,10 +11,11 @@ import 'package:sqflite/sqflite.dart';
 /// 덕분에 테스트에서 [databaseFactoryOverride]로 인메모리 DB를 끼울 수 있다.
 class AppDatabase {
   static const String defaultFileName = 'myworldcup.db';
-  static const int schemaVersion = 1;
+  static const int schemaVersion = 2;
 
   static const String worldCupTable = 'worldcup_table';
   static const String worldCupItemTable = 'worldcup_item_table';
+  static const String deletedSampleTable = 'deleted_sample_worldcup_table';
 
   final String fileName;
 
@@ -49,6 +50,7 @@ class AppDatabase {
   }
 
   static Future<void> _onCreate(Database db, int version) async {
+    await _createDeletedSampleTable(db);
     await db.execute(
       'CREATE TABLE $worldCupTable ('
       'idx INTEGER PRIMARY KEY AUTOINCREMENT, '
@@ -75,8 +77,11 @@ class AppDatabase {
     int oldVersion,
     int newVersion,
   ) async {
-    if (newVersion > oldVersion) {
-      // TODO(schema): 스키마를 바꿀 때 여기에 마이그레이션을 추가한다.
+    if (oldVersion < 2) {
+      await _createDeletedSampleTable(db);
     }
   }
+
+  static Future<void> _createDeletedSampleTable(Database db) =>
+      db.execute('CREATE TABLE $deletedSampleTable (idx INTEGER PRIMARY KEY)');
 }

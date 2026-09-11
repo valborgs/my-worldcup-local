@@ -142,9 +142,16 @@ pumping:
 - `worldcup_table`: idx, title, info, date, titleImageSrc, maxRound
 - `worldcup_item_table`: idx, imagePath, imageInfo, worldCupIdx
 
-Sample tournaments use **negative `idx`** and are wiped and re-seeded on every
-launch from `assets/sample/sample_worldcups.json`. User tournaments have
-positive ids and are never touched by seeding.
+Sample tournaments use **negative `idx`** and are refreshed on every launch
+from `assets/sample/sample_worldcups.json`. Deleted sample IDs persist in
+`deleted_sample_worldcup_table` (schema v2) and are excluded from seeding.
+Record sample deletions in the same transaction as deleting their rows.
+Sample IDs are permanent identities: never reuse a removed sample's ID for a
+different tournament. Keep deletion records even when a sample leaves the
+manifest, so temporarily removed samples do not reappear after being deleted.
+IDs -1019 through -1000 are reserved for disposable debug paging data and must
+not appear in the sample manifest or the sample deletion records.
+User tournaments have positive ids and are never touched by seeding.
 
 ## Configuration
 

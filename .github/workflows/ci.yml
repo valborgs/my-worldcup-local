@@ -22,6 +22,11 @@ jobs:
           cache: true
 
       # pub workspace라서 루트에서 한 번만 받으면 전체 패키지가 해결된다.
+      - name: Install SQLite for FFI tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+
       - name: Install dependencies
         run: flutter pub get
 
