@@ -33,7 +33,7 @@ class SqliteWorldCupRepository implements WorldCupRepository {
       final db = await _db.database;
       final result = await db.rawQuery(
         'SELECT COUNT(*) AS itemIndex FROM ${AppDatabase.worldCupTable} '
-        'WHERE idx < ?',
+        'WHERE idx > ?',
         [idx],
       );
       return (result.first['itemIndex'] as num?)?.toInt() ?? 0;
@@ -53,7 +53,7 @@ class SqliteWorldCupRepository implements WorldCupRepository {
         AppDatabase.worldCupTable,
         where: query.isEmpty ? null : 'title LIKE ? OR info LIKE ?',
         whereArgs: query.isEmpty ? null : ['%$query%', '%$query%'],
-        orderBy: 'idx ASC',
+        orderBy: 'idx DESC',
         limit: limit,
         offset: offset,
       );

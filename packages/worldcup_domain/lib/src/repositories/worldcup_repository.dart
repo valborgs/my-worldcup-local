@@ -12,7 +12,7 @@ abstract interface class WorldCupRepository {
   /// 전체 목록에서 [idx] 월드컵이 몇 번째인지. 페이저 위치 계산용이다.
   Future<int> indexOf(int idx);
 
-  /// `idx` 오름차순 한 페이지.
+  /// 최근 추가한 월드컵부터 `idx` 내림차순 한 페이지.
   Future<List<WorldCupModel>> page({
     required int limit,
     required int offset,
