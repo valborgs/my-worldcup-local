@@ -35,6 +35,90 @@ void main() {
     );
   }
 
+  testWidgets('빠른 이동 후에도 스와이프할 수 있다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                WorldCupList(
+                  repository: _FakeWorldCupDao(_models(100)),
+                  enableBottomSheetSelectionPagerTransition: false,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final entry in {'맨 뒤': 100, '중간': 50, '맨 앞': 1}.entries) {
+      await tester.tap(find.text(entry.key));
+      await tester.pump();
+      expect(
+        tester
+            .widget<PageView>(find.byKey(const ValueKey('worldCupPager')))
+            .controller!
+            .position
+            .isScrollingNotifier
+            .value,
+        isFalse,
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.bySemanticsLabel(
+          'Game ${101 - entry.value}, 최대 라운드 4강, ${entry.value} / 100',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byType(AlertDialog), findsNothing);
+    }
+    await tester.drag(
+      find.byKey(const ValueKey('worldCupPager')),
+      const Offset(-500, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.bySemanticsLabel('Game 99, 최대 라운드 4강, 2 / 100'),
+      findsOneWidget,
+    );
+  });
+  testWidgets('로드된 빠른 이동은 애니메이션하고 미로드 위치는 즉시 이동한다', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                WorldCupList(
+                  repository: _FakeWorldCupDao(_models(20)),
+                  enableBottomSheetSelectionPagerTransition: false,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    PageController controller() => tester
+        .widget<PageView>(find.byKey(const ValueKey('worldCupPager')))
+        .controller!;
+    final initialController = controller();
+    await tester.tap(find.text('중간'));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(controller(), same(initialController));
+    expect(controller().page, greaterThan(0));
+    expect(controller().page, lessThan(9));
+    await tester.pumpAndSettle();
+    expect(controller().page, 9);
+    await tester.tap(find.text('맨 앞'));
+    await tester.pumpAndSettle();
+    expect(controller().page, 0);
+  });
   testWidgets('빈 목록이면 PageView를 만들지 않는다', (tester) async {
     await tester.pumpWidget(ProviderScope(child: buildPager(items: const [])));
 
