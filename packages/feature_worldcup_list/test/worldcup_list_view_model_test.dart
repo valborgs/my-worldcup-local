@@ -36,6 +36,35 @@ void main() {
     expect(vm.pagerItems.first.idx, 41);
   });
 
+  test('먼 위치도 한 페이지 조회로 이동한다', () async {
+    final repo = _FakeRepository(models(1000));
+    final vm = WorldCupListViewModel(repo);
+    addTearDown(vm.dispose);
+    await vm.refresh();
+    for (final index in [999, 499, 0]) {
+      final calls = repo.pageCalls;
+      final target = await vm.locatePagerPosition(index);
+      expect(vm.pagerOffset + target!.index, index);
+      expect(vm.pagerItems[target.index].idx, 1000 - index);
+      expect(repo.pageCalls - calls, 1);
+      expect(vm.pagerItems.length, WorldCupListViewModel.pageSize);
+    }
+  });
+
+  test('늦은 이동 응답은 새 이동을 덮어쓰지 않는다', () async {
+    final repo = _FakeRepository(models(100));
+    final vm = WorldCupListViewModel(repo);
+    addTearDown(vm.dispose);
+    await vm.refresh();
+    repo.blockNextPage();
+    final stale = vm.locatePagerPosition(99);
+    await vm.locatePagerPosition(49);
+    repo.releaseBlocked();
+    expect(await stale, isNull);
+    expect(vm.pagerOffset, 44);
+    expect(await vm.locatePagerPosition(-1), isNull);
+    expect(await vm.locatePagerPosition(100), isNull);
+  });
   group('검색', () {
     test('검색 모드에 들어가면 현재 시트 항목으로 미리 채운다', () async {
       final repo = _FakeRepository(models(20));
