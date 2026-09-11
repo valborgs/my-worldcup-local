@@ -7,7 +7,7 @@ import '../database/app_database.dart';
 
 /// 샘플 월드컵을 앱 시작 시마다 최신 상태로 동기화한다.
 ///
-/// 기존 샘플(idx < 0)을 지우고 다시 넣는다. 샘플 이미지 에셋이 교체되거나
+/// 삭제 기록이 없는 샘플(idx < 0)만 다시 넣는다. 샘플 이미지 에셋이 교체되거나
 /// 이름이 바뀌어도 로컬 DB에 남아있던 예전 경로를 참조하지 않게 하기 위해서다.
 /// 사용자가 만든 월드컵(idx > 0)은 건드리지 않는다.
 ///
@@ -39,6 +39,8 @@ class SampleWorldCupSeeder {
     try {
       final db = await _database.database;
       await db.transaction((txn) async {
+        final deletedRows = await txn.query(AppDatabase.deletedSampleTable);
+        final deletedIds = deletedRows.map((row) => row['idx'] as int).toSet();
         // 예전에 저장됐던 샘플 데이터를 모두 지운다.
         await txn.delete(
           AppDatabase.worldCupItemTable,
@@ -47,6 +49,7 @@ class SampleWorldCupSeeder {
         await txn.delete(AppDatabase.worldCupTable, where: 'idx < 0');
 
         for (final sample in samples) {
+          if (deletedIds.contains(sample.idx)) continue;
           await txn.insert(AppDatabase.worldCupTable, <String, Object?>{
             'idx': sample.idx,
             'title': sample.title,

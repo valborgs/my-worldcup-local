@@ -145,6 +145,13 @@ class SqliteWorldCupRepository implements WorldCupRepository {
     return _guard('월드컵을 삭제하지 못했습니다.', () async {
       final db = await _db.database;
       await db.transaction((txn) async {
+        if (idx < 0) {
+          await txn.rawInsert(
+            'INSERT OR IGNORE INTO ${AppDatabase.deletedSampleTable} (idx) '
+            'VALUES (?)',
+            [idx],
+          );
+        }
         await txn.delete(
           AppDatabase.worldCupItemTable,
           where: 'worldCupIdx = ?',
