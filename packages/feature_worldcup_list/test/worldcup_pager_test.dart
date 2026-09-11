@@ -115,7 +115,7 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('추가 후 새로고침해도 현재 페이지와 다음 항목을 유지한다', (tester) async {
+  testWidgets('추가 후 새로고침해도 현재 카드와 다음 항목을 유지한다', (tester) async {
     final dao = _FakeWorldCupDao(_models(20));
     final listKey = GlobalKey<WorldCupListState>();
     await tester.pumpWidget(
@@ -145,7 +145,7 @@ void main() {
       await tester.pumpAndSettle();
     }
     expect(
-      find.bySemanticsLabel('Game 10, 최대 라운드 4강, 10 / 20'),
+      find.bySemanticsLabel('Game 11, 최대 라운드 4강, 10 / 20'),
       findsOneWidget,
     );
 
@@ -154,7 +154,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.bySemanticsLabel('Game 10, 최대 라운드 4강, 10 / 21'),
+      find.bySemanticsLabel('Game 11, 최대 라운드 4강, 11 / 21'),
       findsOneWidget,
     );
     await tester.drag(
@@ -163,12 +163,12 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(
-      find.bySemanticsLabel('Game 11, 최대 라운드 4강, 11 / 21'),
+      find.bySemanticsLabel('Game 10, 최대 라운드 4강, 12 / 21'),
       findsOneWidget,
     );
   });
 
-  testWidgets('추가된 월드컵이 현재 로드 범위 밖이어도 해당 페이지로 이동한다', (tester) async {
+  testWidgets('새 월드컵을 추가하면 첫 페이지로 이동한다', (tester) async {
     final dao = _FakeWorldCupDao(_models(20));
     final listKey = GlobalKey<WorldCupListState>();
     await tester.pumpWidget(
@@ -191,27 +191,25 @@ void main() {
     await tester.pumpAndSettle();
 
     dao.models = _models(21);
-    await listKey.currentState!.refreshAndScrollTo(21);
+    final navigation = listKey.currentState!.refreshAndScrollTo(21);
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
     await tester.pumpAndSettle();
+    await navigation;
 
     expect(listKey.currentState!.worldCupList, hasLength(10));
     expect(dao.requestedLimits, everyElement(lessThanOrEqualTo(10)));
     final pageView = tester.widget<PageView>(find.byType(PageView));
-    expect(pageView.controller!.page, 9);
-    expect(
-      find.bySemanticsLabel('Game 21, 최대 라운드 4강, 21 / 21'),
-      findsOneWidget,
-    );
+    expect(pageView.controller!.page, 0);
+    expect(find.bySemanticsLabel('Game 21, 최대 라운드 4강, 1 / 21'), findsOneWidget);
 
     await tester.drag(
       find.byKey(const ValueKey('worldCupPager')),
-      const Offset(500, 0),
+      const Offset(-500, 0),
     );
     await tester.pumpAndSettle();
-    expect(
-      find.bySemanticsLabel('Game 20, 최대 라운드 4강, 20 / 21'),
-      findsOneWidget,
-    );
+    expect(find.bySemanticsLabel('Game 20, 최대 라운드 4강, 2 / 21'), findsOneWidget);
   });
 
   testWidgets('현재 로드 범위의 월드컵으로 이동할 때 애니메이션을 유지한다', (tester) async {
@@ -236,7 +234,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final navigation = listKey.currentState!.refreshAndScrollTo(4);
+    final navigation = listKey.currentState!.refreshAndScrollTo(7);
     await tester.pump();
     await tester.pump();
     await tester.pump();
@@ -273,14 +271,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await listKey.currentState!.refreshAndScrollTo(15);
+    await listKey.currentState!.refreshAndScrollTo(1);
     await tester.pumpAndSettle();
-    expect(
-      find.bySemanticsLabel('Game 15, 최대 라운드 4강, 15 / 15'),
-      findsOneWidget,
-    );
+    expect(find.bySemanticsLabel('Game 1, 최대 라운드 4강, 15 / 15'), findsOneWidget);
 
-    final navigation = listKey.currentState!.refreshAndScrollTo(6);
+    final navigation = listKey.currentState!.refreshAndScrollTo(10);
     await tester.pump();
     await tester.pump();
     await tester.pump();
@@ -288,8 +283,8 @@ void main() {
     await navigation;
     await tester.pumpAndSettle();
 
-    expect(listKey.currentState!.worldCupList.first.idx, 1);
-    expect(find.bySemanticsLabel('Game 6, 최대 라운드 4강, 6 / 15'), findsOneWidget);
+    expect(listKey.currentState!.worldCupList.first.idx, 15);
+    expect(find.bySemanticsLabel('Game 10, 최대 라운드 4강, 6 / 15'), findsOneWidget);
   });
 
   // 위젯을 띄우지 않고 ViewModel만으로 검증한다. 새로고침의 조회 범위 계산은
@@ -297,7 +292,10 @@ void main() {
   test('첫 페이지를 공유하는 새로고침은 가장 큰 범위를 한 번만 조회한다', () async {
     final dao = _FakeWorldCupDao(_models(30));
     // 페이저가 이미 30개를 들고 있는 상태에서 새로고침한다.
-    final viewModel = WorldCupListViewModel(dao, initialItems: _models(30));
+    final viewModel = WorldCupListViewModel(
+      dao,
+      initialItems: _models(30).reversed.toList(),
+    );
     addTearDown(viewModel.dispose);
 
     await viewModel.refresh();
@@ -378,7 +376,7 @@ void main() {
       hasLength(WorldCupListViewModel.pagerWindowSize),
     );
     expect(
-      find.bySemanticsLabel('Game 28, 최대 라운드 4강, 28 / 100'),
+      find.bySemanticsLabel('Game 73, 최대 라운드 4강, 28 / 100'),
       findsOneWidget,
     );
 
@@ -393,7 +391,7 @@ void main() {
 
     expect(dao.requestedOffsets.where((offset) => offset == 0), hasLength(2));
     expect(
-      find.bySemanticsLabel('Game 13, 최대 라운드 4강, 13 / 100'),
+      find.bySemanticsLabel('Game 88, 최대 라운드 4강, 13 / 100'),
       findsOneWidget,
     );
   });
@@ -458,7 +456,7 @@ void main() {
           .currentState!
           .worldCupList[settledPagerState.currentPageIndex]
           .idx,
-      30,
+      71,
     );
   });
 
@@ -485,7 +483,7 @@ void main() {
     await tester.pumpAndSettle();
 
     dao.models = _models(32);
-    await listKey.currentState!.refreshAndScrollTo(32);
+    await listKey.currentState!.refreshAndScrollTo(1);
     await tester.pumpAndSettle();
 
     for (var count = 0; count < 7; count++) {
@@ -496,19 +494,13 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    expect(
-      find.bySemanticsLabel('Game 25, 최대 라운드 4강, 25 / 32'),
-      findsOneWidget,
-    );
+    expect(find.bySemanticsLabel('Game 8, 최대 라운드 4강, 25 / 32'), findsOneWidget);
     await tester.drag(
       find.byKey(const ValueKey('worldCupPager')),
       const Offset(500, 0),
     );
     await tester.pumpAndSettle();
-    expect(
-      find.bySemanticsLabel('Game 24, 최대 라운드 4강, 24 / 32'),
-      findsOneWidget,
-    );
+    expect(find.bySemanticsLabel('Game 9, 최대 라운드 4강, 24 / 32'), findsOneWidget);
   });
 
   testWidgets('시트 앞쪽 페이지를 이어붙여도 위치와 플링 관성을 유지한다', (tester) async {
@@ -547,7 +539,8 @@ void main() {
               )
               .map((text) => text.data)
               .where((text) => text != null && text.startsWith('Game '))
-              .map((text) => int.parse(text!.substring(5)))
+              // 내림차순 ID를 화면의 1-based 위치로 변환한다.
+              .map((text) => 101 - int.parse(text!.substring(5)))
               .toList()
             ..sort();
       return ids.first;
@@ -699,12 +692,13 @@ class _FakeWorldCupDao implements WorldCupRepository {
   }) async {
     requestedLimits.add(limit);
     requestedOffsets.add(offset);
-    return models.skip(offset).take(limit).toList();
+    final sorted = List.of(models)..sort((a, b) => b.idx.compareTo(a.idx));
+    return sorted.skip(offset).take(limit).toList();
   }
 
   @override
   Future<int> indexOf(int idx) async =>
-      models.where((item) => item.idx < idx).length;
+      models.where((item) => item.idx > idx).length;
 
   // 페이저 테스트에서 쓰지 않는 나머지 멤버.
   @override
