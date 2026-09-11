@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:worldcup_core/worldcup_core.dart';
 
 import '../database/app_database.dart';
+import 'seed_ids.dart';
 
 /// 샘플 월드컵을 앱 시작 시마다 최신 상태로 동기화한다.
 ///
@@ -115,6 +116,9 @@ class _SampleWorldCup {
     final idx = json['idx'] as int;
     if (idx >= 0) {
       throw FormatException('샘플 월드컵의 idx는 음수여야 합니다: $idx');
+    }
+    if (isDebugWorldCupId(idx)) {
+      throw FormatException('디버그 전용 idx는 샘플에 사용할 수 없습니다: $idx');
     }
     return _SampleWorldCup(
       idx: idx,

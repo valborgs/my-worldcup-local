@@ -24,25 +24,27 @@ void main() {
     await expectLater(seeder.sync(), throwsA(isA<StorageFailure>()));
   });
 
-  test('샘플 idx가 양수면 거부한다', () async {
-    // 양수 idx를 허용하면 사용자가 만든 월드컵을 지울 수 있다.
-    final seeder = SampleWorldCupSeeder(
-      database: AppDatabase(),
-      manifestLoader: () async => jsonEncode({
-        'worldCups': [
-          {
-            'idx': 5,
-            'title': 't',
-            'info': 'i',
-            'titleImage': 'a.jpg',
-            'maxRound': 4,
-            'items': [
-              {'image': 'a.jpg', 'info': 'x'},
-            ],
-          },
-        ],
-      }),
-    );
-    await expectLater(seeder.sync(), throwsA(isA<StorageFailure>()));
-  });
+  for (final idx in [5, 0, -1019, -1005, -1000]) {
+    test('사용자 또는 디버그 전용 idx를 거부한다: $idx', () async {
+      // 양수 idx를 허용하면 사용자가 만든 월드컵을 지울 수 있다.
+      final seeder = SampleWorldCupSeeder(
+        database: AppDatabase(),
+        manifestLoader: () async => jsonEncode({
+          'worldCups': [
+            {
+              'idx': idx,
+              'title': 't',
+              'info': 'i',
+              'titleImage': 'a.jpg',
+              'maxRound': 4,
+              'items': [
+                {'image': 'a.jpg', 'info': 'x'},
+              ],
+            },
+          ],
+        }),
+      );
+      await expectLater(seeder.sync(), throwsA(isA<StorageFailure>()));
+    });
+  }
 }

@@ -103,6 +103,29 @@ void main() {
     expect(await SqliteWorldCupRepository(database).count(), 2);
   });
 
+  test(
+    'debug paging deletions do not create sample deletion records',
+    () async {
+      await sync();
+      await TestWorldCupSeeder(database).seed();
+      final repository = SqliteWorldCupRepository(database);
+      for (final id in [-1019, -1005, -1000]) {
+        await repository.delete(id);
+        expect(await repository.findById(id), isNull);
+      }
+      final db = await database.database;
+      expect(await db.query(AppDatabase.deletedSampleTable), isEmpty);
+      await repository.delete(-1);
+      await restart();
+      await TestWorldCupSeeder(database).seed();
+      final restartedRepository = SqliteWorldCupRepository(database);
+      expect(await restartedRepository.findById(-1), isNull);
+      for (final id in [-1019, -1005, -1000]) {
+        expect(await restartedRepository.findById(id), isNotNull);
+      }
+    },
+  );
+
   test('fresh database restores samples after app data is removed', () async {
     await sync();
     await SqliteWorldCupRepository(database).delete(-1);
