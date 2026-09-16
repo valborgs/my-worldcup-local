@@ -42,6 +42,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A02900000000000000000005 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A02900000000000000000004 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A02900000000000000000003 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
@@ -199,6 +200,7 @@
 			knownRegions = (
 				ko,
 				ja,
+				en,
 				Base,
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
@@ -305,6 +307,7 @@
 			children = (
 				A02900000000000000000003 /* ko */,
 				A02900000000000000000004 /* ja */,
+				A02900000000000000000005 /* en */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";

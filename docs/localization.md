@@ -1,7 +1,7 @@
 # 다국어 리소스 관리
 
 이슈 #29의 1단계: Flutter 공식 `gen-l10n`과 언어별 ARB로 다국어 기반을 구성한다.
-한국어가 원본이자 기본 언어다. 현재 지원 언어는 한국어(`ko`)와 일본어(`ja`)다.
+한국어가 원본이자 기본 언어다. 현재 지원 언어는 한국어(`ko`), 일본어(`ja`), 영어(`en`)다.
 
 ## 파일 위치
 
@@ -65,7 +65,8 @@ supportedLocales: AppLocalizations.supportedLocales,
 
 앱은 기기의 선호 언어 목록을 Flutter 표준 규칙으로 매칭한다. 지원되는 언어가
 없으면 지원 목록의 첫 언어인 한국어로 열린다. 일본어 기기에서는 일본어로,
-영어 등 미지원 언어만 설정된 기기에서는 한국어로 표시된다.
+영어 기기에서는 영어로 표시된다. 프랑스어 등 미지원 언어만 설정된 기기는
+한국어로 표시된다. 영어는 지역 공통 `en` 리소스를 사용한다.
 앱 내부 언어 선택/저장은 제공하지 않는다.
 
 현재 온보딩, 목록/검색, 편집, 경기/결과, 공유/수신, 공지/문의, 업데이트 안내,
@@ -80,7 +81,7 @@ supportedLocales: AppLocalizations.supportedLocales,
    번역하고 placeholder 이름과 타입을 유지한다. 지원 언어 등록은 ARB에서 자동
    생성되므로 Dart의 supportedLocales를 수동 수정하지 않는다.
 2. 생성기는 번역이 빠진 키를 한국어 원본으로 보완한다. 생성 경고를 확인하고
-   출시 전 모든 키를 번역한다. 일본어 키 누락은 테스트에서도 검사한다.
+   출시 전 모든 키를 번역한다. 일본어·영어 키 누락은 테스트에서도 검사한다.
    한국어 fallback 순서는 그대로 유지한다.
 3. 두 생성 명령을 실행한다. Android 앱 이름과 iOS 앱 이름·권한 안내는
    `tool/generate_native_localizations.dart`가 같은 ARB에서 생성한다.
@@ -88,9 +89,9 @@ supportedLocales: AppLocalizations.supportedLocales,
    `values-b+ja/strings.xml` 같은 폴더로 생성한다.
 4. iOS `ios/Runner/Info.plist`의 `CFBundleLocalizations`에 언어를 추가하고,
    Xcode에서 생성된 `<언어 코드>.lproj/InfoPlist.strings`를 기존 `InfoPlist.strings`
-   언어 그룹 및 Runner 리소스에 등록한다. 일본어는 이미 등록되어 있다.
+   언어 그룹 및 Runner 리소스에 등록한다. 일본어·영어는 이미 등록되어 있다.
    개발 언어는 `ko`로 유지한다.
-5. 한국어 회귀 테스트와 일본어 선택 테스트, 영어 등 미지원 언어의 한국어
+5. 한국어 회귀 테스트와 일본어·영어 선택 테스트, 프랑스어 등 미지원 언어의 한국어
    fallback 검증을 유지하고 새 언어의 선택 테스트를 추가한다.
 6. 긴 번역/큰 글자에서 줄바꿈과 잘림을 확인한다. 실제 Android/iOS 기기에서
    시스템 공유·권한 안내도 확인한다. 서드파티 OS UI 자체의 문구는 해당 SDK와
@@ -110,7 +111,7 @@ supportedLocales: AppLocalizations.supportedLocales,
   선택한다. 시드 JSON/DB를 번역문으로 덮어쓰지 않는다. 새 샘플을 넣으면
   `sample*` ARB 키와 이 매핑을 추가한다. 미등록 id와 사용자가 만든 콘텐츠는
   원문으로 표시한다. 검색은 원본 저장 데이터 기준이며, 번역된 샘플 이름 검색은
-  별도 지원이 필요하다. 현재 일본어로 번역된 샘플 제목을 검색해도 매칭되지 않는다.
+  별도 지원이 필요하다. 현재 일본어·영어로 번역된 샘플 제목을 검색해도 매칭되지 않는다.
 - `native*` 키와 `appTitle`을 바꾸면 네이티브 생성 명령도 실행한다.
   생성된 Android XML 및 iOS strings도 커밋한다. CI는 두 생성 결과의 차이를 검사한다.
 
@@ -120,8 +121,10 @@ supportedLocales: AppLocalizations.supportedLocales,
 `test/localization_coverage_test.dart`는 온보딩의 실행 중 언어 변경,
 샘플 리소스 누락 및 화면의 한국어 하드코딩 재발을 검사한다.
 공용 UI 테스트는 모든 상태/오류 코드의 번역과 동적 내용 보존을 검사한다.
-언어 변경 테스트는 실제 한국어·일본어 delegate를 사용한다. 일본어 ARB의 키,
+언어 변경 테스트는 실제 한국어·일본어·영어 delegate를 사용한다. 일본어·영어 ARB의 키,
 placeholder 일치, 한국어 잔류 및 기본 샘플 매핑도 검사한다.
 온보딩 패키지의 기본 영문 페이지 안내는 `progressSemantic`으로 번역한다.
+한국어 문구를 검사하는 위젯 테스트는 기기 locale을 명시적으로 `ko`로 지정한다.
+영어 지원 추가 후 테스트 런너의 기본 locale(`en`)에 의존하면 기대 언어가 바뀌기 때문이다.
 
 참고: https://docs.flutter.dev/ui/internationalization

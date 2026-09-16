@@ -5,6 +5,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
   testWidgets('공간을 넘는 제목은 말줄임 없이 자동으로 끝까지 이동한다', (tester) async {
     const title = '가나다라마바사아자차카타파하가나다라마바사아자차카타파하';
     final semanticsHandle = tester.ensureSemantics();

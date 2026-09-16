@@ -3,6 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
   Widget buildMenu({
     required ValueChanged<WorldCupAction> onSelected,
     TextScaler? textScaler,
@@ -70,18 +76,23 @@ void main() {
     ]);
   });
 
-  testWidgets('접근성 글자 크기가 커도 시트에서 모든 기능을 스크롤해 선택할 수 있다', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(320, 480));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+  for (final locale in ['ko', 'en']) {
+    testWidgets('$locale 큰 글자에서도 추가 메뉴의 모든 기능을 선택할 수 있다', (tester) async {
+      binding.platformDispatcher.localesTestValue = [Locale(locale)];
+      await tester.binding.setSurfaceSize(const Size(320, 480));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    await tester.pumpWidget(
-      buildMenu(onSelected: (_) {}, textScaler: const TextScaler.linear(2)),
-    );
+      await tester.pumpWidget(
+        buildMenu(onSelected: (_) {}, textScaler: const TextScaler.linear(2)),
+      );
 
-    await tester.tap(find.byTooltip('월드컵 추가 메뉴'));
-    await tester.pumpAndSettle();
+      await tester.tap(
+        find.byTooltip(locale == 'ko' ? '월드컵 추가 메뉴' : 'Add a World Cup'),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.byType(ListView), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      expect(find.byType(ListView), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

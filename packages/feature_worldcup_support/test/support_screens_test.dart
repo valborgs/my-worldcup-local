@@ -103,24 +103,52 @@ Future<void> send(WidgetTester tester, {String label = '문의 등록'}) async {
 }
 
 void main() {
-  testWidgets('일본어 문의 검증과 접수 결과는 번역되고 입력 콘텐츠는 보존된다', (tester) async {
-    tester.binding.platformDispatcher.localesTestValue = [const Locale('ja')];
-    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
-    final api = ScreenApi();
-    await tester.pumpWidget(app(api, const InquiryScreen()));
-    await tester.pumpAndSettle();
-    expect(find.text('ご意見をお聞かせください'), findsOneWidget);
-    await send(tester, label: '送信');
-    expect(find.text('お問い合わせ内容を入力してください。'), findsOneWidget);
-    expect(api.submitted, 0);
-    await tester.enterText(find.byType(TextFormField).last, '사용자가 작성한 내용');
-    await send(tester, label: '送信');
-    expect(find.text('お問い合わせを受け付けました。'), findsOneWidget);
-    expect(find.text('受付番号：104'), findsOneWidget);
-    expect(api.submitted, 1);
-    expect(api.submittedContent, '사용자가 작성한 내용');
-    expect(tester.takeException(), isNull);
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
   });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
+  for (final locale in ['ja', 'en']) {
+    testWidgets('$locale 문의 검증과 접수 결과는 번역되고 입력 콘텐츠는 보존된다', (tester) async {
+      tester.binding.platformDispatcher.localesTestValue = [Locale(locale)];
+      addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+      final api = ScreenApi();
+      await tester.pumpWidget(app(api, const InquiryScreen()));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          locale == 'ja' ? 'ご意見をお聞かせください' : 'We’d like to hear from you',
+        ),
+        findsOneWidget,
+      );
+      await send(tester, label: locale == 'ja' ? '送信' : 'Send message');
+      expect(
+        find.text(
+          locale == 'ja' ? 'お問い合わせ内容を入力してください。' : 'Please enter a message.',
+        ),
+        findsOneWidget,
+      );
+      expect(api.submitted, 0);
+      await tester.enterText(find.byType(TextFormField).last, '사용자가 작성한 내용');
+      await send(tester, label: locale == 'ja' ? '送信' : 'Send message');
+      expect(
+        find.text(
+          locale == 'ja'
+              ? 'お問い合わせを受け付けました。'
+              : 'Your message has been received.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(locale == 'ja' ? '受付番号：104' : 'Reference number: 104'),
+        findsOneWidget,
+      );
+      expect(api.submitted, 1);
+      expect(api.submittedContent, '사용자가 작성한 내용');
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('일본어 공지 화면은 서버 제목과 본문을 그대로 표시한다', (tester) async {
     tester.binding.platformDispatcher.localesTestValue = [const Locale('ja')];

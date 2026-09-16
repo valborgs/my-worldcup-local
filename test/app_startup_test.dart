@@ -12,6 +12,12 @@ import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 /// `AppRoutes.list`가 '/'라서, 온보딩이 끝나며 그 이름으로 replace 해도
 /// 온보딩이 다시 열린다. 첫 실행에서 앱을 쓸 수 없게 되는 버그였다.
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
   Widget app({required bool? isAlreadyShownHelp}) {
     return ProviderScope(
       child: MyWorldCup(
@@ -25,7 +31,7 @@ void main() {
   MaterialApp findApp(WidgetTester tester) =>
       tester.widget<MaterialApp>(find.byType(MaterialApp));
 
-  for (final locale in [const Locale('ko', 'KR'), const Locale('en', 'US')]) {
+  for (final locale in [const Locale('ko', 'KR'), const Locale('fr', 'FR')]) {
     testWidgets('$locale 기기에서 한국어 앱 및 기본 위젯 리소스를 사용한다', (tester) async {
       tester.binding.platformDispatcher.localesTestValue = [locale];
       addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
@@ -38,6 +44,22 @@ void main() {
       expect(AppLocalizations.of(context).appTitle, '내가 만든 월드컵');
       expect(MaterialLocalizations.of(context).cancelButtonLabel, '취소');
       expect(findApp(tester).onGenerateTitle!(context), '내가 만든 월드컵');
+      expect(findApp(tester).supportedLocales.first, const Locale('ko'));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final locale in [const Locale('en', 'US'), const Locale('en', 'GB')]) {
+    testWidgets('$locale 기기에서는 영어 앱과 기본 위젯 리소스를 사용한다', (tester) async {
+      tester.binding.platformDispatcher.localesTestValue = [locale];
+      addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+      await tester.pumpWidget(app(isAlreadyShownHelp: null));
+      await tester.pumpAndSettle();
+      final context = tester.element(find.text('Skip'));
+      expect(Localizations.localeOf(context), const Locale('en'));
+      expect(AppLocalizations.of(context).appTitle, 'My Custom World Cup');
+      expect(MaterialLocalizations.of(context).cancelButtonLabel, 'Cancel');
+      expect(findApp(tester).onGenerateTitle!(context), 'My Custom World Cup');
       expect(findApp(tester).supportedLocales.first, const Locale('ko'));
       expect(tester.takeException(), isNull);
     });

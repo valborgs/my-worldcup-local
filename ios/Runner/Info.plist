@@ -10,6 +10,7 @@
 	<array>
 		<string>ko</string>
 		<string>ja</string>
+		<string>en</string>
 	</array>
 	<key>CFBundleDisplayName</key>
 	<string>내가 만든 월드컵</string>

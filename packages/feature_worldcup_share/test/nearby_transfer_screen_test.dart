@@ -12,49 +12,67 @@ import 'package:worldcup_core/worldcup_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
-  testWidgets('일본어 수신 화면은 기기 이름, 인증 코드와 전송 상태를 번역한다', (tester) async {
-    final gateway = _ScreenFakeGateway();
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          locale: const Locale('ja'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: NearbyWorldCupReceiveScreen(
-            gateway: gateway,
-            packageGateway: _UnusedPackageGateway(),
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
+  for (final locale in ['ja', 'en']) {
+    testWidgets('$locale 수신 화면은 기기 이름과 인증 코드를 번역한다', (tester) async {
+      final gateway = _ScreenFakeGateway();
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            locale: Locale(locale),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: NearbyWorldCupReceiveScreen(
+              gateway: gateway,
+              packageGateway: _UnusedPackageGateway(),
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(gateway.advertisedName, matches(RegExp(r'^ワールドカップ端末 \d{4}$')));
-    gateway.add(
-      const NearbyConnectionRequest(
-        endpoint: NearbyEndpoint(id: 'sender', name: '相手の端末'),
-        incoming: true,
-      ),
-    );
-    gateway.add(
-      const NearbyVerificationCode(
-        endpointId: 'sender',
-        endpointName: '相手の端末',
-        code: '4821',
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('4821'),
-      160,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('コード一致・許可'), findsOneWidget);
-    expect(find.text('拒否'), findsOneWidget);
-    expect(find.text('4821'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox());
-    await tester.pump();
-  });
+      );
+      await tester.pumpAndSettle();
+      expect(
+        gateway.advertisedName,
+        matches(
+          RegExp(
+            locale == 'ja' ? r'^ワールドカップ端末 \d{4}$' : r'^World Cup device \d{4}$',
+          ),
+        ),
+      );
+      gateway.add(
+        const NearbyConnectionRequest(
+          endpoint: NearbyEndpoint(id: 'sender', name: '相手の端末'),
+          incoming: true,
+        ),
+      );
+      gateway.add(
+        const NearbyVerificationCode(
+          endpointId: 'sender',
+          endpointName: '相手の端末',
+          code: '4821',
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('4821'),
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(
+        find.text(locale == 'ja' ? 'コード一致・許可' : 'Codes match · Accept'),
+        findsOneWidget,
+      );
+      expect(find.text(locale == 'ja' ? '拒否' : 'Reject'), findsOneWidget);
+      expect(find.text('4821'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    });
+  }
   testWidgets('화면이 시작한 수신 세션은 한국어 리소스로 익명 기기 이름을 만든다', (tester) async {
     final gateway = _ScreenFakeGateway();
     await tester.pumpWidget(

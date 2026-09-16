@@ -27,6 +27,12 @@ import 'package:feature_worldcup_play/src/widgets/game_item.dart';
 import 'package:feature_worldcup_play/src/widgets/worldcup_game.dart';
 
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
   // idx < 0 : 샘플 월드컵 항목 (Image.asset 경로)
   // idx >= 0 : 사용자가 직접 추가한(실제) 월드컵 항목 (Image.file 경로).
   // 테스트는 저장소 루트에서 실행되므로 아래 상대경로의 실제 파일이 존재한다.

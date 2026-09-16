@@ -17,6 +17,12 @@ import 'package:feature_worldcup_play/src/widgets/game_item.dart';
 import 'package:feature_worldcup_play/src/widgets/item_description_text.dart';
 
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
   // 게임 화면이 실제로 쓰는 값에 맞춘 상자. 세로 폰(가로 411dp) 기준으로
   // 항목 하나의 높이가 약 380dp일 때 설명이 쓸 수 있는 크기다.
   const preferredFontSize = 24.0;

@@ -191,8 +191,10 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
               ),
             ),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            OverflowBar(
+              alignment: MainAxisAlignment.spaceEvenly,
+              spacing: 8,
+              overflowSpacing: 8,
               children: [
                 IconOutlinedButton(
                   AppLocalizations.of(context).commonCancel,
