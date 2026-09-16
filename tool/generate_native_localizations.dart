@@ -26,9 +26,7 @@ void main() {
         : 'values-b+${locale.replaceAll('_', '+')}';
     final android = File('android/app/src/main/res/$qualifier/strings.xml');
     android.parent.createSync(recursive: true);
-    final appTitle = const HtmlEscape()
-        .convert(value('appTitle'))
-        .replaceAll("'", r"\'");
+    final appTitle = androidString(value('appTitle'));
     android.writeAsStringSync('''<?xml version="1.0" encoding="utf-8"?>
 <!-- Generated from app_$locale.arb. Do not edit. -->
 <resources>
@@ -55,4 +53,19 @@ void main() {
       ].join('\n'),
     );
   }
+}
+
+/// XML entities alone do not escape Android's string-resource syntax.
+String androidString(String value) {
+  var escaped = value
+      .replaceAll(r'\', r'\\')
+      .replaceAll("'", r"\'")
+      .replaceAll('"', r'\"')
+      .replaceAll('\n', r'\n')
+      .replaceAll('\r', r'\r')
+      .replaceAll('\t', r'\t');
+  if (escaped.startsWith('@') || escaped.startsWith('?')) {
+    escaped = r'\' + escaped;
+  }
+  return const HtmlEscape(HtmlEscapeMode.element).convert(escaped);
 }

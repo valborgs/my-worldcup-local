@@ -11,6 +11,31 @@ import 'package:worldcup_core/worldcup_core.dart';
 void main() {
   late Directory temporaryDirectory;
 
+  for (final entry in {
+    'denied': AppMessageId.nearbyPermissionRequired,
+    'permanentlyDenied': AppMessageId.nearbyPermissionBlocked,
+    'permissionDenied': AppMessageId.nearbyPermissionRequired,
+    'permissionPermanentlyDenied': AppMessageId.nearbyPermissionBlocked,
+    'alreadyBusy': AppMessageId.nearbyAlreadyBusy,
+    'invalidState': AppMessageId.nearbyInvalidState,
+    'connectionFailed': AppMessageId.nearbyConnectionFailed,
+  }.entries) {
+    test('연결 중 ${entry.key} 권한 오류를 안내한다', () async {
+      final gateway = _FakeNearbyGateway()
+        ..connectionError = PlatformException(code: entry.key);
+      final controller = NearbyWorldCupTransferController.sender(
+        gateway: gateway,
+        packageGateway: _FakePackageGateway(temporaryDirectory),
+        worldCup: _worldCup,
+      );
+      addTearDown(controller.dispose);
+      await controller.start();
+      await controller.connect(const NearbyEndpoint(id: 'peer', name: 'peer'));
+      expect(controller.phase, NearbyTransferPhase.error);
+      expect(controller.message.id, entry.value);
+    });
+  }
+
   setUp(() async {
     temporaryDirectory = await Directory.systemTemp.createTemp(
       'nearby_controller_test_',
@@ -541,6 +566,7 @@ class _FakeNearbyGateway implements NearbyTransferGateway {
   int cancelCalls = 0;
   int disposeCalls = 0;
   Object? startDiscoveryError;
+  Object? connectionError;
   String? discoveryDisplayName;
   String? connectionDisplayName;
 
@@ -576,6 +602,7 @@ class _FakeNearbyGateway implements NearbyTransferGateway {
     required String displayName,
   }) async {
     connectionRequests++;
+    if (connectionError != null) throw connectionError!;
     connectionDisplayName = displayName;
   }
 

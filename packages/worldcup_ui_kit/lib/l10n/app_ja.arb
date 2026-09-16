@@ -4,8 +4,12 @@
   "@onboardingProgress": {
     "description": "온보딩 페이지 표시기의 접근성 안내",
     "placeholders": {
-      "current": { "type": "int" },
-      "total": { "type": "int" }
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "appTitle": "自分で作るワールドカップ",
@@ -1481,5 +1485,17 @@
         "type": "int"
       }
     }
+  },
+  "nearbyAlreadyBusy": "別の近くのデバイス操作が進行中です。操作を終了してからもう一度お試しください。",
+  "@nearbyAlreadyBusy": {
+    "description": "주변 기기 작업 중복 안내"
+  },
+  "nearbyInvalidState": "現在の状態ではこの操作を実行できません。転送画面を開き直してください。",
+  "@nearbyInvalidState": {
+    "description": "주변 기기 작업 상태 오류 안내"
+  },
+  "nearbyConnectionFailed": "デバイスに接続できませんでした。2台のデバイスを近づけて、もう一度お試しください。",
+  "@nearbyConnectionFailed": {
+    "description": "주변 기기 연결 실패 안내"
   }
 }

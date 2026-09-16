@@ -88,6 +88,7 @@ class WorldCupListViewModel extends ChangeNotifier {
 
   /// 검색 결과가 뒤늦게 도착해 최신 질의를 덮어쓰는 것을 막는 세대 번호.
   int _queryGeneration = 0;
+  List<int> _searchMatchingIds = const [];
 
   /// 새로고침이 창을 갈아끼운 뒤 도착한 페이지 응답을 무효화하는 세대 번호.
   ///
@@ -393,6 +394,7 @@ class WorldCupListViewModel extends ChangeNotifier {
         limit: pageSize,
         offset: offset,
         searchQuery: query,
+        matchingIds: _searchMatchingIds,
       );
       // 조회 중에 질의가 바뀌었으면 결과를 버린다.
       if (!_disposed &&
@@ -443,12 +445,18 @@ class WorldCupListViewModel extends ChangeNotifier {
   }
 
   /// 현재 검색어로 첫 페이지를 불러온다.
-  Future<void> runSearch() async {
+  Future<void> runSearch({List<int> matchingIds = const []}) async {
     final generation = ++_queryGeneration;
     final query = _query;
+    _searchMatchingIds = List.unmodifiable(matchingIds);
     final results = await Future.wait([
-      _repository.count(searchQuery: query),
-      _repository.page(limit: pageSize, offset: 0, searchQuery: query),
+      _repository.count(searchQuery: query, matchingIds: _searchMatchingIds),
+      _repository.page(
+        limit: pageSize,
+        offset: 0,
+        searchQuery: query,
+        matchingIds: _searchMatchingIds,
+      ),
     ]);
     // 뒤늦게 도착한 응답이 최신 질의 결과를 덮어쓰지 않도록 한다.
     if (_disposed || !_isSearching || generation != _queryGeneration) return;
@@ -464,6 +472,7 @@ class WorldCupListViewModel extends ChangeNotifier {
     _isSearching = false;
     _query = '';
     _searchResults = [];
+    _searchMatchingIds = const [];
     _searchTotalCount = 0;
   }
 }

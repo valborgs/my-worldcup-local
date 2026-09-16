@@ -7,7 +7,12 @@ import '../entities/worldcup_model.dart';
 /// 제공한다. 실패는 `worldcup_core`의 `StorageFailure`로 감싸서 던진다.
 abstract interface class WorldCupRepository {
   /// 검색어에 걸리는 월드컵의 총 개수. 페이징에서 전체 길이를 알 때 쓴다.
-  Future<int> count({String searchQuery = ''});
+  /// [matchingIds]는 표시 계층에서 번역된 문구와 일치한 ID다.
+  /// 검색 시 원문 일치와 합쳐 중복 없이 조회하며 없는 ID는 무시한다.
+  Future<int> count({
+    String searchQuery = '',
+    List<int> matchingIds = const [],
+  });
 
   /// 전체 목록에서 [idx] 월드컵이 몇 번째인지. 페이저 위치 계산용이다.
   /// [page]와 같은 정렬 기준으로 계산한다.
@@ -15,10 +20,12 @@ abstract interface class WorldCupRepository {
 
   /// 최근 추가한 월드컵부터 `idx` 내림차순 한 페이지.
   /// 이 정렬은 [indexOf]의 계산 기준과 반드시 일치해야 한다.
+  /// [matchingIds]는 [count]와 동일한 추가 검색 조건이다.
   Future<List<WorldCupModel>> page({
     required int limit,
     required int offset,
     String searchQuery = '',
+    List<int> matchingIds = const [],
   });
 
   /// id로 월드컵 한 건. 없으면 `null`.

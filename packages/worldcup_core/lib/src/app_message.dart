@@ -96,6 +96,9 @@ enum AppMessageId {
   nearbyPermissionRequired,
   nearbyRadiosDisabled,
   nearbyStartFailed,
+  nearbyAlreadyBusy,
+  nearbyInvalidState,
+  nearbyConnectionFailed,
   nearbyImportFailed,
   nearbyError,
 }

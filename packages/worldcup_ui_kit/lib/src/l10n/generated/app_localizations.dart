@@ -2043,6 +2043,24 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'월드컵 기기 {suffix}'**
   String nearbyDeviceName(int suffix);
+
+  /// 주변 기기 작업 중복 안내
+  ///
+  /// In ko, this message translates to:
+  /// **'다른 주변 기기 작업이 진행 중입니다. 작업을 종료한 뒤 다시 시도해주세요.'**
+  String get nearbyAlreadyBusy;
+
+  /// 주변 기기 작업 상태 오류 안내
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 상태에서는 이 작업을 진행할 수 없습니다. 전송 화면을 다시 열어주세요.'**
+  String get nearbyInvalidState;
+
+  /// 주변 기기 연결 실패 안내
+  ///
+  /// In ko, this message translates to:
+  /// **'기기에 연결하지 못했습니다. 두 기기를 가까이 두고 다시 시도해주세요.'**
+  String get nearbyConnectionFailed;
 }
 
 class _AppLocalizationsDelegate

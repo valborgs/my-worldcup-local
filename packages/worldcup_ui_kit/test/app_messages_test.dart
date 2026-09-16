@@ -9,6 +9,16 @@ void main() {
   final korean = AppLocalizationsKo();
   final japanese = AppLocalizationsJa();
   final english = AppLocalizationsEn();
+  test('샘플의 번역된 제목과 설명을 현재 언어로 검색한다', () {
+    for (final l10n in [korean, japanese, english]) {
+      expect(l10n.matchingSampleIds(l10n.sampleFemaleTitle), contains(-1));
+      expect(l10n.matchingSampleIds(l10n.sampleMaleInfo), contains(-2));
+      expect(l10n.matchingSampleIds('   '), isEmpty);
+      expect(l10n.matchingSampleIds('no-match-1234'), isEmpty);
+    }
+    expect(english.matchingSampleIds('  FEMALE IDOL  '), [-1]);
+    expect(korean.matchingSampleIds('FEMALE IDOL'), isEmpty);
+  });
   test('영어 재시도 안내는 초 단위 단수와 복수를 구분한다', () {
     expect(english.supportRetryAfter(1), 'Please try again in 1 second.');
     expect(english.supportRetryAfter(2), 'Please try again in 2 seconds.');

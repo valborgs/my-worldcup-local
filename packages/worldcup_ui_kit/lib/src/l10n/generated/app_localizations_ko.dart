@@ -1058,4 +1058,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String nearbyDeviceName(int suffix) {
     return '월드컵 기기 $suffix';
   }
+
+  @override
+  String get nearbyAlreadyBusy => '다른 주변 기기 작업이 진행 중입니다. 작업을 종료한 뒤 다시 시도해주세요.';
+
+  @override
+  String get nearbyInvalidState =>
+      '현재 상태에서는 이 작업을 진행할 수 없습니다. 전송 화면을 다시 열어주세요.';
+
+  @override
+  String get nearbyConnectionFailed =>
+      '기기에 연결하지 못했습니다. 두 기기를 가까이 두고 다시 시도해주세요.';
 }

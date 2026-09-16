@@ -2,6 +2,18 @@ import 'generated/app_localizations.dart';
 
 /// Localize built-in samples at display time, preserving stored user content.
 extension SampleLocalizations on AppLocalizations {
+  /// The repository combines these IDs with stored-text matches before paging.
+  List<int> matchingSampleIds(String query) {
+    final normalized = query.trim().toLowerCase();
+    if (normalized.isEmpty) return const [];
+    return [
+      for (final id in [-1, -2])
+        if (worldCupTitle(id, '').toLowerCase().contains(normalized) ||
+            worldCupInfo(id, '').toLowerCase().contains(normalized))
+          id,
+    ];
+  }
+
   String worldCupTitle(int id, String original) => switch (id) {
     -1 => sampleFemaleTitle,
     -2 => sampleMaleTitle,

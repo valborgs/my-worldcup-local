@@ -539,8 +539,12 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
   }
 
   AppMessage _nativeErrorMessage(String code) => AppMessage(switch (code) {
-    'permissionDenied' => AppMessageId.nearbyPermissionRequired,
+    'denied' || 'permissionDenied' => AppMessageId.nearbyPermissionRequired,
+    'permanentlyDenied' ||
     'permissionPermanentlyDenied' => AppMessageId.nearbyPermissionBlocked,
+    'alreadyBusy' => AppMessageId.nearbyAlreadyBusy,
+    'invalidState' => AppMessageId.nearbyInvalidState,
+    'connectionFailed' => AppMessageId.nearbyConnectionFailed,
     'radioOff' => AppMessageId.nearbyRadiosDisabled,
     'unavailable' => AppMessageId.nearbyStartFailed,
     'transferFailed' || 'io' => AppMessageId.nearbyTransferFailed,

@@ -110,8 +110,10 @@ supportedLocales: AppLocalizations.supportedLocales,
 - 기본 샘플은 `sample_localizations.dart`에서 고정 id 및 이미지 경로로 번역을
   선택한다. 시드 JSON/DB를 번역문으로 덮어쓰지 않는다. 새 샘플을 넣으면
   `sample*` ARB 키와 이 매핑을 추가한다. 미등록 id와 사용자가 만든 콘텐츠는
-  원문으로 표시한다. 검색은 원본 저장 데이터 기준이며, 번역된 샘플 이름 검색은
-  별도 지원이 필요하다. 현재 일본어·영어로 번역된 샘플 제목을 검색해도 매칭되지 않는다.
+  원문으로 표시한다. 검색은 원본 저장 데이터와 현재 언어의 샘플 제목·설명을
+  함께 조회한다. UI에서 번역에 일치한 샘플 ID를 전달하고, DB에서 OR 조건으로
+  합친 뒤 개수 계산·정렬·페이징하므로 중복이나 삭제된 샘플이 생기지 않는다.
+  새 샘플은 `matchingSampleIds`의 대상 ID에도 추가한다.
 - `native*` 키와 `appTitle`을 바꾸면 네이티브 생성 명령도 실행한다.
   생성된 Android XML 및 iOS strings도 커밋한다. CI는 두 생성 결과의 차이를 검사한다.
 

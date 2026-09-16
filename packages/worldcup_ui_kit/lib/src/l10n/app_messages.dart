@@ -95,6 +95,9 @@ extension AppMessageLocalization on AppLocalizations {
     AppMessageId.nearbyPermissionRequired => nearbyPermissionRequired,
     AppMessageId.nearbyRadiosDisabled => nearbyRadiosDisabled,
     AppMessageId.nearbyStartFailed => nearbyStartFailed,
+    AppMessageId.nearbyAlreadyBusy => nearbyAlreadyBusy,
+    AppMessageId.nearbyInvalidState => nearbyInvalidState,
+    AppMessageId.nearbyConnectionFailed => nearbyConnectionFailed,
     AppMessageId.nearbyImportFailed => nearbyImportFailed,
     AppMessageId.nearbyError => nearbyError,
   };

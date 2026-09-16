@@ -273,7 +273,10 @@ class _FakeRepository implements WorldCupRepository {
   }
 
   @override
-  Future<int> count({String searchQuery = ''}) => throw UnimplementedError();
+  Future<int> count({
+    String searchQuery = '',
+    List<int> matchingIds = const [],
+  }) => throw UnimplementedError();
 
   @override
   Future<int> indexOf(int idx) => throw UnimplementedError();
@@ -283,6 +286,7 @@ class _FakeRepository implements WorldCupRepository {
     required int limit,
     required int offset,
     String searchQuery = '',
+    List<int> matchingIds = const [],
   }) => throw UnimplementedError();
 
   @override

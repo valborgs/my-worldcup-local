@@ -52,6 +52,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
   bool _isJumping = false;
   bool _isLoadingNextSheetPage = false;
   bool _isLoadingPreviousSheetPage = false;
+  String? _searchLocale;
   int _pagerNavigationRequest = 0;
   int? _pagerTargetPage;
   double _collapsedSheetSize = 0.1;
@@ -76,6 +77,22 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
   void _onViewModelChanged() {
     if (mounted) setState(() {});
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = AppLocalizations.of(context).localeName;
+    if (_searchLocale != locale && _vm.isSearching) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _vm.isSearching) unawaited(_runSearch());
+      });
+    }
+    _searchLocale = locale;
+  }
+
+  Future<void> _runSearch() => _vm.runSearch(
+    matchingIds: AppLocalizations.of(context).matchingSampleIds(_vm.query),
+  );
 
   @override
   void dispose() {
@@ -439,7 +456,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
     // 뒤로 밀린 시트 창은 전역 0 기준 검색 결과로 예열할 수
     // 없다. 예열이 비었으면 스크롤 알림을 기다리지 말고 첫 페이지를
     // 바로 조회해 '검색 결과가 없습니다'에 멈추는 상태를 피한다.
-    if (_vm.sheetItems.isEmpty) unawaited(_vm.runSearch());
+    if (_vm.sheetItems.isEmpty) unawaited(_runSearch());
     if (_sheetController.isAttached &&
         _sheetController.size <= minSheetSize + 0.05) {
       await _sheetController.animateTo(
@@ -628,7 +645,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
     // 타이핑마다 조회하지 않도록 잠시 기다린다.
     _searchDebounce = Timer(
       const Duration(milliseconds: 300),
-      () => unawaited(_vm.runSearch()),
+      () => unawaited(_runSearch()),
     );
   }
 

@@ -1129,4 +1129,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String nearbyDeviceName(int suffix) {
     return 'World Cup device $suffix';
   }
+
+  @override
+  String get nearbyAlreadyBusy =>
+      'Another nearby device operation is in progress. Finish it and try again.';
+
+  @override
+  String get nearbyInvalidState =>
+      'This action is not available in the current state. Reopen the transfer screen.';
+
+  @override
+  String get nearbyConnectionFailed =>
+      'Could not connect to the device. Move the devices closer together and try again.';
 }

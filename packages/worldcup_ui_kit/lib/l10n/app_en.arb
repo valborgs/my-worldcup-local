@@ -1485,5 +1485,17 @@
         "type": "int"
       }
     }
+  },
+  "nearbyAlreadyBusy": "Another nearby device operation is in progress. Finish it and try again.",
+  "@nearbyAlreadyBusy": {
+    "description": "주변 기기 작업 중복 안내"
+  },
+  "nearbyInvalidState": "This action is not available in the current state. Reopen the transfer screen.",
+  "@nearbyInvalidState": {
+    "description": "주변 기기 작업 상태 오류 안내"
+  },
+  "nearbyConnectionFailed": "Could not connect to the device. Move the devices closer together and try again.",
+  "@nearbyConnectionFailed": {
+    "description": "주변 기기 연결 실패 안내"
   }
 }

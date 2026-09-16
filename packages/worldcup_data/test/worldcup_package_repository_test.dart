@@ -208,7 +208,10 @@ class _FakeWorldCupDao implements WorldCupRepository {
 
   // 패키지 테스트에서 쓰지 않는 나머지 멤버.
   @override
-  Future<int> count({String searchQuery = ''}) => throw UnimplementedError();
+  Future<int> count({
+    String searchQuery = '',
+    List<int> matchingIds = const [],
+  }) => throw UnimplementedError();
 
   @override
   Future<WorldCupModel?> findById(int idx) => throw UnimplementedError();
@@ -221,6 +224,7 @@ class _FakeWorldCupDao implements WorldCupRepository {
     required int limit,
     required int offset,
     String searchQuery = '',
+    List<int> matchingIds = const [],
   }) => throw UnimplementedError();
 
   @override

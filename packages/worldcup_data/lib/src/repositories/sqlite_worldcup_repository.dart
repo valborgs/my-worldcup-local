@@ -5,6 +5,20 @@ import '../database/app_database.dart';
 import '../dto/worldcup_row.dart';
 import '../seed/seed_ids.dart';
 
+({String? where, List<Object?>? args}) _searchFilter(
+  String searchQuery,
+  List<int> matchingIds,
+) {
+  final query = searchQuery.trim();
+  if (query.isEmpty) return (where: null, args: null);
+  final ids = matchingIds.toSet().toList();
+  return (
+    where:
+        'title LIKE ? OR info LIKE ?${ids.isEmpty ? '' : ' OR idx IN (${List.filled(ids.length, '?').join(',')})'}',
+    args: ['%$query%', '%$query%', ...ids],
+  );
+}
+
 /// [WorldCupRepository]의 SQLite 구현.
 ///
 /// sqflite 예외는 밖으로 흘려보내지 않고 [StorageFailure]로 감싼다.
@@ -14,15 +28,17 @@ class SqliteWorldCupRepository implements WorldCupRepository {
   const SqliteWorldCupRepository(this._db);
 
   @override
-  Future<int> count({String searchQuery = ''}) {
+  Future<int> count({
+    String searchQuery = '',
+    List<int> matchingIds = const [],
+  }) {
     return _guard('월드컵 개수를 불러오지 못했습니다.', () async {
       final db = await _db.database;
-      final query = searchQuery.trim();
-      final where = query.isEmpty ? '' : ' WHERE title LIKE ? OR info LIKE ?';
-      final args = query.isEmpty ? <Object?>[] : ['%$query%', '%$query%'];
+      final filter = _searchFilter(searchQuery, matchingIds);
+      final where = filter.where == null ? '' : ' WHERE ${filter.where}';
       final result = await db.rawQuery(
         'SELECT COUNT(*) AS count FROM ${AppDatabase.worldCupTable}$where',
-        args,
+        filter.args,
       );
       return (result.first['count'] as num?)?.toInt() ?? 0;
     });
@@ -47,14 +63,15 @@ class SqliteWorldCupRepository implements WorldCupRepository {
     required int limit,
     required int offset,
     String searchQuery = '',
+    List<int> matchingIds = const [],
   }) {
     return _guard('월드컵 목록을 불러오지 못했습니다.', () async {
       final db = await _db.database;
-      final query = searchQuery.trim();
+      final filter = _searchFilter(searchQuery, matchingIds);
       final rows = await db.query(
         AppDatabase.worldCupTable,
-        where: query.isEmpty ? null : 'title LIKE ? OR info LIKE ?',
-        whereArgs: query.isEmpty ? null : ['%$query%', '%$query%'],
+        where: filter.where,
+        whereArgs: filter.args,
         // indexOf()의 위치 계산과 같은 정렬 기준을 유지한다.
         orderBy: 'idx DESC',
         limit: limit,
