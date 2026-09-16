@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
@@ -55,7 +57,7 @@ class _InAppUpdateHostState extends ConsumerState<InAppUpdateHost>
       );
     } catch (error, stackTrace) {
       log(
-        '인앱 업데이트를 준비하지 못해 업데이트 안내 없이 계속합니다.',
+        'Update initialization failed; continuing without update prompts.',
         error: error,
         stackTrace: stackTrace,
         name: 'in_app_update',
@@ -105,7 +107,9 @@ class _InAppUpdateHostState extends ConsumerState<InAppUpdateHost>
     if (_controller.hasUnseenInstallFailure) {
       _controller.acknowledgeInstallFailure();
       messenger.showSnackBar(
-        const SnackBar(content: Text('업데이트 설치를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요.')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).updateInstallFailed),
+        ),
       );
       return;
     }
@@ -126,8 +130,11 @@ class _InAppUpdateHostState extends ConsumerState<InAppUpdateHost>
         // (안드로이드 가이드의 Snackbar.LENGTH_INDEFINITE에 해당한다)
         duration: const Duration(days: 365),
         showCloseIcon: true,
-        content: const Text('새 버전을 모두 받았습니다. 재시작하면 적용됩니다.'),
-        action: SnackBarAction(label: '재시작', onPressed: _controller.installNow),
+        content: Text(AppLocalizations.of(context).updateReady),
+        action: SnackBarAction(
+          label: AppLocalizations.of(context).updateRestart,
+          onPressed: _controller.installNow,
+        ),
       ),
     );
     _promptBar = bar;
@@ -173,7 +180,7 @@ class RequiredUpdateOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Semantics(
-      label: '업데이트 필요',
+      label: AppLocalizations.of(context).updateRequiredSemantics,
       child: Stack(
         children: [
           // 아래 화면으로 가는 터치를 모두 막는다.
@@ -191,21 +198,22 @@ class RequiredUpdateOverlay extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          '업데이트가 필요합니다',
+                          AppLocalizations.of(context).updateRequiredTitle,
                           style: theme.textTheme.titleLarge,
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '이 버전에서는 앱을 계속 사용할 수 없습니다.\n'
-                          '최신 버전으로 업데이트해 주세요.',
+                          AppLocalizations.of(context).updateRequiredBody,
                           style: theme.textTheme.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 24),
                         FilledButton(
                           onPressed: onUpdate,
-                          child: const Text('업데이트'),
+                          child: Text(
+                            AppLocalizations.of(context).updateAction,
+                          ),
                         ),
                       ],
                     ),

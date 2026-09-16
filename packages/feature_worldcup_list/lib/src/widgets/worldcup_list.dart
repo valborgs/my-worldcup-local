@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -120,10 +122,10 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
       return Expanded(
         child: Container(
           alignment: Alignment.center,
-          child: const Text(
-            '오른쪽 상단의 + 버튼을 눌러 \n월드컵 게임을 추가해주세요',
-            style: TextStyle(fontSize: 20),
-            semanticsLabel: '항목이 비어있음',
+          child: Text(
+            AppLocalizations.of(context).listEmptyBody,
+            style: const TextStyle(fontSize: 20),
+            semanticsLabel: AppLocalizations.of(context).listEmptySemantics,
           ),
         ),
       );
@@ -174,10 +176,18 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                   navigationRequest: _pagerNavigationRequest,
                   semanticLabelBuilder: (model, index) {
                     final title = model.idx < 0
-                        ? '(샘플) ${model.title}'
-                        : model.title;
-                    return '$title, 최대 라운드 ${TournamentRounds.defaultRound(model.maxRound)}강, '
-                        '${_pagerOffset + index + 1} / $_allTotalCount';
+                        ? AppLocalizations.of(context).worldCupSampleTitle(
+                            AppLocalizations.of(context)
+                                .worldCupTitle(model.idx, model.title),
+                          )
+                        : AppLocalizations.of(context)
+                              .worldCupTitle(model.idx, model.title);
+                    return AppLocalizations.of(context).listCardSemantics(
+                      title,
+                      TournamentRounds.defaultRound(model.maxRound),
+                      _pagerOffset + index + 1,
+                      _allTotalCount,
+                    );
                   },
                 ),
               ),
@@ -192,21 +202,21 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                       TextButton.icon(
                         onPressed: _isJumping ? null : () => _jumpToPosition(0),
                         icon: const Icon(Icons.first_page),
-                        label: const Text('맨 앞'),
+                        label: Text(AppLocalizations.of(context).listFirst),
                       ),
                       TextButton.icon(
                         onPressed: _isJumping
                             ? null
                             : () => _jumpToPosition((_allTotalCount - 1) ~/ 2),
                         icon: const Icon(Icons.unfold_less),
-                        label: const Text('중간'),
+                        label: Text(AppLocalizations.of(context).listMiddle),
                       ),
                       TextButton.icon(
                         onPressed: _isJumping
                             ? null
                             : () => _jumpToPosition(_allTotalCount - 1),
                         icon: const Icon(Icons.last_page),
-                        label: const Text('맨 뒤'),
+                        label: Text(AppLocalizations.of(context).listLast),
                       ),
                     ],
                   ),
@@ -279,9 +289,14 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                               ),
                             ),
                             if (_sheetItems.isEmpty)
-                              const SliverFillRemaining(
+                              SliverFillRemaining(
                                 hasScrollBody: false,
-                                child: Center(child: Text('검색 결과가 없습니다')),
+                                child: Center(
+                                  child: Text(
+                                    AppLocalizations.of(context)
+                                        .listNoSearchResults,
+                                  ),
+                                ),
                               )
                             else
                               SliverFixedExtentList.builder(
@@ -320,7 +335,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('월드컵을 불러오지 못했습니다. 다시 시도해주세요.')),
+        SnackBar(content: Text(AppLocalizations.of(context).listLoadFailed)),
       );
     } finally {
       if (mounted) setState(() => _isJumping = false);
@@ -330,7 +345,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
   Widget _buildSheetHeader(double minSheetSize) {
     return Semantics(
       button: true,
-      label: '전체 월드컵 목록 열기',
+      label: AppLocalizations.of(context).listOpenAll,
       child: InkWell(
         onTap: () {
           final isCollapsed =
@@ -362,15 +377,19 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                   const SizedBox(height: 8),
                   Text(
                     _searchQuery.isEmpty
-                        ? '전체 목록 ($_sheetTotalCount)'
-                        : '검색 결과 ($_sheetTotalCount)',
+                        ? AppLocalizations.of(context)
+                              .listAllCount(_sheetTotalCount)
+                        : AppLocalizations.of(context)
+                              .listSearchCount(_sheetTotalCount),
                   ),
                 ],
               ),
               Positioned(
                 right: 8,
                 child: IconButton(
-                  tooltip: _isSearchMode ? '검색 닫기' : '월드컵 검색',
+                  tooltip: _isSearchMode
+                      ? AppLocalizations.of(context).listCloseSearch
+                      : AppLocalizations.of(context).listSearch,
                   onPressed: _isSearchMode
                       ? closeSearchMode
                       : () => _openSearch(minSheetSize),
@@ -395,12 +414,12 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
           textInputAction: TextInputAction.search,
           onChanged: _onSearchChanged,
           decoration: InputDecoration(
-            hintText: '월드컵 제목 또는 설명 검색',
+            hintText: AppLocalizations.of(context).listSearchHint,
             prefixIcon: const Icon(Icons.search),
             suffixIcon: _searchQuery.isEmpty
                 ? null
                 : IconButton(
-                    tooltip: '검색어 지우기',
+                    tooltip: AppLocalizations.of(context).listClearSearch,
                     onPressed: () {
                       _searchController.clear();
                       _onSearchChanged('');

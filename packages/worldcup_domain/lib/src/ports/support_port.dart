@@ -1,3 +1,5 @@
+import 'package:worldcup_core/worldcup_core.dart';
+
 import 'dart:typed_data';
 
 class Notice {
@@ -40,7 +42,8 @@ class InquiryReceipt {
 class SupportFailure implements Exception {
   final String code;
   final String message;
-  final Map<String, List<String>> fields;
+  final Map<String, List<AppMessage>> fields;
+  final AppMessage userMessage;
   final int? retryAfterSeconds;
 
   /// The server may have accepted the POST before the connection failed.
@@ -50,6 +53,7 @@ class SupportFailure implements Exception {
     this.code,
     this.message, {
     this.fields = const {},
+    this.userMessage = const AppMessage(AppMessageId.unexpectedError),
     this.retryAfterSeconds,
     this.deliveryUncertain = false,
   });

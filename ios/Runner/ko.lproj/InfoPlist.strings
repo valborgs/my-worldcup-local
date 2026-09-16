@@ -1,0 +1,6 @@
+// Generated from app_ko.arb. Do not edit.
+"CFBundleDisplayName" = "내가 만든 월드컵";
+"NSBluetoothAlwaysUsageDescription" = "주변 기기와 월드컵 파일을 직접 주고받기 위해 Bluetooth를 사용합니다.";
+"NSLocalNetworkUsageDescription" = "인터넷 없이 주변 기기와 월드컵 파일을 직접 전송하기 위해 로컬 네트워크를 사용합니다.";
+"NSCameraUsageDescription" = "월드컵에 사용할 사진을 찍기 위해 카메라를 사용합니다.";
+"NSPhotoLibraryUsageDescription" = "월드컵에 사용할 사진을 선택하기 위해 사진 보관함을 사용합니다.";

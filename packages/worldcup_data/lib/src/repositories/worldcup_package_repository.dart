@@ -40,13 +40,18 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
            documentsDirectoryProvider ?? getApplicationDocumentsDirectory;
 
   @override
-  Future<void> share(WorldCupModel model, {ShareOrigin? origin}) async {
+  Future<void> share(
+    WorldCupModel model, {
+    ShareOrigin? origin,
+    required String title,
+    required String subject,
+  }) async {
     final packagePath = await createPackage(model);
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(packagePath, mimeType: mimeType)],
-        title: '${model.title} 월드컵 공유',
-        subject: '${model.title} 월드컵',
+        title: title,
+        subject: subject,
         sharePositionOrigin: origin == null
             ? null
             : Rect.fromLTWH(
@@ -63,10 +68,16 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
   Future<String> createPackage(WorldCupModel model) async {
     final items = await _repository.items(model.idx);
     if (items.length < 4) {
-      throw const PackageFailure('공유할 월드컵 항목이 부족합니다.');
+      throw const PackageFailure(
+        '공유할 월드컵 항목이 부족합니다.',
+        userMessage: AppMessage(AppMessageId.packageTooFewItems),
+      );
     }
     if (items.length > _maxItemCount) {
-      throw const PackageFailure('항목이 너무 많아 공유할 수 없습니다.');
+      throw const PackageFailure(
+        '항목이 너무 많아 공유할 수 없습니다.',
+        userMessage: AppMessage(AppMessageId.packageTooManyItems),
+      );
     }
 
     final imageEntries = <String>[];
@@ -128,7 +139,13 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
         if (sourcePath.startsWith('assets/')) {
           final asset = await rootBundle.load(sourcePath);
           if (asset.lengthInBytes > _maxImageBytes) {
-            throw PackageFailure('이미지 파일이 너무 큽니다: ${items[index].imageInfo}');
+            throw PackageFailure(
+              '이미지 파일이 너무 큽니다: ${items[index].imageInfo}',
+              userMessage: AppMessage(
+                AppMessageId.packageImageTooLarge,
+                detail: items[index].imageInfo,
+              ),
+            );
           }
           totalImageBytes += asset.lengthInBytes;
           encoder.addArchiveFile(
@@ -145,17 +162,30 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
           if (!await imageFile.exists()) {
             throw PackageFailure(
               '이미지 파일을 찾을 수 없습니다: ${items[index].imageInfo}',
+              userMessage: AppMessage(
+                AppMessageId.packageImageMissing,
+                detail: items[index].imageInfo,
+              ),
             );
           }
           final imageBytes = await imageFile.length();
           if (imageBytes > _maxImageBytes) {
-            throw PackageFailure('이미지 파일이 너무 큽니다: ${items[index].imageInfo}');
+            throw PackageFailure(
+              '이미지 파일이 너무 큽니다: ${items[index].imageInfo}',
+              userMessage: AppMessage(
+                AppMessageId.packageImageTooLarge,
+                detail: items[index].imageInfo,
+              ),
+            );
           }
           totalImageBytes += imageBytes;
           await encoder.addFile(imageFile, archivePath);
         }
         if (totalImageBytes > _maxTotalImageBytes) {
-          throw const PackageFailure('이미지 리소스의 크기가 너무 큽니다.');
+          throw const PackageFailure(
+            '이미지 리소스의 크기가 너무 큽니다.',
+            userMessage: AppMessage(AppMessageId.packageResourceTooLarge),
+          );
         }
       }
 
@@ -172,7 +202,10 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
       }
       if (await packageFile.exists()) await packageFile.delete();
       if (error is PackageFailure) rethrow;
-      throw const PackageFailure('월드컵 공유 파일을 만들지 못했습니다.');
+      throw const PackageFailure(
+        '월드컵 공유 파일을 만들지 못했습니다.',
+        userMessage: AppMessage(AppMessageId.packageCreateFailed),
+      );
     }
   }
 
@@ -180,10 +213,16 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
   Future<ImportedWorldCup> importPackage(String packagePath) async {
     final packageFile = File(packagePath);
     if (!await packageFile.exists()) {
-      throw const PackageFailure('공유 파일을 찾을 수 없습니다.');
+      throw const PackageFailure(
+        '공유 파일을 찾을 수 없습니다.',
+        userMessage: AppMessage(AppMessageId.packageMissing),
+      );
     }
     if (await packageFile.length() > _maxPackageBytes) {
-      throw const PackageFailure('공유 파일이 너무 큽니다.');
+      throw const PackageFailure(
+        '공유 파일이 너무 큽니다.',
+        userMessage: AppMessage(AppMessageId.packageTooLarge),
+      );
     }
 
     InputFileStream? input;
@@ -193,7 +232,10 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
       archive = ZipDecoder().decodeStream(input, verify: true);
     } catch (_) {
       input?.closeSync();
-      throw const PackageFailure('올바른 월드컵 공유 파일이 아닙니다.');
+      throw const PackageFailure(
+        '올바른 월드컵 공유 파일이 아닙니다.',
+        userMessage: AppMessage(AppMessageId.packageInvalid),
+      );
     }
 
     Directory? importDirectory;
@@ -203,18 +245,27 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
       for (final entry in archive) {
         if (!entry.isFile) continue;
         if (entries.containsKey(entry.name)) {
-          throw const PackageFailure('중복된 리소스가 있는 공유 파일입니다.');
+          throw const PackageFailure(
+            '중복된 리소스가 있는 공유 파일입니다.',
+            userMessage: AppMessage(AppMessageId.packageDuplicateResource),
+          );
         }
         entries[entry.name] = entry;
       }
 
       final manifestEntry = entries[_manifestName];
       if (manifestEntry == null || manifestEntry.size > _maxManifestBytes) {
-        throw const PackageFailure('월드컵 정보가 없거나 손상되었습니다.');
+        throw const PackageFailure(
+          '월드컵 정보가 없거나 손상되었습니다.',
+          userMessage: AppMessage(AppMessageId.packageManifestMissing),
+        );
       }
       final manifestBytes = manifestEntry.readBytes();
       if (manifestBytes == null || manifestBytes.length > _maxManifestBytes) {
-        throw const PackageFailure('월드컵 정보를 읽을 수 없습니다.');
+        throw const PackageFailure(
+          '월드컵 정보를 읽을 수 없습니다.',
+          userMessage: AppMessage(AppMessageId.packageManifestUnreadable),
+        );
       }
       final manifest = _PackageManifest.fromJson(
         jsonDecode(utf8.decode(manifestBytes)),
@@ -224,20 +275,32 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
       final imagePaths = <String>{};
       for (final item in manifest.items) {
         if (!_isSafeImageEntry(item.image)) {
-          throw const PackageFailure('안전하지 않은 리소스 경로가 포함되었습니다.');
+          throw const PackageFailure(
+            '안전하지 않은 리소스 경로가 포함되었습니다.',
+            userMessage: AppMessage(AppMessageId.packageUnsafePath),
+          );
         }
         if (!imagePaths.add(item.image)) {
-          throw const PackageFailure('중복된 이미지 리소스 경로가 포함되었습니다.');
+          throw const PackageFailure(
+            '중복된 이미지 리소스 경로가 포함되었습니다.',
+            userMessage: AppMessage(AppMessageId.packageDuplicateImage),
+          );
         }
         final imageEntry = entries[item.image];
         if (imageEntry == null ||
             imageEntry.size <= 0 ||
             imageEntry.size > _maxImageBytes) {
-          throw const PackageFailure('이미지 리소스가 없거나 손상되었습니다.');
+          throw const PackageFailure(
+            '이미지 리소스가 없거나 손상되었습니다.',
+            userMessage: AppMessage(AppMessageId.packageImageDamaged),
+          );
         }
         declaredTotalImageBytes += imageEntry.size;
         if (declaredTotalImageBytes > _maxTotalImageBytes) {
-          throw const PackageFailure('이미지 리소스의 크기가 너무 큽니다.');
+          throw const PackageFailure(
+            '이미지 리소스의 크기가 너무 큽니다.',
+            userMessage: AppMessage(AppMessageId.packageResourceTooLarge),
+          );
         }
       }
 
@@ -261,11 +324,17 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
         final imageEntry = entries[item.image]!;
         final bytes = imageEntry.readBytes();
         if (bytes == null || bytes.isEmpty || bytes.length > _maxImageBytes) {
-          throw const PackageFailure('이미지 리소스를 읽을 수 없습니다.');
+          throw const PackageFailure(
+            '이미지 리소스를 읽을 수 없습니다.',
+            userMessage: AppMessage(AppMessageId.packageImageUnreadable),
+          );
         }
         extractedTotalImageBytes += bytes.length;
         if (extractedTotalImageBytes > _maxTotalImageBytes) {
-          throw const PackageFailure('이미지 리소스의 크기가 너무 큽니다.');
+          throw const PackageFailure(
+            '이미지 리소스의 크기가 너무 큽니다.',
+            userMessage: AppMessage(AppMessageId.packageResourceTooLarge),
+          );
         }
         final extension = _safeImageExtension(item.image);
         final outputFile = File(
@@ -302,7 +371,10 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
     } on PackageFailure {
       rethrow;
     } catch (_) {
-      throw const PackageFailure('월드컵 공유 파일을 가져오지 못했습니다.');
+      throw const PackageFailure(
+        '월드컵 공유 파일을 가져오지 못했습니다.',
+        userMessage: AppMessage(AppMessageId.packageImportFailed),
+      );
     } finally {
       input.closeSync();
       archive.clearSync();
@@ -373,7 +445,10 @@ class _PackageManifest {
     if (json is! Map<String, dynamic> ||
         json['format'] != WorldCupPackageRepository._format ||
         json['version'] != WorldCupPackageRepository._formatVersion) {
-      throw const PackageFailure('지원하지 않는 월드컵 공유 파일입니다.');
+      throw const PackageFailure(
+        '지원하지 않는 월드컵 공유 파일입니다.',
+        userMessage: AppMessage(AppMessageId.packageUnsupported),
+      );
     }
 
     final title = json['title'];
@@ -393,7 +468,10 @@ class _PackageManifest {
         rawItems is! List ||
         rawItems.length < 4 ||
         rawItems.length > WorldCupPackageRepository._maxItemCount) {
-      throw const PackageFailure('월드컵 정보가 손상되었습니다.');
+      throw const PackageFailure(
+        '월드컵 정보가 손상되었습니다.',
+        userMessage: AppMessage(AppMessageId.packageManifestDamaged),
+      );
     }
 
     final parsedDate = DateTime.tryParse(createdAt);
@@ -401,7 +479,10 @@ class _PackageManifest {
         maxRound != rawItems.length ||
         titleImageIndex < 0 ||
         titleImageIndex >= rawItems.length) {
-      throw const PackageFailure('월드컵 정보가 손상되었습니다.');
+      throw const PackageFailure(
+        '월드컵 정보가 손상되었습니다.',
+        userMessage: AppMessage(AppMessageId.packageManifestDamaged),
+      );
     }
 
     final items = <_PackageItem>[];
@@ -411,7 +492,10 @@ class _PackageManifest {
           (rawItem['image'] as String).length > 200 ||
           rawItem['info'] is! String ||
           (rawItem['info'] as String).length > 2000) {
-        throw const PackageFailure('월드컵 항목 정보가 손상되었습니다.');
+        throw const PackageFailure(
+          '월드컵 항목 정보가 손상되었습니다.',
+          userMessage: AppMessage(AppMessageId.packageItemDamaged),
+        );
       }
       items.add(
         _PackageItem(

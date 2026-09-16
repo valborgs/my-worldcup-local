@@ -11,5 +11,6 @@ abstract interface class SocialSharePort {
     required String title,
     required String description,
     required String imageUrl,
+    required String buttonTitle,
   });
 }

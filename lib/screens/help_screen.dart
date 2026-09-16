@@ -1,3 +1,4 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:introduction_screen/introduction_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,30 +19,30 @@ class HelpScreen extends StatefulWidget {
 }
 
 class _HelpScreenState extends State<HelpScreen> {
-  var pageViewModel = [
+  List<PageViewModel> _pages(BuildContext context) => [
     PageViewModel(
-      title: "내가 만든 월드컵",
-      body: "앱을 실행해주셔서 감사합니다!",
+      title: AppLocalizations.of(context).appTitle,
+      body: AppLocalizations.of(context).onboardingWelcome,
       image: Image.asset("assets/icon/logo.png", width: 200, height: 200),
     ),
     PageViewModel(
-      title: "월드컵 만들기 1",
-      body: "상단의 추가 버튼을 눌러 \n월드컵을 만들어보세요",
+      title: AppLocalizations.of(context).onboardingCreateOneTitle,
+      body: AppLocalizations.of(context).onboardingCreateOneBody,
       image: Image.asset("assets/images/help1.png", width: 300, height: 300),
     ),
     PageViewModel(
-      title: "월드컵 만들기 2",
-      body: "내가 직접 찍은 사진을 골라 \n리스트에 추가해보세요",
+      title: AppLocalizations.of(context).onboardingCreateTwoTitle,
+      body: AppLocalizations.of(context).onboardingCreateTwoBody,
       image: Image.asset("assets/images/help2.png", width: 300, height: 300),
     ),
     PageViewModel(
-      title: "월드컵 게임 진행",
-      body: "2개의 사진 중 마음에 든 사진을 선택해보세요",
+      title: AppLocalizations.of(context).onboardingPlayTitle,
+      body: AppLocalizations.of(context).onboardingPlayBody,
       image: Image.asset("assets/images/help3.png", width: 300, height: 300),
     ),
     PageViewModel(
-      title: "월드컵 게임 우승자",
-      body: "월드컵 우승자를 가려봅시다!",
+      title: AppLocalizations.of(context).onboardingWinnerTitle,
+      body: AppLocalizations.of(context).onboardingWinnerBody,
       image: Image.asset("assets/images/help4.png", width: 300, height: 300),
     ),
   ];
@@ -52,14 +53,23 @@ class _HelpScreenState extends State<HelpScreen> {
       body: Padding(
         padding: const EdgeInsets.only(top: 80),
         child: Semantics(
-          label: "도움말, 소개 화면",
+          label: AppLocalizations.of(context).onboardingSemantics,
           child: IntroductionScreen(
-            pages: pageViewModel,
+            pages: _pages(context),
             showNextButton: true,
-            next: const Text("다음", semanticsLabel: "다음"),
+            next: Text(
+              AppLocalizations.of(context).commonNext,
+              semanticsLabel: AppLocalizations.of(context).commonNext,
+            ),
             showSkipButton: true,
-            skip: const Text("스킵하기", semanticsLabel: "스킵하기"),
-            done: const Text("시작하기", semanticsLabel: "시작하기"),
+            skip: Text(
+              AppLocalizations.of(context).onboardingSkip,
+              semanticsLabel: AppLocalizations.of(context).onboardingSkip,
+            ),
+            done: Text(
+              AppLocalizations.of(context).onboardingStart,
+              semanticsLabel: AppLocalizations.of(context).onboardingStart,
+            ),
             onDone: () {
               finishScreen();
             },

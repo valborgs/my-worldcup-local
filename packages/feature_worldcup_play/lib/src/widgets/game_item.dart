@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -157,7 +159,11 @@ class _GameItemState extends ConsumerState<GameItem>
                           right: 12,
                         ),
                         child: ItemDescriptionText(
-                          widget.itemModel.imageInfo,
+                          AppLocalizations.of(context).worldCupItemInfo(
+                            widget.itemModel.worldCupIdx,
+                            widget.itemModel.imagePath,
+                            widget.itemModel.imageInfo,
+                          ),
                           maxWidth: constraints.maxWidth - 24,
                           maxHeight: maxTextHeight,
                           minFontSize: _minDescriptionFontSize,
@@ -167,7 +173,8 @@ class _GameItemState extends ConsumerState<GameItem>
                             fontWeight: FontWeight.bold,
                             backgroundColor: Colors.grey.withValues(alpha: 0.5),
                           ),
-                          semanticsLabel: "항목 이름",
+                          semanticsLabel: AppLocalizations.of(context)
+                              .playItemSemantics,
                         ),
                       ),
                     ),

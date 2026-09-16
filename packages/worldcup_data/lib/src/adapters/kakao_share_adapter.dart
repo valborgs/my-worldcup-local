@@ -7,8 +7,6 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 /// 카카오 SDK의 `FeedTemplate`이 UI로 새어나가지 않도록 이 어댑터 안에서만
 /// 다룬다.
 class KakaoShareAdapter implements SocialSharePort {
-  static const String _buttonTitle = '내가 만든 월드컵 게임 체험하기';
-
   /// 공유 카드와 버튼이 여는 주소. 보통 스토어 링크다.
   final String linkUrl;
 
@@ -24,6 +22,7 @@ class KakaoShareAdapter implements SocialSharePort {
     required String title,
     required String description,
     required String imageUrl,
+    required String buttonTitle,
   }) async {
     final link = Link(
       webUrl: Uri.parse(linkUrl),
@@ -36,7 +35,7 @@ class KakaoShareAdapter implements SocialSharePort {
         imageUrl: Uri.parse(imageUrl),
         link: link,
       ),
-      buttons: [Button(title: _buttonTitle, link: link)],
+      buttons: [Button(title: buttonTitle, link: link)],
     );
 
     // 카카오톡이 깔려 있으면 앱으로, 아니면 웹 공유로 넘어간다.

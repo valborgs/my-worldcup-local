@@ -58,7 +58,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
   NearbyEndpoint? peer;
   String? verificationCode;
   double? progress;
-  String message = '준비 중입니다.';
+  AppMessage message = const AppMessage(AppMessageId.nearbyPreparing);
   bool canOpenSettings = false;
 
   StreamSubscription<NearbyEvent>? _subscription;
@@ -145,10 +145,10 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
           return;
         }
         phase = NearbyTransferPhase.discovering;
-        message = '받는 기기를 찾고 있습니다.';
+        message = const AppMessage(AppMessageId.nearbyDiscovering);
         _armTimeout(
           _timeouts.discovery,
-          '주변 기기를 찾지 못했습니다. 받는 기기에서 월드컵 받기를 열고 다시 시도해주세요.',
+          const AppMessage(AppMessageId.nearbyDiscoveryTimeout),
         );
       } else {
         await gateway.startAdvertising(displayName: _displayName);
@@ -157,7 +157,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
           return;
         }
         phase = NearbyTransferPhase.advertising;
-        message = '월드컵을 받을 준비가 되었습니다.';
+        message = const AppMessage(AppMessageId.nearbyReady);
       }
       _notify();
     } catch (error) {
@@ -178,8 +178,14 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     _cancelTimeout();
     peer = endpoint;
     phase = NearbyTransferPhase.connecting;
-    message = '${endpoint.name}에 연결을 요청하고 있습니다.';
-    _armTimeout(_timeouts.connection, '기기 연결 시간이 초과되었습니다. 다시 시도해주세요.');
+    message = AppMessage(
+      AppMessageId.nearbyRequestingConnection,
+      detail: endpoint.name,
+    );
+    _armTimeout(
+      _timeouts.connection,
+      const AppMessage(AppMessageId.nearbyConnectionTimeout),
+    );
     _notify();
     try {
       await gateway.requestConnection(
@@ -206,8 +212,11 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     }
     _connectionActionInFlight = true;
     phase = NearbyTransferPhase.connecting;
-    message = '상대 기기의 확인을 기다리고 있습니다.';
-    _armTimeout(_timeouts.connection, '연결 확인 시간이 초과되었습니다. 다시 시도해주세요.');
+    message = const AppMessage(AppMessageId.nearbyWaitingForPeer);
+    _armTimeout(
+      _timeouts.connection,
+      const AppMessage(AppMessageId.nearbyVerificationTimeout),
+    );
     _notify();
     try {
       await gateway.acceptConnection(endpoint.id);
@@ -229,7 +238,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
       await gateway.rejectConnection(endpoint.id);
       _cancelTimeout();
       phase = NearbyTransferPhase.canceled;
-      message = '연결 요청을 거절했습니다.';
+      message = const AppMessage(AppMessageId.nearbyRejectedLocally);
       await _cleanupNative();
     } catch (error) {
       _fail(_messageFor(error));
@@ -249,7 +258,9 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     }
     _cancelTimeout();
     phase = NearbyTransferPhase.canceled;
-    message = mode == NearbyTransferMode.send ? '전송을 취소했습니다.' : '받기를 취소했습니다.';
+    message = mode == NearbyTransferMode.send
+        ? const AppMessage(AppMessageId.nearbySendCanceled)
+        : const AppMessage(AppMessageId.nearbyReceiveCanceled);
     _notify();
     await _deleteOutgoingPackage();
     await _cleanupNative(cancelTransfer: true);
@@ -273,7 +284,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
             _endpoints.isEmpty) {
           _armTimeout(
             _timeouts.discovery,
-            '주변 기기를 찾지 못했습니다. 받는 기기에서 월드컵 받기를 열고 다시 시도해주세요.',
+            const AppMessage(AppMessageId.nearbyDiscoveryTimeout),
           );
         }
       case NearbyConnectionRequest(:final endpoint, :final incoming):
@@ -282,8 +293,14 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
         peer = endpoint;
         verificationCode = null;
         phase = NearbyTransferPhase.connecting;
-        message = '${endpoint.name}의 인증 코드를 준비하고 있습니다.';
-        _armTimeout(_timeouts.connection, '연결 확인 시간이 초과되었습니다. 다시 시도해주세요.');
+        message = AppMessage(
+          AppMessageId.nearbyPreparingCode,
+          detail: endpoint.name,
+        );
+        _armTimeout(
+          _timeouts.connection,
+          const AppMessage(AppMessageId.nearbyVerificationTimeout),
+        );
       case NearbyVerificationCode(
         :final endpointId,
         :final endpointName,
@@ -293,28 +310,37 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
         peer = NearbyEndpoint(id: endpointId, name: endpointName);
         verificationCode = code;
         phase = NearbyTransferPhase.verifying;
-        message = '양쪽 기기의 인증 코드가 같은지 확인하세요.';
-        _armTimeout(_timeouts.connection, '연결 확인 시간이 초과되었습니다. 다시 시도해주세요.');
+        message = const AppMessage(AppMessageId.nearbyVerifyCode);
+        _armTimeout(
+          _timeouts.connection,
+          const AppMessage(AppMessageId.nearbyVerificationTimeout),
+        );
       case NearbyConnectionChanged(:final endpointId, :final state):
         if (peer != null && peer!.id != endpointId) return;
         switch (state) {
           case NearbyConnectionState.connecting:
             phase = NearbyTransferPhase.connecting;
-            message = '안전한 연결을 설정하고 있습니다.';
-            _armTimeout(_timeouts.connection, '기기 연결 시간이 초과되었습니다. 다시 시도해주세요.');
+            message = const AppMessage(AppMessageId.nearbySecuringConnection);
+            _armTimeout(
+              _timeouts.connection,
+              const AppMessage(AppMessageId.nearbyConnectionTimeout),
+            );
           case NearbyConnectionState.connected:
             phase = NearbyTransferPhase.connected;
-            message = '${peer?.name ?? '상대 기기'}와 연결되었습니다.';
+            message = AppMessage(
+              AppMessageId.nearbyConnected,
+              detail: peer?.name,
+            );
             if (mode == NearbyTransferMode.send) {
               unawaited(_beginSending());
             } else {
               _armTimeout(
                 _timeouts.transferIdle,
-                '파일 수신 시간이 초과되었습니다. 다시 시도해주세요.',
+                const AppMessage(AppMessageId.nearbyReceiveTimeout),
               );
             }
           case NearbyConnectionState.rejected:
-            _fail('상대 기기에서 연결을 거절했습니다.');
+            _fail(const AppMessage(AppMessageId.nearbyRejectedByPeer));
             unawaited(_deleteOutgoingPackage());
             unawaited(_cleanupNative());
           case NearbyConnectionState.disconnected:
@@ -325,14 +351,16 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
                     phase == NearbyTransferPhase.importing);
             if (canFinishReceivedFile) {
               if (phase != NearbyTransferPhase.importing) {
-                message = '연결이 종료되어 받은 파일을 확인하고 있습니다.';
+                message = const AppMessage(
+                  AppMessageId.nearbyFinalizingDisconnected,
+                );
                 _armTimeout(
                   _timeouts.finalization,
-                  '수신 파일 확인 시간이 초과되었습니다. 다시 시도해주세요.',
+                  const AppMessage(AppMessageId.nearbyFinalizationTimeout),
                 );
               }
             } else {
-              _fail('기기 연결이 끊겼습니다. 가까운 거리에서 다시 시도해주세요.');
+              _fail(const AppMessage(AppMessageId.nearbyDisconnected));
               unawaited(_deleteOutgoingPackage());
               unawaited(_cleanupNative());
             }
@@ -353,20 +381,20 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
           }
           phase = NearbyTransferPhase.transferring;
           message = mode == NearbyTransferMode.send
-              ? '월드컵을 보내고 있습니다.'
-              : '월드컵을 받고 있습니다.';
+              ? const AppMessage(AppMessageId.nearbySending)
+              : const AppMessage(AppMessageId.nearbyReceiving);
           _armTimeout(
             _timeouts.transferIdle,
             mode == NearbyTransferMode.send
-                ? '파일 전송 시간이 초과되었습니다. 다시 시도해주세요.'
-                : '파일 수신 시간이 초과되었습니다. 다시 시도해주세요.',
+                ? const AppMessage(AppMessageId.nearbySendTimeout)
+                : const AppMessage(AppMessageId.nearbyReceiveTimeout),
           );
         } else if (status == NearbyTransferStatus.success &&
             mode == NearbyTransferMode.send) {
           _cancelTimeout();
           phase = NearbyTransferPhase.success;
           progress = 1;
-          message = '월드컵 전송을 완료했습니다.';
+          message = const AppMessage(AppMessageId.nearbySendSuccess);
           unawaited(_deleteOutgoingPackage());
           unawaited(_cleanupNative());
         } else if (status == NearbyTransferStatus.success) {
@@ -374,19 +402,19 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
           _receivedPayloadComplete = true;
           phase = NearbyTransferPhase.transferring;
           progress = 1;
-          message = '수신 파일을 확인하고 있습니다.';
+          message = const AppMessage(AppMessageId.nearbyCheckingFile);
           _armTimeout(
             _timeouts.finalization,
-            '수신 파일 확인 시간이 초과되었습니다. 다시 시도해주세요.',
+            const AppMessage(AppMessageId.nearbyFinalizationTimeout),
           );
         } else if (status == NearbyTransferStatus.canceled) {
           _cancelTimeout();
           phase = NearbyTransferPhase.canceled;
-          message = '파일 전송이 취소되었습니다.';
+          message = const AppMessage(AppMessageId.nearbyTransferCanceled);
           unawaited(_deleteOutgoingPackage());
           unawaited(_cleanupNative());
         } else if (status == NearbyTransferStatus.failure) {
-          _fail('파일 전송에 실패했습니다. 다시 시도해주세요.');
+          _fail(const AppMessage(AppMessageId.nearbyTransferFailed));
           unawaited(_deleteOutgoingPackage());
           unawaited(_cleanupNative());
         }
@@ -395,9 +423,9 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
           _cancelTimeout();
           unawaited(_importReceivedFile(path, size));
         }
-      case NearbyError(:final message):
+      case NearbyError(:final code):
         if (phase == NearbyTransferPhase.importing) return;
-        _fail(message);
+        _fail(_nativeErrorMessage(code.name));
         unawaited(_deleteOutgoingPackage());
         unawaited(_cleanupNative());
     }
@@ -408,8 +436,11 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     if (_disposed || _sendStarted || peer == null || worldCup == null) return;
     _sendStarted = true;
     phase = NearbyTransferPhase.preparing;
-    message = '월드컵 공유 파일을 만들고 있습니다.';
-    _armTimeout(_timeouts.preparation, '공유 파일 준비 시간이 초과되었습니다. 다시 시도해주세요.');
+    message = const AppMessage(AppMessageId.nearbyCreatingFile);
+    _armTimeout(
+      _timeouts.preparation,
+      const AppMessage(AppMessageId.nearbyPreparationTimeout),
+    );
     _notify();
     try {
       final package = File(await packageGateway.createPackage(worldCup!));
@@ -420,8 +451,11 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
       _outgoingPackage = package;
       phase = NearbyTransferPhase.transferring;
       progress = 0;
-      message = '월드컵을 보내고 있습니다.';
-      _armTimeout(_timeouts.transferIdle, '파일 전송 시간이 초과되었습니다. 다시 시도해주세요.');
+      message = const AppMessage(AppMessageId.nearbySending);
+      _armTimeout(
+        _timeouts.transferIdle,
+        const AppMessage(AppMessageId.nearbySendTimeout),
+      );
       _notify();
       await gateway.sendFile(
         endpointId: peer!.id,
@@ -442,7 +476,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     final sourceFile = File(path);
     var importFile = sourceFile;
     phase = NearbyTransferPhase.importing;
-    message = '받은 월드컵을 자동 등록하고 있습니다.';
+    message = const AppMessage(AppMessageId.nearbyImporting);
     _cancelTimeout();
     _notify();
     try {
@@ -450,7 +484,10 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
           !await sourceFile.absolute.exists() ||
           await sourceFile.length() != expectedSize ||
           expectedSize <= 0) {
-        throw const PackageFailure('수신 파일이 완전히 저장되지 않았습니다.');
+        throw const PackageFailure(
+          '수신 파일이 완전히 저장되지 않았습니다.',
+          userMessage: AppMessage(AppMessageId.packageIncomplete),
+        );
       }
       importFile = await _takeOwnershipOfReceivedFile(sourceFile);
       if (_disposed) return;
@@ -460,7 +497,10 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
       if (_disposed) return;
       phase = NearbyTransferPhase.success;
       progress = 1;
-      message = '"${imported.title}" 월드컵을 받았습니다.';
+      message = AppMessage(
+        AppMessageId.nearbyReceiveSuccess,
+        detail: imported.title,
+      );
     } catch (error) {
       _fail(_messageFor(error, importFailure: true));
     } finally {
@@ -473,34 +513,42 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     }
   }
 
-  String _availabilityMessage(NearbyAvailability value) {
+  AppMessage _availabilityMessage(NearbyAvailability value) {
     if (!value.supported) {
-      return value.message ?? '이 기기에서는 Nearby Connections를 사용할 수 없습니다.';
+      return const AppMessage(AppMessageId.nearbyUnsupported);
     }
     if (value.permission == NearbyPermissionState.permanentlyDenied) {
-      return '주변 기기 권한이 차단되었습니다. 앱 설정에서 권한을 허용해주세요.';
+      return const AppMessage(AppMessageId.nearbyPermissionBlocked);
     }
     if (value.permission == NearbyPermissionState.denied) {
-      return '주변 기기 권한이 필요합니다.';
+      return const AppMessage(AppMessageId.nearbyPermissionRequired);
     }
     if (value.bluetooth == NearbyRadioState.disabled ||
         value.wifi == NearbyRadioState.disabled) {
-      return 'Bluetooth와 Wi-Fi를 켠 뒤 다시 시도해주세요.';
+      return const AppMessage(AppMessageId.nearbyRadiosDisabled);
     }
-    return value.message ?? 'Nearby Connections를 시작할 수 없습니다.';
+    return const AppMessage(AppMessageId.nearbyStartFailed);
   }
 
-  String _messageFor(Object error, {bool importFailure = false}) {
-    if (error is Failure) return error.message;
-    if (error is PlatformException && error.message?.isNotEmpty == true) {
-      return error.message!;
-    }
+  AppMessage _messageFor(Object error, {bool importFailure = false}) {
+    if (error is Failure) return error.userMessage;
+    if (error is PlatformException) return _nativeErrorMessage(error.code);
     return importFailure
-        ? '받은 월드컵을 등록하지 못했습니다. 보내는 기기에서 다시 보내주세요.'
-        : '주변 기기 전송 중 오류가 발생했습니다. 다시 시도해주세요.';
+        ? const AppMessage(AppMessageId.nearbyImportFailed)
+        : const AppMessage(AppMessageId.nearbyError);
   }
 
-  void _fail(String value) {
+  AppMessage _nativeErrorMessage(String code) => AppMessage(switch (code) {
+    'permissionDenied' => AppMessageId.nearbyPermissionRequired,
+    'permissionPermanentlyDenied' => AppMessageId.nearbyPermissionBlocked,
+    'radioOff' => AppMessageId.nearbyRadiosDisabled,
+    'unavailable' => AppMessageId.nearbyStartFailed,
+    'transferFailed' || 'io' => AppMessageId.nearbyTransferFailed,
+    'canceled' => AppMessageId.nearbyTransferCanceled,
+    _ => AppMessageId.nearbyError,
+  });
+
+  void _fail(AppMessage value) {
     if (_disposed || finished) return;
     _cancelTimeout();
     phase = NearbyTransferPhase.error;
@@ -557,7 +605,7 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     }
   }
 
-  void _armTimeout(Duration duration, String timeoutMessage) {
+  void _armTimeout(Duration duration, AppMessage timeoutMessage) {
     _timeoutTimer?.cancel();
     _timeoutTimer = Timer(duration, () {
       if (_disposed || finished || phase == NearbyTransferPhase.importing) {
@@ -578,14 +626,12 @@ class NearbyWorldCupTransferController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
-  static final String _anonymousDisplayName = _createAnonymousDisplayName();
+  // Stable for this process. The UI supplies the localized name when starting
+  // a session; injected/headless callers can provide any transport identity.
+  static final int displayNameSuffix =
+      1000 + math.Random.secure().nextInt(9000);
 
-  static String _defaultDisplayName() => _anonymousDisplayName;
-
-  static String _createAnonymousDisplayName() {
-    final suffix = 1000 + math.Random.secure().nextInt(9000);
-    return '월드컵 기기 $suffix';
-  }
+  static String _defaultDisplayName() => 'World Cup $displayNameSuffix';
 
   @override
   void dispose() {

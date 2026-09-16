@@ -153,6 +153,19 @@ IDs -1019 through -1000 are reserved for disposable debug paging data and must
 not appear in the sample manifest or the sample deletion records.
 User tournaments have positive ids and are never touched by seeding.
 
+## Localization
+
+Korean is the source and fallback language. Edit language-specific ARB files in
+`packages/worldcup_ui_kit/lib/l10n/`, then run `flutter gen-l10n` from that package.
+Commit the generated Dart files too; CI checks for drift. UI code imports
+`AppLocalizations` through `worldcup_ui_kit`; core/domain stay pure Dart.
+All app-owned display text, accessibility labels, validation, transfer status,
+share text and built-in sample labels use these resources. Use `AppMessage`
+identifiers for non-UI state/errors and translate at display time; never show
+diagnostic `Failure.message` / `SupportFailure.message` directly. Run
+`dart run tool/generate_native_localizations.dart` after native text changes.
+See [docs/localization.md](docs/localization.md) for the workflow and rollout scope.
+
 ## Configuration
 
 `.env` in the repository root:

@@ -1,3 +1,4 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 // 결승전에서 bottom 아이템이 선택되지 않던 버그의 회귀 테스트.
 //
 // 원인: GameItem은 위젯 key로 WorldCupItemModel.idx만 사용한다. 새 라운드가
@@ -54,6 +55,8 @@ void main() {
       return UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             // WorldCupGame.build와 동일한 구조: Flex 안에 top/bottom GameItem을
             // idx 기반 ValueKey로 배치한다.
@@ -160,6 +163,8 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: WorldCupGame(worldCupModel, items, 8)),
         ),
       ),

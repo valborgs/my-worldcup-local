@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_worldcup_local/main.dart';
 import 'package:worldcup_core/worldcup_core.dart';
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
 /// 첫 화면을 무엇으로 띄우는지에 대한 계약.
 ///
@@ -23,6 +24,28 @@ void main() {
 
   MaterialApp findApp(WidgetTester tester) =>
       tester.widget<MaterialApp>(find.byType(MaterialApp));
+
+  for (final locale in [
+    const Locale('ko', 'KR'),
+    const Locale('ja', 'JP'),
+    const Locale('en', 'US'),
+  ]) {
+    testWidgets('$locale 기기에서 한국어 앱 및 기본 위젯 리소스를 사용한다', (tester) async {
+      tester.binding.platformDispatcher.localesTestValue = [locale];
+      addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+
+      await tester.pumpWidget(app(isAlreadyShownHelp: null));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.text('스킵하기'));
+      expect(Localizations.localeOf(context), const Locale('ko'));
+      expect(AppLocalizations.of(context).appTitle, '내가 만든 월드컵');
+      expect(MaterialLocalizations.of(context).cancelButtonLabel, '취소');
+      expect(findApp(tester).onGenerateTitle!(context), '내가 만든 월드컵');
+      expect(findApp(tester).supportedLocales.first, const Locale('ko'));
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('첫 화면도 라우터를 거친다', (tester) async {
     await tester.pumpWidget(app(isAlreadyShownHelp: null));

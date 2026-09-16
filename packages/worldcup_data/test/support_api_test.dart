@@ -1,3 +1,5 @@
+import 'package:worldcup_core/worldcup_core.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -177,7 +179,9 @@ void main() {
               .having(
                 (e) => e.fields['email'],
                 'fields',
-                status == 400 ? ['올바른 이메일 주소를 입력해 주세요.'] : null,
+                status == 400
+                    ? const [AppMessage(AppMessageId.supportEmailInvalid)]
+                    : null,
               )
               .having(
                 (e) => e.retryAfterSeconds,

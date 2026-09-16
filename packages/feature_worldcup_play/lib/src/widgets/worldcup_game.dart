@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -193,7 +195,10 @@ class _WorldCupGameState extends ConsumerState<WorldCupGame> {
                 child: Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: Text(
-                    (maxRound == 1) ? "결승" : "$round / $maxRound",
+                    (maxRound == 1)
+                        ? AppLocalizations.of(context).playFinal
+                        : AppLocalizations.of(context)
+                              .playMatchProgress(round, maxRound),
                     style: const TextStyle(
                       fontSize: 24,
                       color: Colors.black,

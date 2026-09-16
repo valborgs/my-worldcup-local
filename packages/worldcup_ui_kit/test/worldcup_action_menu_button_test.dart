@@ -8,6 +8,8 @@ void main() {
     TextScaler? textScaler,
   }) {
     return MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       builder: textScaler == null
           ? null
           : (context, child) => MediaQuery(

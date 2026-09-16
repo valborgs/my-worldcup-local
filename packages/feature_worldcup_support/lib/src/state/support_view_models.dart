@@ -1,3 +1,4 @@
+import 'package:worldcup_core/worldcup_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
@@ -8,6 +9,7 @@ SupportFailure? _cooldownFailure(DateTime? retryAt) {
   return SupportFailure(
     'throttled',
     '요청이 많아 잠시 기다려야 합니다.',
+    userMessage: const AppMessage(AppMessageId.supportThrottled),
     retryAfterSeconds: (millis / 1000).ceil(),
   );
 }
@@ -54,7 +56,11 @@ class NoticesViewModel extends ChangeNotifier {
       if (_disposed || generation != _generation) return;
       error = failure is SupportFailure
           ? failure
-          : const SupportFailure('unknown', '공지사항을 불러오지 못했습니다.');
+          : const SupportFailure(
+              'unknown',
+              '공지사항을 불러오지 못했습니다.',
+              userMessage: AppMessage(AppMessageId.supportNoticesFailed),
+            );
       final seconds = error?.retryAfterSeconds;
       if (error?.code == 'throttled' && seconds != null && seconds > 0) {
         retryAt = DateTime.now().add(Duration(seconds: seconds));
@@ -94,19 +100,23 @@ class InquiryViewModel extends ChangeNotifier {
   DateTime? retryAt;
   bool _disposed = false;
 
-  static String? validateContent(String value) {
+  static AppMessage? validateContent(String value) {
     final length = value.trim().runes.length;
-    if (length == 0) return '문의 내용을 입력해 주세요.';
-    if (length > 5000) return '문의 내용은 5,000자까지 입력할 수 있습니다.';
+    if (length == 0) {
+      return const AppMessage(AppMessageId.supportContentRequired);
+    }
+    if (length > 5000) {
+      return const AppMessage(AppMessageId.supportContentTooLong);
+    }
     return null;
   }
 
-  static String? validateEmail(String value) {
+  static AppMessage? validateEmail(String value) {
     final email = value.trim();
     if (email.isEmpty) return null;
     if (email.length > 254 ||
         !RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
-      return '올바른 이메일 주소를 입력해 주세요.';
+      return const AppMessage(AppMessageId.supportEmailInvalid);
     }
     return null;
   }
@@ -114,7 +124,11 @@ class InquiryViewModel extends ChangeNotifier {
   void setScreenshot(Uint8List? bytes, String? name) {
     if (_disposed || busy || receipt != null) return;
     if (bytes != null && (bytes.isEmpty || bytes.length > maxImageBytes)) {
-      error = const SupportFailure('image_size', '10MB 이하의 이미지를 선택해 주세요.');
+      error = const SupportFailure(
+        'image_size',
+        '10MB 이하의 이미지를 선택해 주세요.',
+        userMessage: AppMessage(AppMessageId.supportImageSize),
+      );
     } else {
       screenshot = bytes;
       screenshotName = name;
@@ -131,6 +145,7 @@ class InquiryViewModel extends ChangeNotifier {
     error = const SupportFailure(
       'image_selection',
       '이미지를 열지 못했습니다. 다른 파일을 선택해 주세요.',
+      userMessage: AppMessage(AppMessageId.supportImageSelection),
     );
     notifyListeners();
   }
@@ -148,12 +163,20 @@ class InquiryViewModel extends ChangeNotifier {
     await for (final chunk in stream) {
       length += chunk.length;
       if (length > maxImageBytes) {
-        throw const SupportFailure('image_size', '10MB 이하의 이미지를 선택해 주세요.');
+        throw const SupportFailure(
+          'image_size',
+          '10MB 이하의 이미지를 선택해 주세요.',
+          userMessage: AppMessage(AppMessageId.supportImageSize),
+        );
       }
       chunks.add(chunk);
     }
     if (length == 0) {
-      throw const SupportFailure('image_size', '비어 있는 파일은 첨부할 수 없습니다.');
+      throw const SupportFailure(
+        'image_size',
+        '비어 있는 파일은 첨부할 수 없습니다.',
+        userMessage: AppMessage(AppMessageId.supportImageEmpty),
+      );
     }
     final bytes = Uint8List(length);
     var offset = 0;
@@ -181,7 +204,7 @@ class InquiryViewModel extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    final fields = <String, List<String>>{};
+    final fields = <String, List<AppMessage>>{};
     if (screenshot != null && _uploadResponseFailure != null) {
       error = _uploadResponseFailure;
       notifyListeners();
@@ -195,6 +218,7 @@ class InquiryViewModel extends ChangeNotifier {
       error = SupportFailure(
         'validation_error',
         '입력 내용을 확인해 주세요.',
+        userMessage: const AppMessage(AppMessageId.supportValidation),
         fields: fields,
       );
       notifyListeners();
@@ -232,6 +256,7 @@ class InquiryViewModel extends ChangeNotifier {
           : SupportFailure(
               'unknown',
               '문의 접수를 완료하지 못했습니다.',
+              userMessage: const AppMessage(AppMessageId.supportInquiryFailed),
               deliveryUncertain: !uploading,
             );
       deliveryUncertain = deliveryUncertain || error!.deliveryUncertain;

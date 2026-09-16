@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -10,6 +12,31 @@ import 'package:worldcup_core/worldcup_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
+  testWidgets('화면이 시작한 수신 세션은 한국어 리소스로 익명 기기 이름을 만든다', (tester) async {
+    final gateway = _ScreenFakeGateway();
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: NearbyWorldCupReceiveScreen(
+            gateway: gateway,
+            packageGateway: _UnusedPackageGateway(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(gateway.advertisedName, matches(RegExp(r'^월드컵 기기 \d{4}$')));
+    expect(
+      find.textContaining('이 기기의 이름: ${gateway.advertisedName}'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
+  });
+
   testWidgets('받기 화면은 상대 이름, 인증 코드, 수락/거절과 진행률을 표시하고 dispose한다', (
     tester,
   ) async {
@@ -25,6 +52,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: MediaQuery(
             data: const MediaQueryData(
               size: Size(320, 480),
@@ -94,7 +123,13 @@ void main() {
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(
-      const ProviderScope(child: MaterialApp(home: SizedBox())),
+      const ProviderScope(
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: SizedBox(),
+        ),
+      ),
     );
     await tester.pump();
     expect(gateway.disposeCalls, greaterThanOrEqualTo(1));
@@ -104,6 +139,7 @@ void main() {
 class _ScreenFakeGateway implements NearbyTransferGateway {
   final _events = StreamController<NearbyEvent>.broadcast();
   int disposeCalls = 0;
+  String? advertisedName;
 
   void add(NearbyEvent event) => _events.add(event);
 
@@ -148,7 +184,9 @@ class _ScreenFakeGateway implements NearbyTransferGateway {
   }) async {}
 
   @override
-  Future<void> startAdvertising({required String displayName}) async {}
+  Future<void> startAdvertising({required String displayName}) async {
+    advertisedName = displayName;
+  }
 
   @override
   Future<void> startDiscovery({required String displayName}) async {}
@@ -178,6 +216,10 @@ class _UnusedPackageGateway implements WorldCupPackagePort {
       throw UnimplementedError();
 
   @override
-  Future<void> share(WorldCupModel model, {ShareOrigin? origin}) =>
-      throw UnimplementedError();
+  Future<void> share(
+    WorldCupModel model, {
+    ShareOrigin? origin,
+    required String title,
+    required String subject,
+  }) => throw UnimplementedError();
 }

@@ -1,3 +1,4 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 // #19 회귀 테스트.
 //
 // 항목 설명은 20자로 제한하는 것이 기획 의도였지만, 여러 장 업로드 경로에는
@@ -118,7 +119,13 @@ void main() {
     const long =
         '가나다라마바사아자차카타파하가나다라마바'
         '사아자차카타파하가나다라마바사아자차카타';
-    const item = WorldCupItemModel(1, 'assets/sample/female/chu.jpg', long, -1);
+    // Arbitrary text layout, not the built-in sample's translated name.
+    const item = WorldCupItemModel(
+      1,
+      'assets/sample/female/chu.jpg',
+      long,
+      -9999,
+    );
 
     final container = ProviderContainer();
     addTearDown(container.dispose);
@@ -127,6 +134,8 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [

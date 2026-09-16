@@ -18,7 +18,12 @@ abstract interface class WorldCupPackagePort {
   /// 시스템 공유 시트로 내보낸다.
   ///
   /// [origin]은 iPad에서 팝오버를 띄울 화면상 위치다.
-  Future<void> share(WorldCupModel model, {ShareOrigin? origin});
+  Future<void> share(
+    WorldCupModel model, {
+    ShareOrigin? origin,
+    required String title,
+    required String subject,
+  });
 
   /// 패키지 파일을 만들고 그 경로를 돌려준다.
   Future<String> createPackage(WorldCupModel model);

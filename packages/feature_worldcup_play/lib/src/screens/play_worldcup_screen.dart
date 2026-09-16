@@ -62,8 +62,16 @@ class _PlayWorldCupScreenState extends ConsumerState<PlayWorldCupScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: AutoScrollingText(
-            worldCupModel?.title ?? '',
-            semanticsLabel: '${worldCupModel?.title ?? ''} 게임 화면',
+            AppLocalizations.of(context).worldCupTitle(
+              worldCupModel?.idx ?? 0,
+              worldCupModel?.title ?? '',
+            ),
+            semanticsLabel: AppLocalizations.of(context).playScreenSemantics(
+              AppLocalizations.of(context).worldCupTitle(
+                worldCupModel?.idx ?? 0,
+                worldCupModel?.title ?? '',
+              ),
+            ),
           ),
           systemOverlayStyle: SystemUiOverlayStyle.dark,
         ),
@@ -80,21 +88,21 @@ class _PlayWorldCupScreenState extends ConsumerState<PlayWorldCupScreen> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('게임 종료'),
-          content: const Text('게임을 종료하시겠습니까?\n진행 상황은 저장되지 않습니다.'),
+          title: Text(AppLocalizations.of(context).playExitTitle),
+          content: Text(AppLocalizations.of(context).playExitBody),
           actions: <Widget>[
             TextButton(
               style: TextButton.styleFrom(
                 textStyle: Theme.of(dialogContext).textTheme.labelLarge,
               ),
-              child: const Text('아니오'),
+              child: Text(AppLocalizations.of(context).commonNo),
               onPressed: () => Navigator.pop(dialogContext),
             ),
             TextButton(
               style: TextButton.styleFrom(
                 textStyle: Theme.of(dialogContext).textTheme.labelLarge,
               ),
-              child: const Text('네'),
+              child: Text(AppLocalizations.of(context).commonYes),
               onPressed: () {
                 Navigator.pop(dialogContext); // 다이얼로그 닫기
                 Navigator.of(context).pop(); // 게임 화면 닫기

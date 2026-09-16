@@ -62,9 +62,13 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
         child: Column(
           children: [
             Text(
-              widget.isEditMode ? "사진 수정" : "사진 추가",
+              widget.isEditMode
+                  ? AppLocalizations.of(context).editorEditPhoto
+                  : AppLocalizations.of(context).editorAddPhoto,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              semanticsLabel: widget.isEditMode ? "사진 수정" : "사진 추가",
+              semanticsLabel: widget.isEditMode
+                  ? AppLocalizations.of(context).editorEditPhoto
+                  : AppLocalizations.of(context).editorAddPhoto,
             ),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
             Row(
@@ -72,7 +76,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                 // 사진 찍기
                 Expanded(
                   child: Semantics(
-                    label: "Take a photo",
+                    label: AppLocalizations.of(context).editorTakePhoto,
                     child: InkWell(
                       onTap: () => getCameraImage(),
                       child: Column(
@@ -86,9 +90,10 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                               decoration: const BoxDecoration(
                                 color: Colors.grey,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.camera_alt,
-                                semanticLabel: "카메라",
+                                semanticLabel: AppLocalizations.of(context)
+                                    .editorCamera,
                               ),
                             ),
                           ),
@@ -100,7 +105,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                 // 앨범에서 가져오기
                 Expanded(
                   child: Semantics(
-                    label: "Get a picture from album",
+                    label: AppLocalizations.of(context).editorFromAlbum,
                     child: InkWell(
                       onTap: () => getAlbumImage(),
                       child: Column(
@@ -114,9 +119,10 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                               decoration: const BoxDecoration(
                                 color: Colors.grey,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.photo_album,
-                                semanticLabel: "앨범",
+                                semanticLabel: AppLocalizations.of(context)
+                                    .editorAlbum,
                               ),
                             ),
                           ),
@@ -156,7 +162,10 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                   : Image.asset("assets/images/free_character.png"),
             ),
             isPictureEmpty
-                ? const Text("사진을 추가해주세요", style: TextStyle(color: Colors.red))
+                ? Text(
+                    AppLocalizations.of(context).editorPhotoRequired,
+                    style: const TextStyle(color: Colors.red),
+                  )
                 : const Padding(padding: EdgeInsetsDirectional.only(bottom: 1)),
             const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
             // 사진 설명 입력
@@ -168,9 +177,13 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                     controller: _imageInfoController,
                     validator: (value) => checkImageInfo(),
                     focusNode: _imageInfoFocusNode,
-                    decoration: const InputDecoration(
-                      labelText: '사진 설명',
-                      hintStyle: TextStyle(color: Colors.black38, fontSize: 12),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)
+                          .editorPhotoDescription,
+                      hintStyle: const TextStyle(
+                        color: Colors.black38,
+                        fontSize: 12,
+                      ),
                     ),
                     maxLength: 20,
                   ),
@@ -182,13 +195,15 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 IconOutlinedButton(
-                  "취소",
+                  AppLocalizations.of(context).commonCancel,
                   Icons.cancel_outlined,
                   Colors.red,
                   onPressed: () => Navigator.pop(context),
                 ),
                 IconOutlinedButton(
-                  widget.isEditMode ? "수정" : "추가",
+                  widget.isEditMode
+                      ? AppLocalizations.of(context).commonEdit
+                      : AppLocalizations.of(context).commonAdd,
                   Icons.check,
                   Colors.deepPurple,
                   onPressed: addPicture,
@@ -252,7 +267,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
   // 유효성 검사
   String? checkImageInfo() {
     if (_imageInfoController.text.isEmpty) {
-      return '사진 설명을 입력해주세요.';
+      return AppLocalizations.of(context).editorPhotoDescriptionRequired;
     }
     return null;
   }

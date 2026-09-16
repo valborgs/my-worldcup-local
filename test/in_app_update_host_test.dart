@@ -1,3 +1,4 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,13 +11,19 @@ void main() {
     // 이 위젯은 라우터 위에 있어서, 여기서 새어 나간 예외는 화면 전체를 날린다.
     await tester.pumpWidget(
       const ProviderScope(
-        child: MaterialApp(home: Scaffold(body: Text('본문'))),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: Text('본문')),
+        ),
       ),
     );
 
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) => InAppUpdateHost(child: child!),
           home: const Scaffold(body: Text('본문')),
         ),
@@ -34,6 +41,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Stack(
           children: [
             GestureDetector(
@@ -59,7 +68,11 @@ void main() {
     var updates = 0;
 
     await tester.pumpWidget(
-      MaterialApp(home: RequiredUpdateOverlay(onUpdate: () => updates++)),
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RequiredUpdateOverlay(onUpdate: () => updates++),
+      ),
     );
 
     expect(find.text('업데이트가 필요합니다'), findsOneWidget);

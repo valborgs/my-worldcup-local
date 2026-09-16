@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -76,7 +78,11 @@ Widget app(ScreenApi api, Widget screen) => ProviderScope(
     supportProvider.overrideWithValue(api),
     inquiryImageUploadProvider.overrideWithValue(NoUpload()),
   ],
-  child: MaterialApp(home: screen),
+  child: MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: screen,
+  ),
 );
 
 Future<void> send(WidgetTester tester) async {
@@ -183,7 +189,7 @@ void main() {
       ..onFetch = (_) async => throw const SupportFailure('network', '연결 실패');
     await tester.pumpWidget(app(api, const NoticesScreen()));
     await tester.pumpAndSettle();
-    expect(find.text('연결 실패'), findsOneWidget);
+    expect(find.text('처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'), findsOneWidget);
     api.onFetch = (_) async =>
         NoticePage(notices: [], count: 0, hasNext: false);
     await tester.tap(find.text('다시 불러오기'));

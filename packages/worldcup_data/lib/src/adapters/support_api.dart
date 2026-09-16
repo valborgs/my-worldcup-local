@@ -1,3 +1,5 @@
+import 'package:worldcup_core/worldcup_core.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -25,7 +27,11 @@ class SupportApi implements SupportPort {
     Map<String, Object?>? body,
   }) async {
     if (apiKey.trim().isEmpty || baseUrl.trim().isEmpty) {
-      throw const SupportFailure('configuration', '서비스 연결 설정이 준비되지 않았습니다.');
+      throw const SupportFailure(
+        'configuration',
+        '서비스 연결 설정이 준비되지 않았습니다.',
+        userMessage: AppMessage(AppMessageId.supportConfiguration),
+      );
     }
     final base = Uri.tryParse(baseUrl.trim());
     if (base == null ||
@@ -35,7 +41,11 @@ class SupportApi implements SupportPort {
         base.userInfo.isNotEmpty ||
         base.hasQuery ||
         base.hasFragment) {
-      throw const SupportFailure('configuration', '서비스 주소를 확인해 주세요.');
+      throw const SupportFailure(
+        'configuration',
+        '서비스 주소를 확인해 주세요.',
+        userMessage: AppMessage(AppMessageId.supportAddress),
+      );
     }
     final uri = base.replace(
       path: '${base.path.endsWith('/') ? base.path : '${base.path}/'}$path',
@@ -61,6 +71,7 @@ class SupportApi implements SupportPort {
       throw SupportFailure(
         'network',
         '서버에 연결하지 못했습니다. 네트워크를 확인해 주세요.',
+        userMessage: const AppMessage(AppMessageId.supportNetwork),
         deliveryUncertain: body != null,
       );
     }
@@ -75,15 +86,15 @@ class SupportApi implements SupportPort {
     if (!succeeded) {
       final rawError = json?['error'];
       final error = rawError is Map ? rawError : const {};
-      final fields = <String, List<String>>{};
+      final fields = <String, List<AppMessage>>{};
       final rawFields = error['fields'];
       // Error bodies may contain echoed input, internal URLs or debug details.
       // Use only known field names, with messages owned by the app.
       if (response.statusCode == 400 && rawFields is Map) {
         const fieldMessages = {
-          'email': '올바른 이메일 주소를 입력해 주세요.',
-          'content': '문의 내용은 공백을 제외하고 1~5,000자로 입력해 주세요.',
-          'screenshot_url': '스크린샷을 다시 첨부하거나 제거해 주세요.',
+          'email': AppMessage(AppMessageId.supportEmailInvalid),
+          'content': AppMessage(AppMessageId.supportContentInvalid),
+          'screenshot_url': AppMessage(AppMessageId.supportScreenshotInvalid),
         };
         for (final entry in fieldMessages.entries) {
           if (rawFields.containsKey(entry.key)) {
@@ -91,16 +102,23 @@ class SupportApi implements SupportPort {
           }
         }
       }
-      final (code, message) = switch (response.statusCode) {
-        400 => ('validation_error', '입력 내용을 확인해 주세요.'),
-        401 || 403 => ('authentication', '서비스 인증에 실패했습니다. 잠시 후 다시 시도해 주세요.'),
-        404 => ('not_found', '요청한 정보를 찾을 수 없습니다. 다시 불러와 주세요.'),
-        429 => ('throttled', '요청이 많아 잠시 기다려야 합니다.'),
-        _ => ('server', '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'),
+      final (code, userMessage) = switch (response.statusCode) {
+        400 => (
+          'validation_error',
+          const AppMessage(AppMessageId.supportValidation),
+        ),
+        401 || 403 => (
+          'authentication',
+          const AppMessage(AppMessageId.supportAuthentication),
+        ),
+        404 => ('not_found', const AppMessage(AppMessageId.supportNotFound)),
+        429 => ('throttled', const AppMessage(AppMessageId.supportThrottled)),
+        _ => ('server', const AppMessage(AppMessageId.supportServer)),
       };
       throw SupportFailure(
         code,
-        message,
+        code,
+        userMessage: userMessage,
         fields: fields,
         retryAfterSeconds: response.statusCode == 429
             ? int.tryParse(response.headers['retry-after'] ?? '')
@@ -112,6 +130,7 @@ class SupportApi implements SupportPort {
       throw SupportFailure(
         'invalid_response',
         '서버 응답을 확인하지 못했습니다.',
+        userMessage: const AppMessage(AppMessageId.supportInvalidResponse),
         deliveryUncertain: body != null,
       );
     }
@@ -138,7 +157,11 @@ class SupportApi implements SupportPort {
         }).toList(),
       );
     } catch (_) {
-      throw const SupportFailure('invalid_response', '공지사항 응답을 확인하지 못했습니다.');
+      throw const SupportFailure(
+        'invalid_response',
+        '공지사항 응답을 확인하지 못했습니다.',
+        userMessage: AppMessage(AppMessageId.supportNoticesResponse),
+      );
     }
   }
 
@@ -179,6 +202,7 @@ class SupportApi implements SupportPort {
       throw const SupportFailure(
         'invalid_response',
         '접수 결과를 확인하지 못했습니다.',
+        userMessage: AppMessage(AppMessageId.supportReceiptResponse),
         deliveryUncertain: true,
       );
     }
