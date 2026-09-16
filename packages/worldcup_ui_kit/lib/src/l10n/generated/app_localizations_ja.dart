@@ -15,7 +15,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get appTitle => '自分で作るワールドカップ';
+  String get appTitle => '推しバト';
 
   @override
   String get worldCupAddMenu => 'ワールドカップ追加メニュー';

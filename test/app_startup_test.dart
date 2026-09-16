@@ -74,9 +74,9 @@ void main() {
     await tester.pumpAndSettle();
     final context = tester.element(find.text('スキップ'));
     expect(Localizations.localeOf(context), const Locale('ja'));
-    expect(AppLocalizations.of(context).appTitle, '自分で作るワールドカップ');
+    expect(AppLocalizations.of(context).appTitle, '推しバト');
     expect(MaterialLocalizations.of(context).cancelButtonLabel, 'キャンセル');
-    expect(findApp(tester).onGenerateTitle!(context), '自分で作るワールドカップ');
+    expect(findApp(tester).onGenerateTitle!(context), '推しバト');
     expect(findApp(tester).supportedLocales.first, const Locale('ko'));
     expect(tester.takeException(), isNull);
   });

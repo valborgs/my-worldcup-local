@@ -1,5 +1,5 @@
 // Generated from app_ja.arb. Do not edit.
-"CFBundleDisplayName" = "自分で作るワールドカップ";
+"CFBundleDisplayName" = "推しバト";
 "NSBluetoothAlwaysUsageDescription" = "近くのデバイスとワールドカップのファイルを直接送受信するために Bluetooth を使用します。";
 "NSLocalNetworkUsageDescription" = "インターネットを使わずに近くのデバイスとワールドカップのファイルを直接転送するために、ローカルネットワークを使用します。";
 "NSCameraUsageDescription" = "ワールドカップに使用する写真を撮影するためにカメラを使用します。";
