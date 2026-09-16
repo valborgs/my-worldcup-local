@@ -204,6 +204,28 @@ class WorldCupListViewModel extends ChangeNotifier {
     return PagerTarget(targetIndex, replacedWindow: true);
   }
 
+  /// 전체 목록의 위치로 이동한다. 먼 위치도 한 페이지 조회로 처리한다.
+  Future<PagerTarget?> locatePagerPosition(int index) async {
+    if (_disposed || index < 0 || index >= _totalCount) return null;
+    final generation = ++_windowGeneration;
+    _deferredPagerTrimSide = null;
+    final localIndex = index - _pagerOffset;
+    if (localIndex >= 0 && localIndex < _pagerItems.length) {
+      return PagerTarget(localIndex, replacedWindow: false);
+    }
+    final maxOffset = (_totalCount - pageSize).clamp(0, _totalCount);
+    final offset = (index - pageSize ~/ 2).clamp(0, maxOffset);
+    final items = await _repository.page(limit: pageSize, offset: offset);
+    if (_disposed || generation != _windowGeneration) return null;
+    final targetIndex = index - offset;
+    if (targetIndex >= items.length) return null;
+    _pagerOffset = offset;
+    _pagerItems = items;
+    _deferredPagerTrimSide = null;
+    _notify();
+    return PagerTarget(targetIndex, replacedWindow: true);
+  }
+
   /// 페이저의 다음 페이지를 이어 붙인다.
   Future<void> loadNextPagerPage({bool deferTrim = false}) async {
     final offset = _pagerOffset + _pagerItems.length;

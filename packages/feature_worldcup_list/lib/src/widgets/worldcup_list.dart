@@ -47,6 +47,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
   bool _isSearchCloseScheduled = false;
   bool _isHandlingSheetItemTap = false;
   bool _isPagerTransitionInFlight = false;
+  bool _isJumping = false;
   bool _isLoadingNextSheetPage = false;
   bool _isLoadingPreviousSheetPage = false;
   int _pagerNavigationRequest = 0;
@@ -143,7 +144,8 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                   0,
                   32,
                   0,
-                  hasSheet ? _sheetHeaderHeight + 16 : 32,
+                  (hasSheet ? _sheetHeaderHeight : 0) +
+                      (_allTotalCount > 1 ? 64 : 32),
                 ),
                 child: CoverFlowPager<WorldCupModel>(
                   key: _pagerKey,
@@ -163,7 +165,7 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                     showDialogBeforeGameStart(context, model, refresh);
                   },
                   onPageChanged: (_, index) {
-                    if (_isPagerTransitionInFlight) return;
+                    if (_isPagerTransitionInFlight || _isJumping) return;
                     _prefetchAroundPagerIndex(index);
                   },
                   onScrollEnd: _vm.trimDeferredPagerWindow,
@@ -179,6 +181,36 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
                   },
                 ),
               ),
+              if (_allTotalCount > 1)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: (hasSheet ? _sheetHeaderHeight : 0) + 8,
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    children: [
+                      TextButton.icon(
+                        onPressed: _isJumping ? null : () => _jumpToPosition(0),
+                        icon: const Icon(Icons.first_page),
+                        label: const Text('맨 앞'),
+                      ),
+                      TextButton.icon(
+                        onPressed: _isJumping
+                            ? null
+                            : () => _jumpToPosition((_allTotalCount - 1) ~/ 2),
+                        icon: const Icon(Icons.unfold_less),
+                        label: const Text('중간'),
+                      ),
+                      TextButton.icon(
+                        onPressed: _isJumping
+                            ? null
+                            : () => _jumpToPosition(_allTotalCount - 1),
+                        icon: const Icon(Icons.last_page),
+                        label: const Text('맨 뒤'),
+                      ),
+                    ],
+                  ),
+                ),
               if (hasSheet)
                 DraggableScrollableSheet(
                   controller: _sheetController,
@@ -276,6 +308,23 @@ class WorldCupListState extends ConsumerState<WorldCupList> {
         },
       ),
     );
+  }
+
+  Future<void> _jumpToPosition(int index) async {
+    if (_isJumping || _isHandlingSheetItemTap) return;
+    setState(() => _isJumping = true);
+    try {
+      final target = await _vm.locatePagerPosition(index);
+      if (!mounted || target == null) return;
+      await _navigateToPagerTarget(target);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('월드컵을 불러오지 못했습니다. 다시 시도해주세요.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isJumping = false);
+    }
   }
 
   Widget _buildSheetHeader(double minSheetSize) {
