@@ -9,6 +9,7 @@
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>ko</string>
+		<string>ja</string>
 	</array>
 	<key>CFBundleDisplayName</key>
 	<string>내가 만든 월드컵</string>

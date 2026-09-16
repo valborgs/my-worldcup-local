@@ -10,6 +10,11 @@ class AppLocalizationsKo extends AppLocalizations {
   AppLocalizationsKo([String locale = 'ko']) : super(locale);
 
   @override
+  String onboardingProgress(int current, int total) {
+    return '전체 $total페이지 중 $current페이지';
+  }
+
+  @override
   String get appTitle => '내가 만든 월드컵';
 
   @override

@@ -14,6 +14,7 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 class ScreenApi implements SupportPort {
   final calls = <int>[];
   int submitted = 0;
+  String? submittedContent;
   Future<NoticePage> Function(int)? onFetch;
   Future<InquiryReceipt> Function()? onSubmit;
   @override
@@ -42,6 +43,7 @@ class ScreenApi implements SupportPort {
     String? screenshotUrl,
   }) async {
     submitted++;
+    submittedContent = content;
     return onSubmit != null
         ? onSubmit!()
         : InquiryReceipt(id: 104, createdAt: DateTime.utc(2026));
@@ -85,22 +87,51 @@ Widget app(ScreenApi api, Widget screen) => ProviderScope(
   ),
 );
 
-Future<void> send(WidgetTester tester) async {
+Future<void> send(WidgetTester tester, {String label = '문의 등록'}) async {
   await tester.scrollUntilVisible(
-    find.widgetWithText(FilledButton, '문의 등록'),
+    find.widgetWithText(FilledButton, label),
     200,
     scrollable: find.byType(Scrollable).first,
   );
   await Scrollable.ensureVisible(
-    tester.element(find.widgetWithText(FilledButton, '문의 등록')),
+    tester.element(find.widgetWithText(FilledButton, label)),
     alignment: 0.5,
   );
   await tester.pumpAndSettle();
-  await tester.tap(find.text('문의 등록'));
+  await tester.tap(find.text(label));
   await tester.pumpAndSettle();
 }
 
 void main() {
+  testWidgets('일본어 문의 검증과 접수 결과는 번역되고 입력 콘텐츠는 보존된다', (tester) async {
+    tester.binding.platformDispatcher.localesTestValue = [const Locale('ja')];
+    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+    final api = ScreenApi();
+    await tester.pumpWidget(app(api, const InquiryScreen()));
+    await tester.pumpAndSettle();
+    expect(find.text('ご意見をお聞かせください'), findsOneWidget);
+    await send(tester, label: '送信');
+    expect(find.text('お問い合わせ内容を入力してください。'), findsOneWidget);
+    expect(api.submitted, 0);
+    await tester.enterText(find.byType(TextFormField).last, '사용자가 작성한 내용');
+    await send(tester, label: '送信');
+    expect(find.text('お問い合わせを受け付けました。'), findsOneWidget);
+    expect(find.text('受付番号：104'), findsOneWidget);
+    expect(api.submitted, 1);
+    expect(api.submittedContent, '사용자가 작성한 내용');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('일본어 공지 화면은 서버 제목과 본문을 그대로 표시한다', (tester) async {
+    tester.binding.platformDispatcher.localesTestValue = [const Locale('ja')];
+    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+    await tester.pumpWidget(app(ScreenApi(), const NoticesScreen()));
+    await tester.pumpAndSettle();
+    expect(find.text('お知らせ'), findsOneWidget);
+    expect(find.text('공지 1'), findsOneWidget);
+    expect(find.text('2026/9/9'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'a pending file picker does not trap the screen and late result is ignored',
     (tester) async {

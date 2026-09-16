@@ -25,11 +25,7 @@ void main() {
   MaterialApp findApp(WidgetTester tester) =>
       tester.widget<MaterialApp>(find.byType(MaterialApp));
 
-  for (final locale in [
-    const Locale('ko', 'KR'),
-    const Locale('ja', 'JP'),
-    const Locale('en', 'US'),
-  ]) {
+  for (final locale in [const Locale('ko', 'KR'), const Locale('en', 'US')]) {
     testWidgets('$locale 기기에서 한국어 앱 및 기본 위젯 리소스를 사용한다', (tester) async {
       tester.binding.platformDispatcher.localesTestValue = [locale];
       addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
@@ -46,6 +42,22 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('일본어 기기에서 앱과 기본 위젯이 일본어로 표시된다', (tester) async {
+    tester.binding.platformDispatcher.localesTestValue = [
+      const Locale('ja', 'JP'),
+    ];
+    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+    await tester.pumpWidget(app(isAlreadyShownHelp: null));
+    await tester.pumpAndSettle();
+    final context = tester.element(find.text('スキップ'));
+    expect(Localizations.localeOf(context), const Locale('ja'));
+    expect(AppLocalizations.of(context).appTitle, '自分で作るワールドカップ');
+    expect(MaterialLocalizations.of(context).cancelButtonLabel, 'キャンセル');
+    expect(findApp(tester).onGenerateTitle!(context), '自分で作るワールドカップ');
+    expect(findApp(tester).supportedLocales.first, const Locale('ko'));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('첫 화면도 라우터를 거친다', (tester) async {
     await tester.pumpWidget(app(isAlreadyShownHelp: null));

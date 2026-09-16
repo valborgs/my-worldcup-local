@@ -5,6 +5,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:my_worldcup_local/update/in_app_update_host.dart';
 
 void main() {
+  testWidgets('일본어 필수 업데이트 안내는 작은 화면과 큰 글자에서 표시된다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('ja'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
+          child: RequiredUpdateOverlay(onUpdate: () {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('アップデートが必要です'), findsOneWidget);
+    expect(find.text('アップデート'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets('의존성을 만들지 못해도 앱 화면은 그대로 뜬다', (tester) async {
     // featureFlagProvider는 override 되지 않으면 던진다. main()이 Firebase
     // 초기화 실패를 잡고 앱을 계속 띄운 뒤 이 포트를 만들 때와 같은 상황이다.

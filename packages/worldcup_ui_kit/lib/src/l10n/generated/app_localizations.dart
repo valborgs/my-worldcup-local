@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_ja.dart';
 import 'app_localizations_ko.dart';
 
 // ignore_for_file: type=lint
@@ -92,7 +93,16 @@ abstract class AppLocalizations {
       ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[Locale('ko')];
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('ko'),
+    Locale('ja'),
+  ];
+
+  /// 온보딩 페이지 표시기의 접근성 안내
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 {total}페이지 중 {current}페이지'**
+  String onboardingProgress(int current, int total);
 
   /// 앱의 표시 제목
   ///
@@ -2044,7 +2054,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['ko'].contains(locale.languageCode);
+      <String>['ja', 'ko'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -2053,6 +2063,8 @@ class _AppLocalizationsDelegate
 AppLocalizations lookupAppLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'ja':
+      return AppLocalizationsJa();
     case 'ko':
       return AppLocalizationsKo();
   }

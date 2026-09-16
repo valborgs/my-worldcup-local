@@ -56,6 +56,7 @@ class _HelpScreenState extends State<HelpScreen> {
           label: AppLocalizations.of(context).onboardingSemantics,
           child: IntroductionScreen(
             pages: _pages(context),
+            progressSemantic: AppLocalizations.of(context).onboardingProgress,
             showNextButton: true,
             next: Text(
               AppLocalizations.of(context).commonNext,
