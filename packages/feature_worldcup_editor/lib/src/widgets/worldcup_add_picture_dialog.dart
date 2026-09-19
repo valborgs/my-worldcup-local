@@ -190,31 +190,28 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                 ],
               ),
             ),
-            const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-            OverflowBar(
-              alignment: MainAxisAlignment.spaceEvenly,
-              spacing: 8,
-              overflowSpacing: 8,
-              children: [
-                IconOutlinedButton(
-                  AppLocalizations.of(context).commonCancel,
-                  Icons.cancel_outlined,
-                  Colors.red,
-                  onPressed: () => Navigator.pop(context),
-                ),
-                IconOutlinedButton(
-                  widget.isEditMode
-                      ? AppLocalizations.of(context).commonEdit
-                      : AppLocalizations.of(context).commonAdd,
-                  Icons.check,
-                  Colors.deepPurple,
-                  onPressed: addPicture,
-                ),
-              ],
-            ),
           ],
         ),
       ),
+      // 버튼은 스크롤 영역 밖(actions)에 둬야 키보드가 올라와도 가려지지 않는다.
+      actionsAlignment: MainAxisAlignment.spaceEvenly,
+      actionsOverflowButtonSpacing: 8,
+      actions: [
+        IconOutlinedButton(
+          AppLocalizations.of(context).commonCancel,
+          Icons.cancel_outlined,
+          Colors.red,
+          onPressed: () => Navigator.pop(context),
+        ),
+        IconOutlinedButton(
+          widget.isEditMode
+              ? AppLocalizations.of(context).commonEdit
+              : AppLocalizations.of(context).commonAdd,
+          Icons.check,
+          Colors.deepPurple,
+          onPressed: addPicture,
+        ),
+      ],
     );
   }
 
