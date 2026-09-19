@@ -115,6 +115,8 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
   );
 
   var isLoading = false;
+  // 공유 확인 창이 떠 있는 동안 버튼을 다시 눌러 창이 겹치지 않게 한다.
+  var _confirmingShare = false;
 
   @override
   Widget build(BuildContext context) {
@@ -297,7 +299,17 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
 
   // 카카오톡 공유하기 기능
   Future<void> shareGameWithKakao() async {
-    if (isLoading) return;
+    if (isLoading || _confirmingShare) return;
+    // 공유하려면 사진을 외부 이미지 호스팅에 올려야 한다. 링크를 받은
+    // 사람은 누구나 볼 수 있으므로 업로드 전에 사용자에게 먼저 묻는다.
+    _confirmingShare = true;
+    final bool confirmed;
+    try {
+      confirmed = await _confirmPhotoShare();
+    } finally {
+      _confirmingShare = false;
+    }
+    if (!confirmed || !mounted) return;
     setState(() => isLoading = true);
 
     try {
@@ -347,5 +359,29 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
+  }
+
+  /// 사진 공유 전 확인. 사용자가 확인을 눌렀을 때만 true.
+  Future<bool> _confirmPhotoShare() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        final l10n = AppLocalizations.of(dialogContext);
+        return AlertDialog(
+          content: Text(l10n.resultShareConfirmBody),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.commonCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(l10n.commonConfirm),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed ?? false;
   }
 }

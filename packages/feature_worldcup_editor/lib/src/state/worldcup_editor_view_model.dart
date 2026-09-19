@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/foundation.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
@@ -36,10 +38,17 @@ class WorldCupEditorViewModel extends ChangeNotifier {
 
   final WorldCupRepository _repository;
 
+  /// 새로 고른 사진의 위치 정보 등 메타데이터를 지운다.
+  final ImageMetadataPort _imageMetadata;
+
   /// 수정할 월드컵 id. `null`이면 새로 만드는 중이다.
   final int? editWorldCupId;
 
-  WorldCupEditorViewModel(this._repository, {this.editWorldCupId});
+  WorldCupEditorViewModel(
+    this._repository, {
+    required this._imageMetadata,
+    this.editWorldCupId,
+  });
 
   bool _disposed = false;
 
@@ -66,12 +75,25 @@ class WorldCupEditorViewModel extends ChangeNotifier {
 
   bool _isLoading = false;
 
+  bool _isProcessingImage = false;
+  int _processedImageCount = 0;
+  int _processingImageTotal = 0;
+
   List<EditorItem> get items => List.unmodifiable(_items);
 
   bool get isEditMode => editWorldCupId != null;
 
   /// 수정 모드에서 원본을 불러오는 중인지.
   bool get isLoading => _isLoading;
+
+  /// 새로 고른 사진의 메타데이터를 지우는 중인지.
+  bool get isProcessingImage => _isProcessingImage;
+
+  /// [prepareImages]가 처리를 마친 사진 수. 여러 장을 처리할 때만 센다.
+  int get processedImageCount => _processedImageCount;
+
+  /// [prepareImages]가 처리할 전체 사진 수. 처리 중이 아니면 0.
+  int get processingImageTotal => _processingImageTotal;
 
   /// 수정 모드에서 원본을 불러왔는지. 새로 만드는 중이면 항상 참이다.
   bool get isReady => !isEditMode || _original != null;
@@ -105,6 +127,65 @@ class WorldCupEditorViewModel extends ChangeNotifier {
     } finally {
       _isLoading = false;
       _notify();
+    }
+  }
+
+  /// 새로 고른 사진 [sourcePath]에서 메타데이터를 지운 사본의 경로.
+  ///
+  /// 월드컵 사진은 공유 파일에 담겨 다른 사람에게 가므로, 항목에는 이
+  /// 경로를 넣어야 한다. 지우지 못했거나 그 사이 화면이 닫혔으면 `null`.
+  /// 이때 원본을 대신 쓰지 않는다.
+  Future<String?> prepareImage(String sourcePath) async {
+    _isProcessingImage = true;
+    _notify();
+    try {
+      return await _strip(sourcePath);
+    } finally {
+      _isProcessingImage = false;
+      _notify();
+    }
+  }
+
+  /// 여러 장을 [prepareImage]처럼 처리한다. 결과는 입력과 같은 순서이며,
+  /// 처리하지 못한 사진 자리는 `null`이다.
+  ///
+  /// 한 장 끝날 때마다 알리므로 화면은 [processedImageCount] /
+  /// [processingImageTotal]로 진행률을 보여 줄 수 있다. 원본 사진은 한 장에
+  /// 수 초씩 걸릴 수 있어, 진행이 보이지 않으면 앱이 멈춘 것처럼 보인다.
+  /// 도중에 화면이 닫히면 남은 사진은 처리하지 않는다.
+  Future<List<String?>> prepareImages(List<String> sourcePaths) async {
+    final results = <String?>[];
+    _isProcessingImage = true;
+    _processedImageCount = 0;
+    _processingImageTotal = sourcePaths.length;
+    _notify();
+    try {
+      for (final sourcePath in sourcePaths) {
+        results.add(_disposed ? null : await _strip(sourcePath));
+        _processedImageCount++;
+        _notify();
+      }
+      return results;
+    } finally {
+      _isProcessingImage = false;
+      _processedImageCount = 0;
+      _processingImageTotal = 0;
+      _notify();
+    }
+  }
+
+  Future<String?> _strip(String sourcePath) async {
+    try {
+      final path = await _imageMetadata.stripMetadata(sourcePath);
+      return _disposed ? null : path;
+    } catch (error, stackTrace) {
+      log(
+        '사진 메타데이터 제거 실패',
+        error: error,
+        stackTrace: stackTrace,
+        name: 'worldcup_editor_view_model',
+      );
+      return null;
     }
   }
 

@@ -395,6 +395,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resultShareFailed => 'Could not share. Please try again later.';
 
   @override
+  String get editorImageProcessing =>
+      'Removing location and other details from the photo…';
+
+  @override
+  String get editorImageProcessFailed =>
+      'Could not process this photo. Please choose another one.';
+
+  @override
+  String editorImageProcessingProgress(int done, int total) {
+    return 'Processing photos $done/$total';
+  }
+
+  @override
+  String editorImagesProcessFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count photos could not be processed and were skipped.',
+      one: '1 photo could not be processed and was skipped.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get resultShareConfirmBody =>
+      'Share this photo with other people?\nPlease check once more that it contains nothing sensitive.';
+
+  @override
   String get commonSelectButton => 'Select button';
 
   @override

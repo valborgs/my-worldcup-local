@@ -492,6 +492,39 @@
   "@resultShareFailed": {
     "description": "공유할 수 없습니다. 잠시 후 다시 시도해주세요."
   },
+  "editorImageProcessing": "写真の位置情報などを削除しています…",
+  "@editorImageProcessing": {
+    "description": "사진의 위치 정보 등을 지우는 중…"
+  },
+  "editorImageProcessFailed": "写真を処理できませんでした。別の写真を選択してください。",
+  "@editorImageProcessFailed": {
+    "description": "사진을 처리하지 못했습니다. 다른 사진을 선택해 주세요."
+  },
+  "editorImageProcessingProgress": "写真を処理中 {done}/{total}",
+  "@editorImageProcessingProgress": {
+    "description": "사진 처리 중 {done}/{total}",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "editorImagesProcessFailed": "{count}枚の写真を処理できなかったため除外しました。",
+  "@editorImagesProcessFailed": {
+    "description": "사진 {count}장을 처리하지 못해 제외했습니다.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultShareConfirmBody": "この写真を他の人と共有しますか？\n見られて困る内容が含まれていないか、もう一度ご確認ください。",
+  "@resultShareConfirmBody": {
+    "description": "해당 사진을 다른 사람과 공유하시겠습니까? 민감한 내용이 없는지 한 번 더 확인해주세요."
+  },
   "commonSelectButton": "選択ボタン",
   "@commonSelectButton": {
     "description": "선택 버튼"

@@ -378,6 +378,26 @@ class AppLocalizationsJa extends AppLocalizations {
   String get resultShareFailed => '共有できません。しばらくしてからもう一度お試しください。';
 
   @override
+  String get editorImageProcessing => '写真の位置情報などを削除しています…';
+
+  @override
+  String get editorImageProcessFailed => '写真を処理できませんでした。別の写真を選択してください。';
+
+  @override
+  String editorImageProcessingProgress(int done, int total) {
+    return '写真を処理中 $done/$total';
+  }
+
+  @override
+  String editorImagesProcessFailed(int count) {
+    return '$count枚の写真を処理できなかったため除外しました。';
+  }
+
+  @override
+  String get resultShareConfirmBody =>
+      'この写真を他の人と共有しますか？\n見られて困る内容が含まれていないか、もう一度ご確認ください。';
+
+  @override
   String get commonSelectButton => '選択ボタン';
 
   @override

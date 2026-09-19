@@ -9,6 +9,7 @@ export 'src/adapters/imgbb_inquiry_uploader.dart';
 
 export 'src/adapters/admob_ad_units.dart';
 export 'src/adapters/firebase_feature_flags.dart';
+export 'src/adapters/image_metadata_stripper.dart';
 export 'src/adapters/imgbb_image_uploader.dart';
 export 'src/adapters/kakao_share_adapter.dart';
 export 'src/database/app_database.dart';

@@ -826,6 +826,36 @@ abstract class AppLocalizations {
   /// **'공유할 수 없습니다. 잠시 후 다시 시도해주세요.'**
   String get resultShareFailed;
 
+  /// 사진의 위치 정보 등을 지우는 중…
+  ///
+  /// In ko, this message translates to:
+  /// **'사진의 위치 정보 등을 지우는 중…'**
+  String get editorImageProcessing;
+
+  /// 사진을 처리하지 못했습니다. 다른 사진을 선택해 주세요.
+  ///
+  /// In ko, this message translates to:
+  /// **'사진을 처리하지 못했습니다. 다른 사진을 선택해 주세요.'**
+  String get editorImageProcessFailed;
+
+  /// 사진 처리 중 {done}/{total}
+  ///
+  /// In ko, this message translates to:
+  /// **'사진 처리 중 {done}/{total}'**
+  String editorImageProcessingProgress(int done, int total);
+
+  /// 사진 {count}장을 처리하지 못해 제외했습니다.
+  ///
+  /// In ko, this message translates to:
+  /// **'사진 {count}장을 처리하지 못해 제외했습니다.'**
+  String editorImagesProcessFailed(int count);
+
+  /// 해당 사진을 다른 사람과 공유하시겠습니까? 민감한 내용이 없는지 한 번 더 확인해주세요.
+  ///
+  /// In ko, this message translates to:
+  /// **'해당 사진을 다른 사람과 공유하시겠습니까?\n민감한 내용이 없는지 한 번 더 확인해주세요.'**
+  String get resultShareConfirmBody;
+
   /// 선택 버튼
   ///
   /// In ko, this message translates to:

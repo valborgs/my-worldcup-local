@@ -16,7 +16,10 @@ void main() {
 
   group('항목 목록', () {
     test('추가하면 순서대로 쌓인다', () {
-      final vm = WorldCupEditorViewModel(_FakeRepository());
+      final vm = WorldCupEditorViewModel(
+        _FakeRepository(),
+        imageMetadata: _FakeImageMetadata(),
+      );
       addTearDown(vm.dispose);
 
       vm.addItem(item('가'));
@@ -26,7 +29,10 @@ void main() {
     });
 
     test('교체는 해당 자리만 바꾼다', () {
-      final vm = WorldCupEditorViewModel(_FakeRepository());
+      final vm = WorldCupEditorViewModel(
+        _FakeRepository(),
+        imageMetadata: _FakeImageMetadata(),
+      );
       addTearDown(vm.dispose);
       for (final e in items(3)) {
         vm.addItem(e);
@@ -39,7 +45,10 @@ void main() {
 
     test('삭제하면 경로와 설명이 함께 빠진다', () {
       // 예전에는 경로 목록과 설명 목록이 따로 있어 한쪽만 지우면 어긋났다.
-      final vm = WorldCupEditorViewModel(_FakeRepository());
+      final vm = WorldCupEditorViewModel(
+        _FakeRepository(),
+        imageMetadata: _FakeImageMetadata(),
+      );
       addTearDown(vm.dispose);
       for (final e in items(3)) {
         vm.addItem(e);
@@ -55,7 +64,10 @@ void main() {
     });
 
     test('범위를 벗어난 인덱스는 무시한다', () {
-      final vm = WorldCupEditorViewModel(_FakeRepository());
+      final vm = WorldCupEditorViewModel(
+        _FakeRepository(),
+        imageMetadata: _FakeImageMetadata(),
+      );
       addTearDown(vm.dispose);
       vm.addItem(item('하나'));
 
@@ -66,7 +78,10 @@ void main() {
     });
 
     test('항목이 바뀌면 리스너에게 알린다', () {
-      final vm = WorldCupEditorViewModel(_FakeRepository());
+      final vm = WorldCupEditorViewModel(
+        _FakeRepository(),
+        imageMetadata: _FakeImageMetadata(),
+      );
       addTearDown(vm.dispose);
       var notified = 0;
       vm.addListener(() => notified++);
@@ -82,7 +97,10 @@ void main() {
   group('저장 가능 여부', () {
     test('4개 미만이면 저장할 수 없다', () async {
       final repo = _FakeRepository();
-      final vm = WorldCupEditorViewModel(repo);
+      final vm = WorldCupEditorViewModel(
+        repo,
+        imageMetadata: _FakeImageMetadata(),
+      );
       addTearDown(vm.dispose);
       for (final e in items(3)) {
         vm.addItem(e);
@@ -95,7 +113,10 @@ void main() {
 
     test('4개면 저장한다', () async {
       final repo = _FakeRepository();
-      final vm = WorldCupEditorViewModel(repo);
+      final vm = WorldCupEditorViewModel(
+        repo,
+        imageMetadata: _FakeImageMetadata(),
+      );
       addTearDown(vm.dispose);
       for (final e in items(4)) {
         vm.addItem(e);
@@ -109,7 +130,10 @@ void main() {
   group('새로 만들기', () {
     test('첫 항목의 이미지를 대표 이미지로 쓰고 개수를 maxRound로 넣는다', () async {
       final repo = _FakeRepository();
-      final vm = WorldCupEditorViewModel(repo);
+      final vm = WorldCupEditorViewModel(
+        repo,
+        imageMetadata: _FakeImageMetadata(),
+      );
       addTearDown(vm.dispose);
       for (final e in items(5)) {
         vm.addItem(e);
@@ -140,7 +164,11 @@ void main() {
           for (var i = 1; i <= 4; i++)
             WorldCupItemModel(i, '/img/항목$i.jpg', '항목$i', 7),
         ];
-      final vm = WorldCupEditorViewModel(repo, editWorldCupId: 7);
+      final vm = WorldCupEditorViewModel(
+        repo,
+        imageMetadata: _FakeImageMetadata(),
+        editWorldCupId: 7,
+      );
       addTearDown(vm.dispose);
 
       await vm.load();
@@ -160,7 +188,11 @@ void main() {
           for (var i = 1; i <= 4; i++)
             WorldCupItemModel(i, '/img/항목$i.jpg', '항목$i', 7),
         ];
-      final vm = WorldCupEditorViewModel(repo, editWorldCupId: 7);
+      final vm = WorldCupEditorViewModel(
+        repo,
+        imageMetadata: _FakeImageMetadata(),
+        editWorldCupId: 7,
+      );
       addTearDown(vm.dispose);
       await vm.load();
 
@@ -175,7 +207,11 @@ void main() {
     test('원본을 못 불러왔으면 수정하지 않는다', () async {
       // 화면 진입 직후 사용자가 바로 확인을 누르면 이 상태가 될 수 있다.
       final repo = _FakeRepository();
-      final vm = WorldCupEditorViewModel(repo, editWorldCupId: 99);
+      final vm = WorldCupEditorViewModel(
+        repo,
+        imageMetadata: _FakeImageMetadata(),
+        editWorldCupId: 99,
+      );
       addTearDown(vm.dispose);
       for (final e in items(4)) {
         vm.addItem(e);
@@ -190,7 +226,11 @@ void main() {
       // 수정 화면에 들어가자마자 뒤로가기를 누르면 이 상황이 된다.
       final repo = _FakeRepository()
         ..worldCups[7] = WorldCupModel(7, 't', 'i', DateTime(2026), 'p', 4);
-      final vm = WorldCupEditorViewModel(repo, editWorldCupId: 7);
+      final vm = WorldCupEditorViewModel(
+        repo,
+        imageMetadata: _FakeImageMetadata(),
+        editWorldCupId: 7,
+      );
       var notified = 0;
       vm.addListener(() => notified++);
 
@@ -207,7 +247,10 @@ void main() {
 
     test('새로 만드는 중이면 load가 아무 일도 하지 않는다', () async {
       final repo = _FakeRepository();
-      final vm = WorldCupEditorViewModel(repo);
+      final vm = WorldCupEditorViewModel(
+        repo,
+        imageMetadata: _FakeImageMetadata(),
+      );
       addTearDown(vm.dispose);
 
       await vm.load();
@@ -216,6 +259,117 @@ void main() {
       expect(repo.findCalls, 0);
     });
   });
+
+  group('사진 메타데이터', () {
+    test('고른 사진 대신 메타데이터를 지운 사본 경로를 돌려준다', () async {
+      final metadata = _FakeImageMetadata();
+      final vm = WorldCupEditorViewModel(
+        _FakeRepository(),
+        imageMetadata: metadata,
+      );
+      addTearDown(vm.dispose);
+      final processing = <bool>[];
+      vm.addListener(() => processing.add(vm.isProcessingImage));
+
+      final path = await vm.prepareImage('/picker/cache/photo.jpg');
+
+      expect(path, '/stripped/photo.jpg');
+      expect(metadata.requested, ['/picker/cache/photo.jpg']);
+      expect(processing, [true, false]);
+    });
+
+    test('메타데이터를 지우지 못하면 원본을 쓰지 않고 null을 돌려준다', () async {
+      final vm = WorldCupEditorViewModel(
+        _FakeRepository(),
+        imageMetadata: _FakeImageMetadata(fail: true),
+      );
+      addTearDown(vm.dispose);
+
+      final path = await vm.prepareImage('/picker/cache/photo.jpg');
+
+      expect(path, isNull);
+      expect(vm.isProcessingImage, isFalse);
+    });
+
+    test('여러 장은 순서대로 처리하며 몇 장째인지 알린다', () async {
+      final vm = WorldCupEditorViewModel(
+        _FakeRepository(),
+        imageMetadata: _FakeImageMetadata(failing: {'/p/b.jpg'}),
+      );
+      addTearDown(vm.dispose);
+      final progress = <(bool, int, int)>[];
+      vm.addListener(
+        () => progress.add((
+          vm.isProcessingImage,
+          vm.processedImageCount,
+          vm.processingImageTotal,
+        )),
+      );
+
+      final paths = await vm.prepareImages([
+        '/p/a.jpg',
+        '/p/b.jpg',
+        '/p/c.jpg',
+      ]);
+
+      expect(paths, ['/stripped/a.jpg', null, '/stripped/c.jpg']);
+      expect(progress, [
+        (true, 0, 3),
+        (true, 1, 3),
+        (true, 2, 3),
+        (true, 3, 3),
+        (false, 0, 0),
+      ]);
+    });
+
+    test('여러 장 처리 중에 화면이 닫히면 남은 사진은 처리하지 않는다', () async {
+      final metadata = _FakeImageMetadata()..gate = Completer<void>();
+      final vm = WorldCupEditorViewModel(
+        _FakeRepository(),
+        imageMetadata: metadata,
+      );
+
+      final pending = vm.prepareImages(['/p/a.jpg', '/p/b.jpg', '/p/c.jpg']);
+      vm.dispose();
+      metadata.gate!.complete();
+
+      expect(await pending, [null, null, null]);
+      expect(metadata.requested, ['/p/a.jpg']);
+    });
+
+    test('처리 중에 화면이 닫혀도 dispose 뒤에 알리지 않는다', () async {
+      final metadata = _FakeImageMetadata()..gate = Completer<void>();
+      final vm = WorldCupEditorViewModel(
+        _FakeRepository(),
+        imageMetadata: metadata,
+      );
+
+      final pending = vm.prepareImage('/picker/cache/photo.jpg');
+      vm.dispose();
+      metadata.gate!.complete();
+
+      expect(await pending, isNull);
+    });
+  });
+}
+
+class _FakeImageMetadata implements ImageMetadataPort {
+  final bool fail;
+  final Set<String> failing;
+  final requested = <String>[];
+  Completer<void>? gate;
+
+  _FakeImageMetadata({this.fail = false, this.failing = const {}});
+
+  @override
+  Future<String> stripMetadata(String sourcePath) async {
+    requested.add(sourcePath);
+    await gate?.future;
+    if (fail || failing.contains(sourcePath)) {
+      throw StateError('decode failed');
+    }
+    return '/stripped/${sourcePath.split('/').last}';
+  }
 }
 
 class _SavedWorldCup {
