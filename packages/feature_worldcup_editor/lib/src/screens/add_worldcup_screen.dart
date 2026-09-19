@@ -1,5 +1,6 @@
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
@@ -645,6 +646,9 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
         if (!mounted) return;
         if (description != null) {
           _vm.addItem(EditorItem(imagePath: path, imageInfo: description));
+        } else {
+          // 이 사진은 넣지 않기로 했다. 미리 만들어 둔 사본을 지운다.
+          unawaited(_vm.discardPreparedImage(path));
         }
       }
     }

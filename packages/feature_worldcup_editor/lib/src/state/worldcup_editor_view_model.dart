@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
@@ -55,6 +56,11 @@ class WorldCupEditorViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    // 저장하지 않고 나가면 이번에 만든 사본은 어디에도 쓰이지 않는다.
+    for (final path in _preparedPaths) {
+      _discard(path);
+    }
+    _preparedPaths.clear();
     super.dispose();
   }
 
@@ -76,6 +82,13 @@ class WorldCupEditorViewModel extends ChangeNotifier {
   bool _isLoading = false;
 
   bool _isProcessingImage = false;
+
+  /// 이 화면에서 새로 만들었고 아직 저장되지 않은 사본들.
+  ///
+  /// 저장된 월드컵의 사진은 여기 없다. 그런 사진은 저장소가 수정을
+  /// 확정한 뒤에 지운다. 여기서 먼저 지우면 수정을 취소했을 때 원본이
+  /// 사진을 잃는다.
+  final Set<String> _preparedPaths = {};
   int _processedImageCount = 0;
   int _processingImageTotal = 0;
 
@@ -177,7 +190,13 @@ class WorldCupEditorViewModel extends ChangeNotifier {
   Future<String?> _strip(String sourcePath) async {
     try {
       final path = await _imageMetadata.stripMetadata(sourcePath);
-      return _disposed ? null : path;
+      if (_disposed) {
+        // 처리하는 사이 화면이 닫혔다. 방금 만든 사본은 쓰일 곳이 없다.
+        if (path != sourcePath) _discard(path);
+        return null;
+      }
+      if (path != sourcePath) _preparedPaths.add(path);
+      return path;
     } catch (error, stackTrace) {
       log(
         '사진 메타데이터 제거 실패',
@@ -194,18 +213,49 @@ class WorldCupEditorViewModel extends ChangeNotifier {
     _notify();
   }
 
+  /// [prepareImage]로 만들었지만 항목에 넣지 않기로 한 사본을 지운다.
+  Future<void> discardPreparedImage(String path) async {
+    if (!_preparedPaths.remove(path)) return;
+    await _discardNow(path);
+  }
+
+  /// 목록에서 빠진 경로가 이번에 만든 사본이면 지운다.
+  void _discardIfUnused(String path) {
+    if (_items.any((item) => item.imagePath == path)) return;
+    if (_preparedPaths.remove(path)) _discard(path);
+  }
+
+  void _discard(String path) => unawaited(_discardNow(path));
+
+  Future<void> _discardNow(String path) async {
+    try {
+      await _imageMetadata.discard(path);
+    } catch (error, stackTrace) {
+      log(
+        '사진 사본 정리 실패',
+        error: error,
+        stackTrace: stackTrace,
+        name: 'worldcup_editor_view_model',
+      );
+    }
+  }
+
   void replaceItem(int index, EditorItem item) {
     if (index < 0 || index >= _items.length) return;
+    final previous = _items[index].imagePath;
     final next = [..._items];
     next[index] = item;
     _items = next;
+    _discardIfUnused(previous);
     _notify();
   }
 
   void removeItemAt(int index) {
     if (index < 0 || index >= _items.length) return;
+    final removed = _items[index].imagePath;
     final next = [..._items]..removeAt(index);
     _items = next;
+    _discardIfUnused(removed);
     _notify();
   }
 
@@ -225,7 +275,10 @@ class WorldCupEditorViewModel extends ChangeNotifier {
       _items.first.imagePath,
       _items.length,
     );
-    return _repository.add(model, _toItemModels(0));
+    final idx = await _repository.add(model, _toItemModels(0));
+    // 이제 저장된 월드컵의 사진이다. 화면을 닫아도 지우면 안 된다.
+    _preparedPaths.clear();
+    return idx;
   }
 
   /// 수정 내용을 저장한다. 저장했으면 참을 돌려준다.
@@ -245,6 +298,7 @@ class WorldCupEditorViewModel extends ChangeNotifier {
       _items.length,
     );
     await _repository.update(model, _toItemModels(original.idx));
+    _preparedPaths.clear();
     return true;
   }
 

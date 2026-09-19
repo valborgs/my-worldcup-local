@@ -12,4 +12,10 @@ abstract interface class ImageMetadataPort {
   /// 읽거나 변환하지 못하면 `StorageFailure`를 던진다. 원본을 대신
   /// 돌려주지 않는다. 메타데이터가 남은 사진이 조용히 저장되면 안 된다.
   Future<String> stripMetadata(String sourcePath);
+
+  /// [stripMetadata]가 만든 사본 [path]를 지운다.
+  ///
+  /// 항목에 쓰이지 않게 된 사본을 바로 정리할 때 쓴다. 이 포트가 만든
+  /// 사본이 아니면 아무것도 하지 않으며, 지우지 못해도 던지지 않는다.
+  Future<void> discard(String path);
 }

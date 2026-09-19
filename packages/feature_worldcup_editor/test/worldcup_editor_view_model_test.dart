@@ -351,12 +351,139 @@ void main() {
       expect(await pending, isNull);
     });
   });
+  group('쓰이지 않는 사본 정리', () {
+    Future<(WorldCupEditorViewModel, _FakeImageMetadata)> vmWith({
+      _FakeRepository? repository,
+      int? editWorldCupId,
+    }) async {
+      final metadata = _FakeImageMetadata();
+      final vm = WorldCupEditorViewModel(
+        repository ?? _FakeRepository(),
+        imageMetadata: metadata,
+        editWorldCupId: editWorldCupId,
+      );
+      return (vm, metadata);
+    }
+
+    test('설명 입력을 취소한 사본은 바로 지운다', () async {
+      final (vm, metadata) = await vmWith();
+      addTearDown(vm.dispose);
+      final path = await vm.prepareImage('/picker/a.jpg');
+
+      await vm.discardPreparedImage(path!);
+
+      expect(metadata.discarded, ['/stripped/a.jpg']);
+    });
+
+    test('추가했던 사본을 목록에서 빼거나 바꾸면 바로 지운다', () async {
+      final (vm, metadata) = await vmWith();
+      addTearDown(vm.dispose);
+      for (final name in ['a', 'b']) {
+        final path = await vm.prepareImage('/picker/$name.jpg');
+        vm.addItem(EditorItem(imagePath: path!, imageInfo: name));
+      }
+      final replacement = await vm.prepareImage('/picker/c.jpg');
+
+      vm.removeItemAt(0);
+      vm.replaceItem(0, EditorItem(imagePath: replacement!, imageInfo: 'c'));
+      await pumpEventQueue();
+
+      expect(metadata.discarded, ['/stripped/a.jpg', '/stripped/b.jpg']);
+    });
+
+    test('설명만 고쳐 같은 사진으로 바꾸면 지우지 않는다', () async {
+      final (vm, metadata) = await vmWith();
+      addTearDown(vm.dispose);
+      final path = await vm.prepareImage('/picker/a.jpg');
+      vm.addItem(EditorItem(imagePath: path!, imageInfo: '전'));
+
+      vm.replaceItem(0, EditorItem(imagePath: path, imageInfo: '후'));
+      await pumpEventQueue();
+
+      expect(metadata.discarded, isEmpty);
+    });
+
+    test('저장된 원본 사진은 목록에서 빼도 저장 전에는 지우지 않는다', () async {
+      final repo = _FakeRepository();
+      repo.worldCups[7] = WorldCupModel(
+        7,
+        '제목',
+        '설명',
+        DateTime(2026),
+        '/saved/0.jpg',
+        4,
+      );
+      repo.itemsById[7] = [
+        for (var i = 0; i < 4; i++)
+          WorldCupItemModel(i, '/saved/$i.jpg', '$i', 7),
+      ];
+      final (vm, metadata) = await vmWith(repository: repo, editWorldCupId: 7);
+      await vm.load();
+
+      vm.removeItemAt(0);
+      vm.dispose();
+      await pumpEventQueue();
+
+      expect(
+        metadata.discarded,
+        isEmpty,
+        reason: '저장된 월드컵의 사진은 저장소가 수정을 확정한 뒤에 지운다.',
+      );
+    });
+
+    test('저장하지 않고 화면을 닫으면 만든 사본을 모두 지운다', () async {
+      final (vm, metadata) = await vmWith();
+      for (final name in ['a', 'b']) {
+        final path = await vm.prepareImage('/picker/$name.jpg');
+        vm.addItem(EditorItem(imagePath: path!, imageInfo: name));
+      }
+
+      vm.dispose();
+      await pumpEventQueue();
+
+      expect(
+        metadata.discarded,
+        unorderedEquals(['/stripped/a.jpg', '/stripped/b.jpg']),
+      );
+    });
+
+    test('저장한 뒤에 화면을 닫으면 사본을 지우지 않는다', () async {
+      final (vm, metadata) = await vmWith();
+      for (final name in ['a', 'b', 'c', 'd']) {
+        final path = await vm.prepareImage('/picker/$name.jpg');
+        vm.addItem(EditorItem(imagePath: path!, imageInfo: name));
+      }
+
+      await vm.save(title: '제목', info: '설명');
+      vm.dispose();
+      await pumpEventQueue();
+
+      expect(metadata.discarded, isEmpty);
+    });
+
+    test('처리 중에 화면이 닫히면 방금 만든 사본도 지운다', () async {
+      final metadata = _FakeImageMetadata()..gate = Completer<void>();
+      final vm = WorldCupEditorViewModel(
+        _FakeRepository(),
+        imageMetadata: metadata,
+      );
+
+      final pending = vm.prepareImage('/picker/a.jpg');
+      vm.dispose();
+      metadata.gate!.complete();
+      await pending;
+      await pumpEventQueue();
+
+      expect(metadata.discarded, ['/stripped/a.jpg']);
+    });
+  });
 }
 
 class _FakeImageMetadata implements ImageMetadataPort {
   final bool fail;
   final Set<String> failing;
   final requested = <String>[];
+  final discarded = <String>[];
   Completer<void>? gate;
 
   _FakeImageMetadata({this.fail = false, this.failing = const {}});
@@ -369,6 +496,11 @@ class _FakeImageMetadata implements ImageMetadataPort {
       throw StateError('decode failed');
     }
     return '/stripped/${sourcePath.split('/').last}';
+  }
+
+  @override
+  Future<void> discard(String path) async {
+    discarded.add(path);
   }
 }
 

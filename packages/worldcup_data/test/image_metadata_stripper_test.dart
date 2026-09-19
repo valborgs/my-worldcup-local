@@ -116,4 +116,18 @@ void main() {
       throwsA(isA<StorageFailure>()),
     );
   });
+  test('직접 만든 사본은 지우고 그 밖의 파일은 건드리지 않는다', () async {
+    final sourcePath = await writeSource(
+      'plain.jpg',
+      img.encodeJpg(img.Image(width: 4, height: 4)),
+    );
+    final strippedPath = await stripper.stripMetadata(sourcePath);
+
+    await stripper.discard(strippedPath);
+    await stripper.discard(sourcePath);
+    await stripper.discard('assets/sample/female/chu.jpg');
+
+    expect(File(strippedPath).existsSync(), isFalse);
+    expect(File(sourcePath).existsSync(), isTrue);
+  });
 }

@@ -1,3 +1,8 @@
+import 'dart:io';
+
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+import 'package:sqflite/sqflite.dart' show DatabaseExecutor;
 import 'package:worldcup_core/worldcup_core.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
@@ -22,10 +27,28 @@ import '../seed/seed_ids.dart';
 /// [WorldCupRepository]의 SQLite 구현.
 ///
 /// sqflite 예외는 밖으로 흘려보내지 않고 [StorageFailure]로 감싼다.
+///
+/// 월드컵을 지우거나 수정해서 더는 쓰이지 않는 사진 파일도 함께 지운다.
+/// 앱 저장공간([ownedImageDirectories]) 안에 있고, 어떤 월드컵도 참조하지
+/// 않는 파일만 대상이다. 에셋이나 사용자 기기의 다른 파일은 건드리지 않는다.
 class SqliteWorldCupRepository implements WorldCupRepository {
   final AppDatabase _db;
+  final Future<List<Directory>> Function() _ownedImageDirectories;
+  final AppLogger _logger;
 
-  const SqliteWorldCupRepository(this._db);
+  /// [ownedImageDirectories]는 이 앱이 사진을 저장하는 디렉터리다.
+  /// 기본값은 문서 디렉터리(사본, 가져온 월드컵)와 캐시 디렉터리(예전
+  /// 버전이 저장한 사진 선택기 경로)다.
+  const SqliteWorldCupRepository(
+    this._db, {
+    this._ownedImageDirectories = _appStorageDirectories,
+    this._logger = const DeveloperLogger('sqlite_worldcup_repository'),
+  });
+
+  static Future<List<Directory>> _appStorageDirectories() async => [
+    await getApplicationDocumentsDirectory(),
+    await getTemporaryDirectory(),
+  ];
 
   @override
   Future<int> count({
@@ -133,10 +156,14 @@ class SqliteWorldCupRepository implements WorldCupRepository {
   }
 
   @override
-  Future<void> update(WorldCupModel model, List<WorldCupItemModel> items) {
-    return _guard('월드컵을 수정하지 못했습니다.', () async {
+  Future<void> update(
+    WorldCupModel model,
+    List<WorldCupItemModel> items,
+  ) async {
+    final previousImages = await _guard('월드컵을 수정하지 못했습니다.', () async {
       final db = await _db.database;
-      await db.transaction((txn) async {
+      return db.transaction((txn) async {
+        final previous = await _imagePathsOf(txn, model.idx);
         await txn.update(
           AppDatabase.worldCupTable,
           model.toRow(),
@@ -154,15 +181,25 @@ class SqliteWorldCupRepository implements WorldCupRepository {
           batch.insert(AppDatabase.worldCupItemTable, item.toRow());
         }
         await batch.commit(noResult: true);
+        return previous;
       });
     });
+    // 수정이 확정된 뒤에만 지운다. 트랜잭션이 실패했는데 파일부터 지우면
+    // 남아 있는 월드컵이 사진을 잃는다.
+    await _deleteUnusedImages(
+      previousImages.difference({
+        model.titleImageSrc,
+        for (final item in items) item.imagePath,
+      }),
+    );
   }
 
   @override
-  Future<void> delete(int idx) {
-    return _guard('월드컵을 삭제하지 못했습니다.', () async {
+  Future<void> delete(int idx) async {
+    final images = await _guard('월드컵을 삭제하지 못했습니다.', () async {
       final db = await _db.database;
-      await db.transaction((txn) async {
+      return db.transaction((txn) async {
+        final images = await _imagePathsOf(txn, idx);
         if (idx < 0 && !isDebugWorldCupId(idx)) {
           await txn.rawInsert(
             'INSERT OR IGNORE INTO ${AppDatabase.deletedSampleTable} (idx) '
@@ -180,8 +217,73 @@ class SqliteWorldCupRepository implements WorldCupRepository {
           where: 'idx = ?',
           whereArgs: [idx],
         );
+        return images;
       });
     });
+    await _deleteUnusedImages(images);
+  }
+
+  /// 월드컵 [idx]가 참조하는 사진 경로(항목 + 대표 이미지).
+  Future<Set<String>> _imagePathsOf(DatabaseExecutor db, int idx) async {
+    final items = await db.query(
+      AppDatabase.worldCupItemTable,
+      columns: ['imagePath'],
+      where: 'worldCupIdx = ?',
+      whereArgs: [idx],
+    );
+    final worldCups = await db.query(
+      AppDatabase.worldCupTable,
+      columns: ['titleImageSrc'],
+      where: 'idx = ?',
+      whereArgs: [idx],
+    );
+    return {
+      for (final row in [...items, ...worldCups])
+        for (final value in row.values)
+          if (value is String && value.isNotEmpty) value,
+    };
+  }
+
+  /// [candidates] 중 앱 저장공간에 있고 더는 아무도 참조하지 않는 파일을
+  /// 지운다. 데이터는 이미 확정됐으므로 실패해도 던지지 않는다.
+  Future<void> _deleteUnusedImages(Set<String> candidates) async {
+    final files = candidates.where((p) => !p.startsWith('assets/')).toList();
+    if (files.isEmpty) return;
+    try {
+      final roots = await _ownedImageDirectories();
+      final db = await _db.database;
+      for (final filePath in files) {
+        if (!roots.any((root) => path.isWithin(root.path, filePath))) continue;
+        if (await _isReferenced(db, filePath)) continue;
+        final file = File(filePath);
+        if (await file.exists()) await file.delete();
+      }
+    } catch (error, stackTrace) {
+      _logger.error(
+        '쓰이지 않는 사진 파일을 지우지 못했습니다.',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<bool> _isReferenced(DatabaseExecutor db, String filePath) async {
+    final items = await db.query(
+      AppDatabase.worldCupItemTable,
+      columns: ['idx'],
+      where: 'imagePath = ?',
+      whereArgs: [filePath],
+      limit: 1,
+    );
+    if (items.isNotEmpty) return true;
+    final worldCups = await db.query(
+      AppDatabase.worldCupTable,
+      columns: ['idx'],
+      where: 'titleImageSrc = ?',
+      whereArgs: [filePath],
+      limit: 1,
+    );
+    return worldCups.isNotEmpty;
   }
 
   Future<T> _guard<T>(String message, Future<T> Function() body) async {

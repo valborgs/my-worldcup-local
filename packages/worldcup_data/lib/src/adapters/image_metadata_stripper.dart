@@ -27,10 +27,12 @@ class ImageMetadataStripper implements ImageMetadataPort {
   static int _sequence = 0;
 
   final Future<Directory> Function() _documentsDirectoryProvider;
+  final AppLogger _logger;
 
   /// [documentsDirectoryProvider]는 테스트에서 임시 경로를 끼우기 위한 훅이다.
   ImageMetadataStripper({
     Future<Directory> Function()? documentsDirectoryProvider,
+    this._logger = const DeveloperLogger('image_metadata_stripper'),
   }) : _documentsDirectoryProvider =
            documentsDirectoryProvider ?? getApplicationDocumentsDirectory;
 
@@ -63,6 +65,22 @@ class ImageMetadataStripper implements ImageMetadataPort {
         cause: error,
         stackTrace: stackTrace,
       );
+    }
+  }
+
+  @override
+  Future<void> discard(String filePath) async {
+    try {
+      final directory = path.join(
+        (await _documentsDirectoryProvider()).path,
+        _directoryName,
+      );
+      if (!path.isWithin(directory, filePath)) return;
+      final file = File(filePath);
+      if (await file.exists()) await file.delete();
+    } catch (error, stackTrace) {
+      // 정리는 부가 작업이다. 실패해도 사용자의 흐름을 막지 않는다.
+      _logger.error('사진 사본을 지우지 못했습니다.', error: error, stackTrace: stackTrace);
     }
   }
 
