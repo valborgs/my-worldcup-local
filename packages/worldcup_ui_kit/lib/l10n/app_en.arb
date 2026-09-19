@@ -432,6 +432,10 @@
   "@shareOtherAppDescription": {
     "description": "Quick Share, AirDrop 또는 설치된 앱 사용"
   },
+  "shareConfirmBody": "All photos and descriptions in this World Cup will be sent to other people.\nPlease check once more for photos with sensitive content.",
+  "@shareConfirmBody": {
+    "description": "이 월드컵의 모든 사진과 설명이 다른 사람에게 전달됩니다. 민감한 내용의 사진이 있는지 한 번 더 확인해주세요."
+  },
   "sharePackageFailed": "Could not share the World Cup. Please try again later.",
   "@sharePackageFailed": {
     "description": "월드컵을 공유할 수 없습니다. 잠시 후 다시 시도해주세요."

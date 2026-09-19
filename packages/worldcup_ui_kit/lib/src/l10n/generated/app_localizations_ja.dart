@@ -333,6 +333,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'Quick Share、AirDrop、またはインストール済みのアプリを使用';
 
   @override
+  String get shareConfirmBody =>
+      'このワールドカップのすべての写真と説明が相手に送られます。\n見られて困る内容の写真がないか、もう一度ご確認ください。';
+
+  @override
   String get sharePackageFailed => 'ワールドカップを共有できません。しばらくしてからもう一度お試しください。';
 
   @override

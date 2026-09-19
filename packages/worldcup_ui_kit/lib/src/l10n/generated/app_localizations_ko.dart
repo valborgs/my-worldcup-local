@@ -331,6 +331,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get shareOtherAppDescription => 'Quick Share, AirDrop 또는 설치된 앱 사용';
 
   @override
+  String get shareConfirmBody =>
+      '이 월드컵의 모든 사진과 설명이 다른 사람에게 전달됩니다.\n민감한 내용의 사진이 있는지 한 번 더 확인해주세요.';
+
+  @override
   String get sharePackageFailed => '월드컵을 공유할 수 없습니다. 잠시 후 다시 시도해주세요.';
 
   @override

@@ -347,6 +347,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Use Quick Share, AirDrop, or an installed app';
 
   @override
+  String get shareConfirmBody =>
+      'All photos and descriptions in this World Cup will be sent to other people.\nPlease check once more for photos with sensitive content.';
+
+  @override
   String get sharePackageFailed =>
       'Could not share the World Cup. Please try again later.';
 

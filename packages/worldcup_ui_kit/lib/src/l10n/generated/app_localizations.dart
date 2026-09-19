@@ -736,6 +736,12 @@ abstract class AppLocalizations {
   /// **'Quick Share, AirDrop 또는 설치된 앱 사용'**
   String get shareOtherAppDescription;
 
+  /// 이 월드컵의 모든 사진과 설명이 다른 사람에게 전달됩니다. 민감한 내용의 사진이 있는지 한 번 더 확인해주세요.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 월드컵의 모든 사진과 설명이 다른 사람에게 전달됩니다.\n민감한 내용의 사진이 있는지 한 번 더 확인해주세요.'**
+  String get shareConfirmBody;
+
   /// 월드컵을 공유할 수 없습니다. 잠시 후 다시 시도해주세요.
   ///
   /// In ko, this message translates to:
