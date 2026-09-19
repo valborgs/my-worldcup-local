@@ -331,6 +331,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get shareOtherAppDescription => 'Quick Share, AirDrop 또는 설치된 앱 사용';
 
   @override
+  String get shareConfirmBody =>
+      '이 월드컵의 모든 사진과 설명이 다른 사람에게 전달됩니다.\n민감한 내용의 사진이 있는지 한 번 더 확인해주세요.';
+
+  @override
   String get sharePackageFailed => '월드컵을 공유할 수 없습니다. 잠시 후 다시 시도해주세요.';
 
   @override
@@ -374,6 +378,26 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get resultShareFailed => '공유할 수 없습니다. 잠시 후 다시 시도해주세요.';
+
+  @override
+  String get editorImageProcessing => '사진의 위치 정보 등을 지우는 중…';
+
+  @override
+  String get editorImageProcessFailed => '사진을 처리하지 못했습니다. 다른 사진을 선택해 주세요.';
+
+  @override
+  String editorImageProcessingProgress(int done, int total) {
+    return '사진 처리 중 $done/$total';
+  }
+
+  @override
+  String editorImagesProcessFailed(int count) {
+    return '사진 $count장을 처리하지 못해 제외했습니다.';
+  }
+
+  @override
+  String get resultShareConfirmBody =>
+      '해당 사진을 다른 사람과 공유하시겠습니까?\n민감한 내용이 없는지 한 번 더 확인해주세요.';
 
   @override
   String get commonSelectButton => '선택 버튼';

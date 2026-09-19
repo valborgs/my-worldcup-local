@@ -13,6 +13,7 @@ import 'package:riverpod/riverpod.dart';
 import '../ports/support_port.dart';
 
 import '../ports/ad_unit_port.dart';
+import '../ports/image_metadata_port.dart';
 import '../ports/image_upload_port.dart';
 import '../ports/social_share_port.dart';
 import '../ports/worldcup_package_port.dart';
@@ -42,6 +43,10 @@ final worldCupPackageProvider = Provider<WorldCupPackagePort>(
 
 final imageUploadProvider = Provider<ImageUploadPort>(
   (ref) => _missingOverride('imageUploadProvider'),
+);
+
+final imageMetadataProvider = Provider<ImageMetadataPort>(
+  (ref) => _missingOverride('imageMetadataProvider'),
 );
 
 final socialShareProvider = Provider<SocialSharePort>(
