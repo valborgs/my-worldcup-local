@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -38,19 +40,28 @@ class WorldCupListItem extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 worldCupModel.idx < 0
-                    ? '(샘플) ${worldCupModel.title}'
-                    : worldCupModel.title,
+                    ? AppLocalizations.of(context).worldCupSampleTitle(
+                        AppLocalizations.of(
+                          context,
+                        ).worldCupTitle(worldCupModel.idx, worldCupModel.title),
+                      )
+                    : AppLocalizations.of(
+                        context,
+                      ).worldCupTitle(worldCupModel.idx, worldCupModel.title),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleLarge
                     ?.copyWith(fontWeight: FontWeight.bold),
-                semanticsLabel: '월드컵 게임 타이틀',
+                semanticsLabel: AppLocalizations.of(context).listTitleSemantics,
               ),
               const SizedBox(height: 8),
               Text(
-                '최대 라운드 : ${TournamentRounds.defaultRound(worldCupModel.maxRound)}강',
+                AppLocalizations.of(context).worldCupMaxRound(
+                  TournamentRounds.defaultRound(worldCupModel.maxRound),
+                ),
                 style: Theme.of(context).textTheme.bodyMedium,
-                semanticsLabel: '월드컵 최대 라운드',
+                semanticsLabel: AppLocalizations.of(context)
+                    .listMaxRoundSemantics,
               ),
             ],
           ),

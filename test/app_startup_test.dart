@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_worldcup_local/main.dart';
 import 'package:worldcup_core/worldcup_core.dart';
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
 /// 첫 화면을 무엇으로 띄우는지에 대한 계약.
 ///
@@ -11,6 +12,12 @@ import 'package:worldcup_core/worldcup_core.dart';
 /// `AppRoutes.list`가 '/'라서, 온보딩이 끝나며 그 이름으로 replace 해도
 /// 온보딩이 다시 열린다. 첫 실행에서 앱을 쓸 수 없게 되는 버그였다.
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
   Widget app({required bool? isAlreadyShownHelp}) {
     return ProviderScope(
       child: MyWorldCup(
@@ -23,6 +30,56 @@ void main() {
 
   MaterialApp findApp(WidgetTester tester) =>
       tester.widget<MaterialApp>(find.byType(MaterialApp));
+
+  for (final locale in [const Locale('ko', 'KR'), const Locale('fr', 'FR')]) {
+    testWidgets('$locale 기기에서 한국어 앱 및 기본 위젯 리소스를 사용한다', (tester) async {
+      tester.binding.platformDispatcher.localesTestValue = [locale];
+      addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+
+      await tester.pumpWidget(app(isAlreadyShownHelp: null));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.text('스킵하기'));
+      expect(Localizations.localeOf(context), const Locale('ko'));
+      expect(AppLocalizations.of(context).appTitle, '내가 만든 월드컵');
+      expect(MaterialLocalizations.of(context).cancelButtonLabel, '취소');
+      expect(findApp(tester).onGenerateTitle!(context), '내가 만든 월드컵');
+      expect(findApp(tester).supportedLocales.first, const Locale('ko'));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final locale in [const Locale('en', 'US'), const Locale('en', 'GB')]) {
+    testWidgets('$locale 기기에서는 영어 앱과 기본 위젯 리소스를 사용한다', (tester) async {
+      tester.binding.platformDispatcher.localesTestValue = [locale];
+      addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+      await tester.pumpWidget(app(isAlreadyShownHelp: null));
+      await tester.pumpAndSettle();
+      final context = tester.element(find.text('Skip'));
+      expect(Localizations.localeOf(context), const Locale('en'));
+      expect(AppLocalizations.of(context).appTitle, 'My Custom World Cup');
+      expect(MaterialLocalizations.of(context).cancelButtonLabel, 'Cancel');
+      expect(findApp(tester).onGenerateTitle!(context), 'My Custom World Cup');
+      expect(findApp(tester).supportedLocales.first, const Locale('ko'));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('일본어 기기에서 앱과 기본 위젯이 일본어로 표시된다', (tester) async {
+    tester.binding.platformDispatcher.localesTestValue = [
+      const Locale('ja', 'JP'),
+    ];
+    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+    await tester.pumpWidget(app(isAlreadyShownHelp: null));
+    await tester.pumpAndSettle();
+    final context = tester.element(find.text('スキップ'));
+    expect(Localizations.localeOf(context), const Locale('ja'));
+    expect(AppLocalizations.of(context).appTitle, '推しバト');
+    expect(MaterialLocalizations.of(context).cancelButtonLabel, 'キャンセル');
+    expect(findApp(tester).onGenerateTitle!(context), '推しバト');
+    expect(findApp(tester).supportedLocales.first, const Locale('ko'));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('첫 화면도 라우터를 거친다', (tester) async {
     await tester.pumpWidget(app(isAlreadyShownHelp: null));

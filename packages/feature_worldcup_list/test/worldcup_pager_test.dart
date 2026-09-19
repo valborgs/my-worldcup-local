@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:ui' show SemanticsAction;
 
 import 'package:flutter/material.dart';
@@ -10,6 +12,72 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
+  for (final language in ['en', 'ja']) {
+    testWidgets('$language 표시 제목으로 샘플 검색 후 언어 변경 시 검색을 갱신한다', (tester) async {
+      binding.platformDispatcher.localesTestValue = [Locale(language)];
+      final l10n = await AppLocalizations.delegate.load(Locale(language));
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: Column(
+                children: [
+                  WorldCupList(
+                    repository: _FakeWorldCupDao([
+                      ..._models(6),
+                      WorldCupModel(
+                        -1,
+                        '여자 아이돌',
+                        '한국어 설명',
+                        DateTime(2026),
+                        '',
+                        4,
+                      ),
+                      WorldCupModel(
+                        -2,
+                        '남자 아이돌',
+                        '한국어 설명',
+                        DateTime(2026),
+                        '',
+                        4,
+                      ),
+                    ]),
+                    enableBottomSheetSelectionPagerTransition: false,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(l10n.listSearch));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), l10n.sampleFemaleTitle);
+      await tester.pumpAndSettle(const Duration(milliseconds: 400));
+      expect(find.byType(WorldCupSheetItem), findsOneWidget);
+      expect(
+        tester
+            .widget<WorldCupSheetItem>(find.byType(WorldCupSheetItem))
+            .model
+            .idx,
+        -1,
+      );
+      binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+      await tester.pumpAndSettle();
+      expect(find.byType(WorldCupSheetItem), findsNothing);
+      expect(find.text('검색 결과가 없습니다'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
   Widget buildPager({
     required List<String> items,
     int initialPage = 0,
@@ -17,6 +85,8 @@ void main() {
     ValueChanged<int>? onCurrentItemTap,
   }) {
     return MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: CoverFlowPager<String>(
           items: items,
@@ -39,6 +109,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -88,6 +160,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -205,6 +279,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -258,6 +334,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -302,6 +380,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -339,6 +419,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -400,6 +482,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -430,6 +514,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -486,6 +572,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -550,6 +638,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -596,6 +686,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -692,6 +784,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [
@@ -726,6 +820,8 @@ void main() {
     late double itemExtent;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context)
               .copyWith(textScaler: const TextScaler.linear(1.6)),
@@ -765,18 +861,33 @@ class _FakeWorldCupDao implements WorldCupRepository {
 
   _FakeWorldCupDao(this.models);
 
+  List<WorldCupModel> _matching(String query, List<int> ids) => models
+      .where(
+        (m) =>
+            query.isEmpty ||
+            m.title.contains(query) ||
+            m.info.contains(query) ||
+            ids.contains(m.idx),
+      )
+      .toList();
+
   @override
-  Future<int> count({String searchQuery = ''}) async => models.length;
+  Future<int> count({
+    String searchQuery = '',
+    List<int> matchingIds = const [],
+  }) async => _matching(searchQuery, matchingIds).length;
 
   @override
   Future<List<WorldCupModel>> page({
     required int limit,
     required int offset,
     String searchQuery = '',
+    List<int> matchingIds = const [],
   }) async {
     requestedLimits.add(limit);
     requestedOffsets.add(offset);
-    final sorted = List.of(models)..sort((a, b) => b.idx.compareTo(a.idx));
+    final sorted = _matching(searchQuery, matchingIds)
+      ..sort((a, b) => b.idx.compareTo(a.idx));
     return sorted.skip(offset).take(limit).toList();
   }
 
@@ -831,6 +942,8 @@ class _MutablePagerHostState extends State<_MutablePagerHost> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: CoverFlowPager<String>(
           items: items,

@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -49,7 +51,7 @@ class _WorldCupImageDescriptionDialogState
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('이미지 설명'),
+      title: Text(AppLocalizations.of(context).editorImageDescription),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -68,11 +70,13 @@ class _WorldCupImageDescriptionDialogState
               controller: _controller,
               autofocus: true,
               maxLength: 20,
-              validator: (value) =>
-                  (value == null || value.isEmpty) ? '사진 설명을 입력해주세요.' : null,
-              decoration: const InputDecoration(
-                labelText: '설명',
-                hintText: '이미지에 대한 설명을 입력하세요',
+              validator: (value) => (value == null || value.isEmpty)
+                  ? AppLocalizations.of(context).editorPhotoDescriptionRequired
+                  : null,
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).commonDescription,
+                hintText: AppLocalizations.of(context)
+                    .editorImageDescriptionHint,
               ),
               onFieldSubmitted: (_) => _submit(),
             ),
@@ -82,9 +86,12 @@ class _WorldCupImageDescriptionDialogState
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('취소'),
+          child: Text(AppLocalizations.of(context).commonCancel),
         ),
-        TextButton(onPressed: _submit, child: const Text('확인')),
+        TextButton(
+          onPressed: _submit,
+          child: Text(AppLocalizations.of(context).commonConfirm),
+        ),
       ],
     );
   }

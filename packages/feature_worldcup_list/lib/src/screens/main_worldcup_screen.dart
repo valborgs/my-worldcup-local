@@ -56,16 +56,28 @@ class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
           scrolledUnderElevation: 0,
           surfaceTintColor: Colors.transparent,
           leading: PopupMenuButton<String>(
-            tooltip: '도움말 및 소통 메뉴',
+            tooltip: AppLocalizations.of(context).listHelpMenu,
             icon: const Icon(Icons.help_outline, size: 24),
             onSelected: (route) => Navigator.of(context).pushNamed<void>(route),
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: AppRoutes.help, child: Text('도움말')),
-              PopupMenuItem(value: AppRoutes.notices, child: Text('공지사항')),
-              PopupMenuItem(value: AppRoutes.inquiry, child: Text('문의함')),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: AppRoutes.help,
+                child: Text(AppLocalizations.of(context).listHelp),
+              ),
+              PopupMenuItem(
+                value: AppRoutes.notices,
+                child: Text(AppLocalizations.of(context).noticesTitle),
+              ),
+              PopupMenuItem(
+                value: AppRoutes.inquiry,
+                child: Text(AppLocalizations.of(context).inquiryTitle),
+              ),
             ],
           ),
-          title: const Text("내가 만든 월드컵", semanticsLabel: "내가 만든 월드컵 화면"),
+          title: Text(
+            AppLocalizations.of(context).appTitle,
+            semanticsLabel: AppLocalizations.of(context).listScreenSemantics,
+          ),
           actions: [
             WorldCupActionMenuButton(
               isBusy: _isImporting,
@@ -84,7 +96,8 @@ class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
                 Semantics(
                   button: true,
                   enabled: true,
-                  label: "Banner Ad",
+                  label: AppLocalizations.of(context)
+                      .listAdvertisementSemantics,
                   child: SizedBox(
                     width: _bannerAd?.size.width.toDouble(),
                     height: _bannerAd?.size.height.toDouble(),
@@ -110,14 +123,14 @@ class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('앱 종료'),
-          content: const Text('내가 만든 월드컵을 종료하시겠습니까?'),
+          title: Text(AppLocalizations.of(context).listExitTitle),
+          content: Text(AppLocalizations.of(context).listExitBody),
           actions: <Widget>[
             TextButton(
               style: TextButton.styleFrom(
                 textStyle: Theme.of(context).textTheme.labelLarge,
               ),
-              child: const Text('아니오'),
+              child: Text(AppLocalizations.of(context).commonNo),
               onPressed: () {
                 Navigator.pop(context);
               },
@@ -126,7 +139,7 @@ class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
               style: TextButton.styleFrom(
                 textStyle: Theme.of(context).textTheme.labelLarge,
               ),
-              child: const Text('네'),
+              child: Text(AppLocalizations.of(context).commonYes),
               onPressed: () {
                 SystemNavigator.pop();
               },
@@ -154,8 +167,11 @@ class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
 
     final packagePath = result.files.single.path;
     if (packagePath == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('선택한 파일을 읽을 수 없습니다.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).listReadFileFailed),
+        ),
+      );
       return;
     }
 
@@ -168,7 +184,11 @@ class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
       await _worldCupListKey.currentState?.refreshAndScrollTo(imported.idx);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"${imported.title}" 월드컵을 가져왔습니다.')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).listImported(imported.title),
+          ),
+        ),
       );
     } catch (error, stackTrace) {
       log(
@@ -179,8 +199,8 @@ class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
       );
       if (!mounted) return;
       final message = error is Failure
-          ? error.message
-          : '월드컵을 가져올 수 없습니다. 잠시 후 다시 시도해주세요.';
+          ? AppLocalizations.of(context).message(error.userMessage)
+          : AppLocalizations.of(context).listImportFailed;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
     } finally {

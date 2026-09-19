@@ -9,3 +9,5 @@ export 'src/logging/app_logger.dart';
 export 'src/routing/app_routes.dart';
 export 'src/routing/route_args.dart';
 export 'src/sharing/share_origin.dart';
+
+export 'src/app_message.dart';

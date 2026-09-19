@@ -1,3 +1,6 @@
+import 'package:worldcup_core/worldcup_core.dart';
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:ui' as ui;
 
 import 'package:file_picker/file_picker.dart';
@@ -41,6 +44,9 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
     super.dispose();
   }
 
+  String? _validation(AppMessage? value) =>
+      value == null ? null : AppLocalizations.of(context).message(value);
+
   Future<void> _pick() async {
     if (_picking || _vm.busy) return;
     setState(() => _picking = true);
@@ -56,7 +62,11 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
       if (result == null) return;
       final file = result.files.single;
       if (file.size > InquiryViewModel.maxImageBytes) {
-        throw const SupportFailure('image_size', '10MB 이하의 이미지를 선택해 주세요.');
+        throw const SupportFailure(
+          'image_size',
+          'Screenshot exceeds the upload size limit.',
+          userMessage: AppMessage(AppMessageId.supportImageSize),
+        );
       }
       final stream = file.readStream;
       if (stream == null) {
@@ -102,18 +112,16 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
           await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('문의를 다시 전송할까요?'),
-              content: const Text(
-                '이전 문의가 이미 접수되었을 수 있습니다. 다시 전송하면 같은 문의가 중복 접수될 수 있습니다.',
-              ),
+              title: Text(AppLocalizations.of(context).inquiryResendTitle),
+              content: Text(AppLocalizations.of(context).inquiryResendBody),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('취소'),
+                  child: Text(AppLocalizations.of(context).commonCancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('다시 전송'),
+                  child: Text(AppLocalizations.of(context).inquiryResend),
                 ),
               ],
             ),
@@ -146,16 +154,16 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
           await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('작성을 그만둘까요?'),
-              content: const Text('작성 중인 문의는 저장되지 않습니다.'),
+              title: Text(AppLocalizations.of(context).inquiryLeaveTitle),
+              content: Text(AppLocalizations.of(context).inquiryLeaveBody),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('계속 작성'),
+                  child: Text(AppLocalizations.of(context).inquiryKeepWriting),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('나가기'),
+                  child: Text(AppLocalizations.of(context).inquiryLeave),
                 ),
               ],
             ),
@@ -183,7 +191,7 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
         },
         child: Scaffold(
           appBar: AppBar(
-            title: const Text('문의함'),
+            title: Text(AppLocalizations.of(context).inquiryTitle),
             leading: BackButton(onPressed: _vm.busy ? null : _leave),
           ),
           body: SafeArea(
@@ -201,15 +209,20 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            '문의가 접수되었습니다.',
+                            AppLocalizations.of(context).inquirySuccess,
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 8),
-                          Text('접수 번호: ${receipt.id}'),
+                          Text(
+                            AppLocalizations.of(context)
+                                .inquiryReceipt(receipt.id),
+                          ),
                           const SizedBox(height: 24),
                           FilledButton(
                             onPressed: _leave,
-                            child: const Text('확인'),
+                            child: Text(
+                              AppLocalizations.of(context).commonConfirm,
+                            ),
                           ),
                         ],
                       ),
@@ -221,11 +234,11 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
                       padding: const EdgeInsets.all(20),
                       children: [
                         Text(
-                          '의견을 들려주세요',
+                          AppLocalizations.of(context).inquiryHeading,
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: 8),
-                        const Text('불편한 점이나 제안하고 싶은 내용을 남겨 주세요.'),
+                        Text(AppLocalizations.of(context).inquiryIntroduction),
                         const SizedBox(height: 24),
                         TextFormField(
                           controller: _email,
@@ -233,12 +246,15 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
                           keyboardType: TextInputType.emailAddress,
                           autocorrect: false,
                           maxLength: 254,
-                          validator: (value) =>
-                              InquiryViewModel.validateEmail(value ?? ''),
-                          decoration: const InputDecoration(
-                            labelText: '이메일 (선택)',
-                            helperText: '답변받을 이메일을 남겨 주세요.',
-                            border: OutlineInputBorder(),
+                          validator: (value) => _validation(
+                            InquiryViewModel.validateEmail(value ?? ''),
+                          ),
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context)
+                                .inquiryEmailLabel,
+                            helperText: AppLocalizations.of(context)
+                                .inquiryEmailHint,
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -264,7 +280,8 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
                                     .runes
                                     .length;
                                 return Text(
-                                  '$length / 5000',
+                                  AppLocalizations.of(context)
+                                      .inquiryContentCounter(length),
                                   style: TextStyle(
                                     color: length > 5000
                                         ? Theme.of(context).colorScheme.error
@@ -272,13 +289,16 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
                                   ),
                                 );
                               },
-                          validator: (value) =>
-                              InquiryViewModel.validateContent(value ?? ''),
-                          decoration: const InputDecoration(
-                            labelText: '문의 내용',
+                          validator: (value) => _validation(
+                            InquiryViewModel.validateContent(value ?? ''),
+                          ),
+                          decoration: InputDecoration(
+                            labelText: AppLocalizations.of(context)
+                                .inquiryContentLabel,
                             alignLabelWithHint: true,
-                            hintText: '문제가 발생한 상황을 자세히 알려 주세요.',
-                            border: OutlineInputBorder(),
+                            hintText: AppLocalizations.of(context)
+                                .inquiryContentHint,
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -291,14 +311,17 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
                             ),
                             label: Text(
                               _picking
-                                  ? '이미지 선택 중…'
+                                  ? AppLocalizations.of(context)
+                                        .inquiryPickingImage
                                   : _vm.screenshot == null
-                                  ? '스크린샷 첨부 (선택)'
-                                  : '스크린샷 변경',
+                                  ? AppLocalizations.of(context)
+                                        .inquiryAttachScreenshot
+                                  : AppLocalizations.of(context)
+                                        .inquiryChangeScreenshot,
                             ),
                           ),
                         ),
-                        const Text('PNG, JPG, WEBP · 최대 10MB · 1장'),
+                        Text(AppLocalizations.of(context).inquiryImageLimit),
                         if (_vm.screenshot != null) ...[
                           const SizedBox(height: 12),
                           Image.memory(
@@ -306,20 +329,26 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
                             height: 180,
                             cacheHeight: 360,
                             fit: BoxFit.contain,
-                            semanticLabel: '선택한 스크린샷',
-                            errorBuilder: (context, error, stack) =>
-                                const Text('이미지를 표시할 수 없습니다. 다른 파일을 선택해 주세요.'),
+                            semanticLabel: AppLocalizations.of(context)
+                                .inquirySelectedScreenshot,
+                            errorBuilder: (context, error, stack) => Text(
+                              AppLocalizations.of(context)
+                                  .inquiryImageDisplayFailed,
+                            ),
                           ),
                           Row(
                             children: [
                               Expanded(
                                 child: Text(
-                                  _vm.screenshotName ?? '스크린샷',
+                                  _vm.screenshotName ??
+                                      AppLocalizations.of(context)
+                                          .inquiryScreenshot,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               IconButton(
-                                tooltip: '첨부 제거',
+                                tooltip: AppLocalizations.of(context)
+                                    .inquiryRemoveAttachment,
                                 onPressed: blocked
                                     ? null
                                     : () => _vm.setScreenshot(null, null),
@@ -327,9 +356,7 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
                               ),
                             ],
                           ),
-                          const Text(
-                            '첨부 이미지는 외부 이미지 호스팅에 업로드되며 3일 후 만료됩니다. 개인정보가 보이지 않도록 확인해 주세요.',
-                          ),
+                          Text(AppLocalizations.of(context).inquiryImageNotice),
                         ],
                         if (_vm.error != null)
                           Padding(
@@ -338,14 +365,21 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
                               liveRegion: true,
                               child: Text(
                                 [
-                                  _vm.error!.message,
+                                  AppLocalizations.of(context)
+                                      .message(_vm.error!.userMessage),
                                   for (final messages
                                       in _vm.error!.fields.values)
-                                    ...messages,
+                                    ...messages.map(
+                                      AppLocalizations.of(context).message,
+                                    ),
                                   if (_vm.error!.retryAfterSeconds != null)
-                                    '${_vm.error!.retryAfterSeconds}초 후 다시 시도해 주세요.',
+                                    AppLocalizations.of(context)
+                                        .supportRetryAfter(
+                                          _vm.error!.retryAfterSeconds!,
+                                        ),
                                   if (_vm.deliveryUncertain)
-                                    '이미 접수되었을 수 있습니다. 재전송 시 중복 접수에 유의해 주세요.',
+                                    AppLocalizations.of(context)
+                                        .inquiryDeliveryUncertain,
                                 ].join('\n'),
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.error,
@@ -362,10 +396,10 @@ class _InquiryScreenState extends ConsumerState<InquiryScreen> {
                           onPressed: blocked ? null : _submit,
                           child: Text(
                             _vm.uploading
-                                ? '스크린샷 업로드 중…'
+                                ? AppLocalizations.of(context).inquiryUploading
                                 : _vm.busy
-                                ? '문의 접수 중…'
-                                : '문의 등록',
+                                ? AppLocalizations.of(context).inquirySubmitting
+                                : AppLocalizations.of(context).inquirySubmit,
                           ),
                         ),
                         const SizedBox(height: 16),

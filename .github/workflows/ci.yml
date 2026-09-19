@@ -30,6 +30,19 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Verify generated localizations
+        working-directory: packages/worldcup_ui_kit
+        run: |
+          flutter gen-l10n
+          git diff --exit-code -- lib/src/l10n/generated
+          test -z "$(git ls-files --others --exclude-standard lib/src/l10n/generated)"
+
+      - name: Verify generated native localizations
+        run: |
+          dart run tool/generate_native_localizations.dart
+          git diff --exit-code -- android/app/src/main/res ios/Runner
+          test -z "$(git ls-files --others --exclude-standard android/app/src/main/res ios/Runner)"
+
       # .env는 저장소에 커밋하지 않으므로, 분석/테스트가 통과하도록 빈 값으로 만든다.
       - name: Create placeholder .env
         run: |
@@ -42,7 +55,7 @@ jobs:
           ENV
 
       - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed lib packages test
+        run: dart format --output=none --set-exit-if-changed lib packages test tool
 
       - name: Analyze
         run: flutter analyze

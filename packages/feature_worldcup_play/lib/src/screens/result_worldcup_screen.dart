@@ -128,8 +128,13 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: AutoScrollingText(
-            "${widget.worldCupModel.title} 우승자",
-            semanticsLabel: "월드컵 우승자 화면",
+            AppLocalizations.of(context).resultTitle(
+              AppLocalizations.of(context).worldCupTitle(
+                widget.worldCupModel.idx,
+                widget.worldCupModel.title,
+              ),
+            ),
+            semanticsLabel: AppLocalizations.of(context).resultScreenSemantics,
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -151,17 +156,19 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
                 children: [
                   Container(
                     alignment: Alignment.center,
-                    child: const Row(
+                    child: Row(
                       children: [
                         Text(
-                          "축하합니다!",
-                          style: TextStyle(fontSize: 22),
-                          semanticsLabel: "축하 문구",
+                          AppLocalizations.of(context).resultCongratulations,
+                          style: const TextStyle(fontSize: 22),
+                          semanticsLabel: AppLocalizations.of(context)
+                              .resultCongratulationsSemantics,
                         ),
                         Icon(
                           Icons.auto_awesome,
                           color: Colors.yellow,
-                          semanticLabel: "축하",
+                          semanticLabel: AppLocalizations.of(context)
+                              .resultCelebrationSemantics,
                         ),
                       ],
                     ),
@@ -185,9 +192,14 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
                     ),
                   ),
                   Text(
-                    widget.winnerModel.imageInfo,
+                    AppLocalizations.of(context).worldCupItemInfo(
+                      widget.winnerModel.worldCupIdx,
+                      widget.winnerModel.imagePath,
+                      widget.winnerModel.imageInfo,
+                    ),
                     style: const TextStyle(fontSize: 18),
-                    semanticsLabel: "우승자 이름",
+                    semanticsLabel: AppLocalizations.of(context)
+                        .resultWinnerName,
                   ),
                   const Padding(padding: EdgeInsets.only(top: 30)),
                   // 버튼 묶음
@@ -209,19 +221,21 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
                             ),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
                               Icons.replay,
                               color: Colors.white,
-                              semanticLabel: "다시하기",
+                              semanticLabel: AppLocalizations.of(context)
+                                  .resultReplayIcon,
                             ),
-                            Padding(padding: EdgeInsets.only(right: 10)),
+                            const Padding(padding: EdgeInsets.only(right: 10)),
                             Text(
-                              '다시 하기',
-                              style: TextStyle(color: Colors.white),
-                              semanticsLabel: "다시 하기 버튼",
+                              AppLocalizations.of(context).resultReplay,
+                              style: const TextStyle(color: Colors.white),
+                              semanticsLabel: AppLocalizations.of(context)
+                                  .resultReplaySemantics,
                             ),
                           ],
                         ),
@@ -287,7 +301,6 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
     setState(() => isLoading = true);
 
     try {
-      final title = widget.worldCupModel.title;
       final imgUrl =
           await ref
               .read(imageUploadProvider)
@@ -297,11 +310,27 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
         throw StateError('ImgBB did not return an image URL.');
       }
 
-      final description =
-          '${widget.worldCupModel.title} 우승자 : ${widget.winnerModel.imageInfo}';
+      if (!mounted) return;
+      final title = AppLocalizations.of(context)
+          .worldCupTitle(widget.worldCupModel.idx, widget.worldCupModel.title);
+      final description = AppLocalizations.of(context).resultShareDescription(
+        AppLocalizations.of(
+          context,
+        ).worldCupTitle(widget.worldCupModel.idx, widget.worldCupModel.title),
+        AppLocalizations.of(context).worldCupItemInfo(
+          widget.winnerModel.worldCupIdx,
+          widget.winnerModel.imagePath,
+          widget.winnerModel.imageInfo,
+        ),
+      );
       final didOpenShare = await ref
           .read(socialShareProvider)
-          .shareFeed(title: title, description: description, imageUrl: imgUrl);
+          .shareFeed(
+            title: title,
+            description: description,
+            imageUrl: imgUrl,
+            buttonTitle: AppLocalizations.of(context).resultShareButton,
+          );
       if (!didOpenShare) {
         throw StateError('Kakao share UI could not be opened.');
       }
@@ -313,7 +342,7 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('공유할 수 없습니다. 잠시 후 다시 시도해주세요.')),
+        SnackBar(content: Text(AppLocalizations.of(context).resultShareFailed)),
       );
     } finally {
       if (mounted) setState(() => isLoading = false);

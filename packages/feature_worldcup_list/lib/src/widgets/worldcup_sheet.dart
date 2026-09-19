@@ -4,6 +4,8 @@
 /// 받은 값만 그린다.
 library;
 
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -95,12 +97,19 @@ class WorldCupSheetItem extends StatelessWidget {
           child: SizedBox(width: 64, height: 64, child: image),
         ),
         title: Text(
-          model.idx < 0 ? '(샘플) ${model.title}' : model.title,
+          model.idx < 0
+              ? AppLocalizations.of(context).worldCupSampleTitle(
+                  AppLocalizations.of(context)
+                      .worldCupTitle(model.idx, model.title),
+                )
+              : AppLocalizations.of(context)
+                    .worldCupTitle(model.idx, model.title),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          '최대 라운드 : ${TournamentRounds.defaultRound(model.maxRound)}강',
+          AppLocalizations.of(context)
+              .worldCupMaxRound(TournamentRounds.defaultRound(model.maxRound)),
         ),
       ),
     );

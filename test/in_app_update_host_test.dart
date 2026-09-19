@@ -1,22 +1,59 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:my_worldcup_local/update/in_app_update_host.dart';
 
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
+  for (final locale in ['ja', 'en']) {
+    testWidgets('$locale 필수 업데이트 안내는 작은 화면과 큰 글자에서 표시된다', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(320, 640));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: Locale(locale),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
+            child: RequiredUpdateOverlay(onUpdate: () {}),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.text(locale == 'ja' ? 'アップデートが必要です' : 'An update is required'),
+        findsOneWidget,
+      );
+      expect(find.text(locale == 'ja' ? 'アップデート' : 'Update'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets('의존성을 만들지 못해도 앱 화면은 그대로 뜬다', (tester) async {
     // featureFlagProvider는 override 되지 않으면 던진다. main()이 Firebase
     // 초기화 실패를 잡고 앱을 계속 띄운 뒤 이 포트를 만들 때와 같은 상황이다.
     // 이 위젯은 라우터 위에 있어서, 여기서 새어 나간 예외는 화면 전체를 날린다.
     await tester.pumpWidget(
       const ProviderScope(
-        child: MaterialApp(home: Scaffold(body: Text('본문'))),
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: Text('본문')),
+        ),
       ),
     );
 
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) => InAppUpdateHost(child: child!),
           home: const Scaffold(body: Text('본문')),
         ),
@@ -34,6 +71,8 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Stack(
           children: [
             GestureDetector(
@@ -59,7 +98,11 @@ void main() {
     var updates = 0;
 
     await tester.pumpWidget(
-      MaterialApp(home: RequiredUpdateOverlay(onUpdate: () => updates++)),
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: RequiredUpdateOverlay(onUpdate: () => updates++),
+      ),
     );
 
     expect(find.text('업데이트가 필요합니다'), findsOneWidget);

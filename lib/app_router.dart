@@ -1,3 +1,4 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:feature_worldcup_support/feature_worldcup_support.dart';
 import 'package:worldcup_core/worldcup_core.dart';
@@ -57,8 +58,8 @@ class AppRouter {
       case AppRoutes.onboarding:
         return MaterialPageRoute<void>(
           settings: settings,
-          builder: (_) => Semantics(
-            label: "도움말, 소개 화면",
+          builder: (context) => Semantics(
+            label: AppLocalizations.of(context).onboardingSemantics,
             child: HelpScreen(
               true,
               enableBottomSheetSelectionPagerTransition:

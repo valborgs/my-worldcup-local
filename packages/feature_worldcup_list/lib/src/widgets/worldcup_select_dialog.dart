@@ -38,14 +38,26 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       scrollable: true,
-      title: Text(widget.model.title, semanticsLabel: "월드컵 제목"),
-      content: Text(widget.model.info, semanticsLabel: "월드컵 설명"),
+      title: Text(
+        AppLocalizations.of(context)
+            .worldCupTitle(widget.model.idx, widget.model.title),
+        semanticsLabel: AppLocalizations.of(context).worldCupTitleSemantics,
+      ),
+      content: Text(
+        AppLocalizations.of(context)
+            .worldCupInfo(widget.model.idx, widget.model.info),
+        semanticsLabel: AppLocalizations.of(context)
+            .worldCupDescriptionSemantics,
+      ),
       actions: [
         Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text("- 라운드 수를 선택해주세요- ", textAlign: TextAlign.center),
+            Text(
+              AppLocalizations.of(context).worldCupChooseRound,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 5),
             Center(
               child: DropdownMenu(
@@ -60,7 +72,8 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
                         .map<DropdownMenuEntry<int>>((int value) {
                           return DropdownMenuEntry<int>(
                             value: value,
-                            label: '$value 강',
+                            label: AppLocalizations.of(context)
+                                .worldCupRoundOption(value),
                           );
                         })
                         .toList(),
@@ -77,7 +90,7 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
               children: [
                 // 월드컵 게임 시작
                 IconOutlinedButton(
-                  "시작",
+                  AppLocalizations.of(context).commonStart,
                   Icons.play_arrow,
                   Colors.deepPurpleAccent,
                   onPressed: () {
@@ -93,7 +106,7 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
                 // 월드컵 수정 (샘플 월드컵이 아닌 경우에만 표시)
                 if (widget.model.idx > 0)
                   IconOutlinedButton(
-                    "수정",
+                    AppLocalizations.of(context).commonEdit,
                     Icons.edit,
                     Colors.orange,
                     onPressed: () {
@@ -107,7 +120,7 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
                   ),
                 // 월드컵 삭제
                 IconOutlinedButton(
-                  "삭제",
+                  AppLocalizations.of(context).commonDelete,
                   Icons.delete,
                   Colors.red,
                   onPressed: () {
@@ -126,23 +139,23 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
             if (widget.model.idx > 0)
               Builder(
                 builder: (buttonContext) => _isSharing
-                    ? const OutlinedButton(
+                    ? OutlinedButton(
                         onPressed: null,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            SizedBox(
+                            const SizedBox(
                               width: 18,
                               height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             ),
-                            SizedBox(width: 10),
-                            Text('공유 파일 준비 중...'),
+                            const SizedBox(width: 10),
+                            Text(AppLocalizations.of(context).sharePreparing),
                           ],
                         ),
                       )
                     : IconOutlinedButton(
-                        "공유하기",
+                        AppLocalizations.of(context).commonShare,
                         Icons.share,
                         Colors.blue,
                         onPressed: () => _showShareOptions(buttonContext),
@@ -169,18 +182,25 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('공유 방법 선택', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                AppLocalizations.of(context).shareChooseMethod,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 8),
               ListTile(
                 leading: const Icon(Icons.devices_other),
-                title: const Text('주변 기기로 보내기'),
-                subtitle: const Text('인터넷 없이 Nearby Connections로 직접 전송'),
+                title: Text(AppLocalizations.of(context).shareNearby),
+                subtitle: Text(
+                  AppLocalizations.of(context).shareNearbyDescription,
+                ),
                 onTap: () => Navigator.pop(context, _ShareChoice.nearby),
               ),
               ListTile(
                 leading: const Icon(Icons.ios_share),
-                title: const Text('다른 앱으로 공유하기'),
-                subtitle: const Text('Quick Share, AirDrop 또는 설치된 앱 사용'),
+                title: Text(AppLocalizations.of(context).shareOtherApp),
+                subtitle: Text(
+                  AppLocalizations.of(context).shareOtherAppDescription,
+                ),
                 onTap: () => Navigator.pop(context, _ShareChoice.otherApp),
               ),
             ],
@@ -206,6 +226,14 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
     try {
       await packagePort.share(
         widget.model,
+        title: AppLocalizations.of(context).shareFileTitle(
+          AppLocalizations.of(context)
+              .worldCupTitle(widget.model.idx, widget.model.title),
+        ),
+        subject: AppLocalizations.of(context).shareFileSubject(
+          AppLocalizations.of(context)
+              .worldCupTitle(widget.model.idx, widget.model.title),
+        ),
         origin: sharePositionOrigin == null
             ? null
             : ShareOrigin(
@@ -224,8 +252,8 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
       );
       if (!mounted) return;
       final message = error is Failure
-          ? error.message
-          : '월드컵을 공유할 수 없습니다. 잠시 후 다시 시도해주세요.';
+          ? AppLocalizations.of(context).message(error.userMessage)
+          : AppLocalizations.of(context).sharePackageFailed;
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
     } finally {
@@ -248,7 +276,7 @@ Future<void> deleteWorldCup(
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("데이터를 삭제할 수 없습니다. 잠시후에 다시 시도해주세요.")),
+      SnackBar(content: Text(AppLocalizations.of(context).listDeleteFailed)),
     );
     return;
   }

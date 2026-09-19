@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -12,6 +14,7 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 class ScreenApi implements SupportPort {
   final calls = <int>[];
   int submitted = 0;
+  String? submittedContent;
   Future<NoticePage> Function(int)? onFetch;
   Future<InquiryReceipt> Function()? onSubmit;
   @override
@@ -40,6 +43,7 @@ class ScreenApi implements SupportPort {
     String? screenshotUrl,
   }) async {
     submitted++;
+    submittedContent = content;
     return onSubmit != null
         ? onSubmit!()
         : InquiryReceipt(id: 104, createdAt: DateTime.utc(2026));
@@ -76,25 +80,86 @@ Widget app(ScreenApi api, Widget screen) => ProviderScope(
     supportProvider.overrideWithValue(api),
     inquiryImageUploadProvider.overrideWithValue(NoUpload()),
   ],
-  child: MaterialApp(home: screen),
+  child: MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: screen,
+  ),
 );
 
-Future<void> send(WidgetTester tester) async {
+Future<void> send(WidgetTester tester, {String label = '문의 등록'}) async {
   await tester.scrollUntilVisible(
-    find.widgetWithText(FilledButton, '문의 등록'),
+    find.widgetWithText(FilledButton, label),
     200,
     scrollable: find.byType(Scrollable).first,
   );
   await Scrollable.ensureVisible(
-    tester.element(find.widgetWithText(FilledButton, '문의 등록')),
+    tester.element(find.widgetWithText(FilledButton, label)),
     alignment: 0.5,
   );
   await tester.pumpAndSettle();
-  await tester.tap(find.text('문의 등록'));
+  await tester.tap(find.text(label));
   await tester.pumpAndSettle();
 }
 
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
+  for (final locale in ['ja', 'en']) {
+    testWidgets('$locale 문의 검증과 접수 결과는 번역되고 입력 콘텐츠는 보존된다', (tester) async {
+      tester.binding.platformDispatcher.localesTestValue = [Locale(locale)];
+      addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+      final api = ScreenApi();
+      await tester.pumpWidget(app(api, const InquiryScreen()));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          locale == 'ja' ? 'ご意見をお聞かせください' : 'We’d like to hear from you',
+        ),
+        findsOneWidget,
+      );
+      await send(tester, label: locale == 'ja' ? '送信' : 'Send message');
+      expect(
+        find.text(
+          locale == 'ja' ? 'お問い合わせ内容を入力してください。' : 'Please enter a message.',
+        ),
+        findsOneWidget,
+      );
+      expect(api.submitted, 0);
+      await tester.enterText(find.byType(TextFormField).last, '사용자가 작성한 내용');
+      await send(tester, label: locale == 'ja' ? '送信' : 'Send message');
+      expect(
+        find.text(
+          locale == 'ja'
+              ? 'お問い合わせを受け付けました。'
+              : 'Your message has been received.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(locale == 'ja' ? '受付番号：104' : 'Reference number: 104'),
+        findsOneWidget,
+      );
+      expect(api.submitted, 1);
+      expect(api.submittedContent, '사용자가 작성한 내용');
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('일본어 공지 화면은 서버 제목과 본문을 그대로 표시한다', (tester) async {
+    tester.binding.platformDispatcher.localesTestValue = [const Locale('ja')];
+    addTearDown(tester.binding.platformDispatcher.clearLocalesTestValue);
+    await tester.pumpWidget(app(ScreenApi(), const NoticesScreen()));
+    await tester.pumpAndSettle();
+    expect(find.text('お知らせ'), findsOneWidget);
+    expect(find.text('공지 1'), findsOneWidget);
+    expect(find.text('2026/9/9'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   testWidgets(
     'a pending file picker does not trap the screen and late result is ignored',
     (tester) async {
@@ -183,7 +248,7 @@ void main() {
       ..onFetch = (_) async => throw const SupportFailure('network', '연결 실패');
     await tester.pumpWidget(app(api, const NoticesScreen()));
     await tester.pumpAndSettle();
-    expect(find.text('연결 실패'), findsOneWidget);
+    expect(find.text('처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'), findsOneWidget);
     api.onFetch = (_) async =>
         NoticePage(notices: [], count: 0, hasNext: false);
     await tester.tap(find.text('다시 불러오기'));

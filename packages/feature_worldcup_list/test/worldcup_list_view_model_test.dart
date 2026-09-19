@@ -12,6 +12,29 @@ void main() {
       WorldCupModel(i, 'Game $i', '설명 $i', DateTime(2026), '', 4),
   ];
 
+  test('번역 검색의 추가 ID는 후속 페이지까지 유지하고 다음 검색에서 초기화한다', () async {
+    final repo = _FakeRepository([
+      ...models(12),
+      WorldCupModel(-1, '여자 아이돌', '설명', DateTime(2026), '', 4),
+    ]);
+    final vm = WorldCupListViewModel(repo);
+    addTearDown(vm.dispose);
+    await vm.refresh();
+    vm.startSearch();
+    vm.updateQuery('Game');
+    await vm.runSearch(matchingIds: [-1]);
+    expect(vm.sheetTotalCount, 13);
+    expect(vm.sheetItems, hasLength(10));
+    await vm.loadNextSheetPage();
+    expect(vm.sheetItems, hasLength(13));
+    expect(vm.sheetItems.last.idx, -1);
+    expect(vm.sheetItems.map((m) => m.idx).toSet(), hasLength(13));
+    vm.updateQuery('없는 검색어');
+    await vm.runSearch();
+    expect(vm.sheetTotalCount, 0);
+    expect(vm.sheetItems, isEmpty);
+  });
+
   test('새 월드컵을 추가하면 첫 항목이며 뒤쪽 창에서도 첫 위치로 이동한다', () async {
     final repo = _FakeRepository(models(40));
     final vm = WorldCupListViewModel(repo);
@@ -559,28 +582,37 @@ class _FakeRepository implements WorldCupRepository {
     if (gate != null && !gate.isCompleted) gate.complete();
   }
 
-  List<WorldCupModel> _matching(String query) => query.isEmpty
+  List<WorldCupModel> _matching(String query, List<int> matchingIds) =>
+      query.isEmpty
       ? models
       : models
-            .where((m) => m.title.contains(query) || m.info.contains(query))
+            .where(
+              (m) =>
+                  m.title.contains(query) ||
+                  m.info.contains(query) ||
+                  matchingIds.contains(m.idx),
+            )
             .toList();
 
   @override
-  Future<int> count({String searchQuery = ''}) async =>
-      _matching(searchQuery).length;
+  Future<int> count({
+    String searchQuery = '',
+    List<int> matchingIds = const [],
+  }) async => _matching(searchQuery, matchingIds).length;
 
   @override
   Future<List<WorldCupModel>> page({
     required int limit,
     required int offset,
     String searchQuery = '',
+    List<int> matchingIds = const [],
   }) async {
     pageCalls++;
     requestedLimits.add(limit);
     requestedOffsets.add(offset);
     // 실제 DB처럼 호출 시점의 데이터로 결과를 확정한 뒤 붙잡는다. 그래야
     // 붙잡힌 응답이 "조회 이후 바뀐 데이터"가 아니라 낡은 데이터가 된다.
-    final sorted = List.of(_matching(searchQuery))
+    final sorted = List.of(_matching(searchQuery, matchingIds))
       ..sort((a, b) => b.idx.compareTo(a.idx));
     final result = sorted.skip(offset).take(limit).toList();
     if (_gateArmed) {

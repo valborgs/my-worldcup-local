@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -11,6 +13,12 @@ const String _onePixelPngBase64 =
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
   late Directory tempDir;
   late File imageFile;
 
@@ -29,6 +37,8 @@ void main() {
     final List<String?> results = [];
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async {

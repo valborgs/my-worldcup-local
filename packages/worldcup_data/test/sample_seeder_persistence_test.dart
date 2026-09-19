@@ -104,6 +104,68 @@ void main() {
   });
 
   test(
+    'localized matches preserve count, paging, duplicates and deletion',
+    () async {
+      await sync();
+      final repository = SqliteWorldCupRepository(database);
+      final db = await database.database;
+      await db.insert(AppDatabase.worldCupTable, {
+        'idx': 1,
+        'title': 'Idol user',
+        'info': '',
+        'date': 0,
+        'titleImageSrc': '',
+        'maxRound': 4,
+      });
+      expect(
+        await repository.count(searchQuery: 'Idol', matchingIds: [-1, -2]),
+        3,
+      );
+      expect(
+        (await repository.page(
+          limit: 2,
+          offset: 0,
+          searchQuery: 'Idol',
+          matchingIds: [-1, -2],
+        )).map((m) => m.idx),
+        [1, -1],
+      );
+      expect(
+        (await repository.page(
+          limit: 2,
+          offset: 2,
+          searchQuery: 'Idol',
+          matchingIds: [-1, -2],
+        )).map((m) => m.idx),
+        [-2],
+      );
+      expect(
+        await repository.count(searchQuery: 'sample', matchingIds: [-1, -2]),
+        2,
+      );
+      await repository.delete(-1);
+      expect(
+        await repository.count(searchQuery: 'Idol', matchingIds: [-1, -2]),
+        2,
+      );
+      expect(
+        (await repository.page(
+          limit: 10,
+          offset: 0,
+          searchQuery: 'Idol',
+          matchingIds: [-1, -2],
+        )).map((m) => m.idx),
+        [1, -2],
+      );
+      expect(
+        await repository.count(searchQuery: "' OR 1=1 --", matchingIds: []),
+        0,
+      );
+      expect(await repository.count(matchingIds: [-1]), 2);
+    },
+  );
+
+  test(
     'debug paging deletions do not create sample deletion records',
     () async {
       await sync();

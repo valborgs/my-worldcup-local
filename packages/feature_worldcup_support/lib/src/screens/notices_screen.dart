@@ -1,3 +1,4 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
@@ -36,7 +37,7 @@ class _NoticesScreenState extends ConsumerState<NoticesScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('공지사항')),
+    appBar: AppBar(title: Text(AppLocalizations.of(context).noticesTitle)),
     body: SafeArea(
       child: ListenableBuilder(
         listenable: _vm,
@@ -53,12 +54,20 @@ class _NoticesScreenState extends ConsumerState<NoticesScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Text(
-                      _vm.error!.message,
-                      semanticsLabel: '오류: ${_vm.error!.message}',
+                      AppLocalizations.of(context)
+                          .message(_vm.error!.userMessage),
+                      semanticsLabel: AppLocalizations.of(context)
+                          .supportErrorSemantics(
+                            AppLocalizations.of(context)
+                                .message(_vm.error!.userMessage),
+                          ),
                     ),
                   ),
                   if (_vm.error!.retryAfterSeconds != null)
-                    Text('${_vm.error!.retryAfterSeconds}초 후 다시 시도해 주세요.'),
+                    Text(
+                      AppLocalizations.of(context)
+                          .supportRetryAfter(_vm.error!.retryAfterSeconds!),
+                    ),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: TextButton.icon(
@@ -66,14 +75,16 @@ class _NoticesScreenState extends ConsumerState<NoticesScreen> {
                           ? null
                           : () => _load(_vm.requestedPage),
                       icon: const Icon(Icons.refresh),
-                      label: const Text('다시 불러오기'),
+                      label: Text(AppLocalizations.of(context).commonRetry),
                     ),
                   ),
                 ],
                 if (_vm.loaded && _vm.notices.isEmpty && !_vm.loading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 80),
-                    child: Center(child: Text('등록된 공지사항이 없습니다.')),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 80),
+                    child: Center(
+                      child: Text(AppLocalizations.of(context).noticesEmpty),
+                    ),
                   ),
                 for (final notice in _vm.notices)
                   Card(
@@ -93,7 +104,8 @@ class _NoticesScreenState extends ConsumerState<NoticesScreen> {
                           Image.network(
                             notice.imageUrl!,
                             fit: BoxFit.contain,
-                            semanticLabel: '공지 첨부 이미지',
+                            semanticLabel: AppLocalizations.of(context)
+                                .noticesImageSemantics,
                             loadingBuilder: (context, child, progress) =>
                                 progress == null
                                 ? child
@@ -103,11 +115,12 @@ class _NoticesScreenState extends ConsumerState<NoticesScreen> {
                                       child: CircularProgressIndicator(),
                                     ),
                                   ),
-                            errorBuilder: (context, error, stack) =>
-                                const Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: Text('첨부 이미지를 불러올 수 없습니다.'),
-                                ),
+                            errorBuilder: (context, error, stack) => Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(
+                                AppLocalizations.of(context).noticesImageFailed,
+                              ),
+                            ),
                           ),
                         ],
                       ],
@@ -123,14 +136,18 @@ class _NoticesScreenState extends ConsumerState<NoticesScreen> {
                           onPressed: _vm.loading || _vm.page == 1
                               ? null
                               : () => _load(_vm.page - 1),
-                          child: const Text('이전'),
+                          child: Text(
+                            AppLocalizations.of(context).commonPrevious,
+                          ),
                         ),
-                        Text('${_vm.page} 페이지'),
+                        Text(
+                          AppLocalizations.of(context).noticesPage(_vm.page),
+                        ),
                         TextButton(
                           onPressed: _vm.loading || !_vm.hasNext
                               ? null
                               : () => _load(_vm.page + 1),
-                          child: const Text('다음'),
+                          child: Text(AppLocalizations.of(context).commonNext),
                         ),
                       ],
                     ),
@@ -143,8 +160,6 @@ class _NoticesScreenState extends ConsumerState<NoticesScreen> {
     ),
   );
 
-  String _date(DateTime value) {
-    final date = value.toLocal();
-    return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
-  }
+  String _date(DateTime value) =>
+      AppLocalizations.of(context).noticesDate(value.toLocal());
 }

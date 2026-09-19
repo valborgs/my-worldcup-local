@@ -1,0 +1,6 @@
+// Generated from app_en.arb. Do not edit.
+"CFBundleDisplayName" = "My Custom World Cup";
+"NSBluetoothAlwaysUsageDescription" = "Bluetooth is used to send and receive World Cup files directly with nearby devices.";
+"NSLocalNetworkUsageDescription" = "The local network is used to transfer World Cup files directly between nearby devices without the internet.";
+"NSCameraUsageDescription" = "The camera is used to take photos for your World Cups.";
+"NSPhotoLibraryUsageDescription" = "The photo library is used to choose photos for your World Cups.";

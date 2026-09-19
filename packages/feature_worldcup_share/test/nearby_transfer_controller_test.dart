@@ -11,6 +11,31 @@ import 'package:worldcup_core/worldcup_core.dart';
 void main() {
   late Directory temporaryDirectory;
 
+  for (final entry in {
+    'denied': AppMessageId.nearbyPermissionRequired,
+    'permanentlyDenied': AppMessageId.nearbyPermissionBlocked,
+    'permissionDenied': AppMessageId.nearbyPermissionRequired,
+    'permissionPermanentlyDenied': AppMessageId.nearbyPermissionBlocked,
+    'alreadyBusy': AppMessageId.nearbyAlreadyBusy,
+    'invalidState': AppMessageId.nearbyInvalidState,
+    'connectionFailed': AppMessageId.nearbyConnectionFailed,
+  }.entries) {
+    test('연결 중 ${entry.key} 권한 오류를 안내한다', () async {
+      final gateway = _FakeNearbyGateway()
+        ..connectionError = PlatformException(code: entry.key);
+      final controller = NearbyWorldCupTransferController.sender(
+        gateway: gateway,
+        packageGateway: _FakePackageGateway(temporaryDirectory),
+        worldCup: _worldCup,
+      );
+      addTearDown(controller.dispose);
+      await controller.start();
+      await controller.connect(const NearbyEndpoint(id: 'peer', name: 'peer'));
+      expect(controller.phase, NearbyTransferPhase.error);
+      expect(controller.message.id, entry.value);
+    });
+  }
+
   setUp(() async {
     temporaryDirectory = await Directory.systemTemp.createTemp(
       'nearby_controller_test_',
@@ -172,7 +197,10 @@ void main() {
     expect(packageGateway.importCalls, 1);
     expect(refreshCalls, 1);
     expect(controller.phase, NearbyTransferPhase.success);
-    expect(controller.message, '"받은 월드컵" 월드컵을 받았습니다.');
+    expect(
+      controller.message,
+      const AppMessage(AppMessageId.nearbyReceiveSuccess, detail: '받은 월드컵'),
+    );
     expect(await file.exists(), isFalse);
   });
 
@@ -183,7 +211,10 @@ void main() {
     await file.writeAsBytes([1, 2], flush: true);
     final gateway = _FakeNearbyGateway();
     final packageGateway = _FakePackageGateway(temporaryDirectory)
-      ..importError = const PackageFailure('손상된 패키지입니다.');
+      ..importError = const PackageFailure(
+        '손상된 패키지입니다.',
+        userMessage: AppMessage(AppMessageId.packageInvalid),
+      );
     final controller = NearbyWorldCupTransferController.receiver(
       gateway: gateway,
       packageGateway: packageGateway,
@@ -206,7 +237,7 @@ void main() {
     await _flush();
 
     expect(controller.phase, NearbyTransferPhase.error);
-    expect(controller.message, '손상된 패키지입니다.');
+    expect(controller.message.id, AppMessageId.packageInvalid);
     expect(await file.exists(), isFalse);
     expect(gateway.disposeCalls, 1);
   });
@@ -241,8 +272,8 @@ void main() {
     await _flush();
 
     expect(controller.phase, NearbyTransferPhase.error);
-    expect(controller.message, '받은 월드컵을 등록하지 못했습니다. 보내는 기기에서 다시 보내주세요.');
-    expect(controller.message, isNot(contains('파일을 확인')));
+    expect(controller.message.id, AppMessageId.nearbyImportFailed);
+
     expect(await file.exists(), isFalse);
   });
 
@@ -300,9 +331,8 @@ void main() {
     await controller.start();
 
     expect(controller.phase, NearbyTransferPhase.error);
-    expect(controller.message, '주변 기기 검색을 시작할 수 없습니다.');
-    expect(controller.message, isNot(contains('8032')));
-    expect(controller.message, isNot(contains('MISSING_PERMISSION')));
+    expect(controller.message.id, AppMessageId.nearbyStartFailed);
+    expect(controller.message.detail, isNull);
 
     await controller.cancel();
     expect(
@@ -449,7 +479,7 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 80));
 
     expect(controller.phase, NearbyTransferPhase.error);
-    expect(controller.message, contains('주변 기기를 찾지 못했습니다'));
+    expect(controller.message.id, AppMessageId.nearbyDiscoveryTimeout);
     expect(gateway.disposeCalls, 1);
   });
 
@@ -484,7 +514,7 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 80));
 
     expect(controller.phase, NearbyTransferPhase.error);
-    expect(controller.message, contains('수신 파일 확인 시간이 초과되었습니다'));
+    expect(controller.message.id, AppMessageId.nearbyFinalizationTimeout);
     expect(gateway.cancelCalls, 1);
     expect(gateway.disposeCalls, 1);
   });
@@ -505,7 +535,7 @@ void main() {
     await _flush();
     await controller.connect(controller.endpoints.single);
 
-    expect(gateway.discoveryDisplayName, matches(RegExp(r'^월드컵 기기 \d{4}$')));
+    expect(gateway.discoveryDisplayName, matches(RegExp(r'^World Cup \d{4}$')));
     expect(controller.displayName, gateway.discoveryDisplayName);
     expect(gateway.connectionDisplayName, gateway.discoveryDisplayName);
     expect(gateway.discoveryDisplayName, isNot('localhost'));
@@ -536,6 +566,7 @@ class _FakeNearbyGateway implements NearbyTransferGateway {
   int cancelCalls = 0;
   int disposeCalls = 0;
   Object? startDiscoveryError;
+  Object? connectionError;
   String? discoveryDisplayName;
   String? connectionDisplayName;
 
@@ -571,6 +602,7 @@ class _FakeNearbyGateway implements NearbyTransferGateway {
     required String displayName,
   }) async {
     connectionRequests++;
+    if (connectionError != null) throw connectionError!;
     connectionDisplayName = displayName;
   }
 
@@ -640,5 +672,10 @@ class _FakePackageGateway implements WorldCupPackagePort {
   }
 
   @override
-  Future<void> share(WorldCupModel model, {ShareOrigin? origin}) async {}
+  Future<void> share(
+    WorldCupModel model, {
+    ShareOrigin? origin,
+    required String title,
+    required String subject,
+  }) async {}
 }

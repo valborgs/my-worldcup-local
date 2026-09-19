@@ -1,3 +1,4 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,6 +7,12 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
   testWidgets('게임 시작 다이얼로그는 제한된 높이를 넘으면 전체 본문이 스크롤된다', (tester) async {
     final longTitle = List.filled(7, '가나다라마바사아자차카타파하').join();
     final model = WorldCupModel(
@@ -24,6 +31,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: WorldCupSelectDialog(model, onChanged: () {})),
         ),
       ),
@@ -107,6 +116,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: WorldCupSelectDialog(sampleModel, onChanged: () {}),
           ),
@@ -141,6 +152,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: WorldCupSelectDialog(model, onChanged: () {})),
         ),
       ),

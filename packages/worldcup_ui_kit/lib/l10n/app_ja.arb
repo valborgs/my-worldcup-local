@@ -1,0 +1,1501 @@
+{
+  "@@locale": "ja",
+  "onboardingProgress": "全{total}ページ中{current}ページ目",
+  "@onboardingProgress": {
+    "description": "온보딩 페이지 표시기의 접근성 안내",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "appTitle": "推しバト",
+  "@appTitle": {
+    "description": "앱의 표시 제목"
+  },
+  "worldCupAddMenu": "ワールドカップ追加メニュー",
+  "@worldCupAddMenu": {
+    "description": "월드컵 추가 버튼의 툴팁과 접근성 레이블"
+  },
+  "worldCupAddMethodTitle": "追加方法を選択",
+  "@worldCupAddMethodTitle": {
+    "description": "월드컵 추가 방법 바텀시트 제목"
+  },
+  "worldCupCreate": "新しいワールドカップを作る",
+  "@worldCupCreate": {
+    "description": "새 월드컵 생성 메뉴"
+  },
+  "worldCupCreateDescription": "写真を選んで自分だけのワールドカップを作成",
+  "@worldCupCreateDescription": {
+    "description": "새 월드컵 생성 메뉴 설명"
+  },
+  "worldCupReceiveNearby": "近くのデバイスから受信",
+  "@worldCupReceiveNearby": {
+    "description": "주변 기기 수신 메뉴"
+  },
+  "worldCupReceiveNearbyDescription": "インターネット不要で Nearby Connections から直接受信",
+  "@worldCupReceiveNearbyDescription": {
+    "description": "주변 기기 수신 설명. Nearby Connections는 서비스 이름"
+  },
+  "worldCupImportFile": "ファイルからインポート",
+  "@worldCupImportFile": {
+    "description": "월드컵 파일 가져오기 메뉴"
+  },
+  "worldCupImportFileDescription": ".myworldcup ファイルを選択してインポート",
+  "@worldCupImportFileDescription": {
+    "description": "파일 가져오기 설명. .myworldcup 확장자는 번역하지 않음"
+  },
+  "commonYes": "はい",
+  "@commonYes": {
+    "description": "네"
+  },
+  "commonNo": "いいえ",
+  "@commonNo": {
+    "description": "아니오"
+  },
+  "commonCancel": "キャンセル",
+  "@commonCancel": {
+    "description": "취소"
+  },
+  "commonConfirm": "確認",
+  "@commonConfirm": {
+    "description": "확인"
+  },
+  "commonNext": "次へ",
+  "@commonNext": {
+    "description": "다음"
+  },
+  "commonPrevious": "前へ",
+  "@commonPrevious": {
+    "description": "이전"
+  },
+  "commonClose": "閉じる",
+  "@commonClose": {
+    "description": "닫기"
+  },
+  "commonDelete": "削除",
+  "@commonDelete": {
+    "description": "삭제"
+  },
+  "commonEdit": "編集",
+  "@commonEdit": {
+    "description": "수정"
+  },
+  "commonAdd": "追加",
+  "@commonAdd": {
+    "description": "추가"
+  },
+  "commonStart": "開始",
+  "@commonStart": {
+    "description": "시작"
+  },
+  "commonShare": "共有",
+  "@commonShare": {
+    "description": "공유하기"
+  },
+  "commonDescription": "説明",
+  "@commonDescription": {
+    "description": "설명"
+  },
+  "commonInfo": "ご案内",
+  "@commonInfo": {
+    "description": "안내"
+  },
+  "commonRetry": "再読み込み",
+  "@commonRetry": {
+    "description": "다시 불러오기"
+  },
+  "onboardingWelcome": "アプリをご利用いただきありがとうございます！",
+  "@onboardingWelcome": {
+    "description": "앱을 실행해주셔서 감사합니다!"
+  },
+  "onboardingCreateOneTitle": "ワールドカップの作り方 1",
+  "@onboardingCreateOneTitle": {
+    "description": "월드컵 만들기 1"
+  },
+  "onboardingCreateOneBody": "画面上部の追加ボタンを押して\nワールドカップを作ってみましょう",
+  "@onboardingCreateOneBody": {
+    "description": "상단의 추가 버튼을 눌러  월드컵을 만들어보세요"
+  },
+  "onboardingCreateTwoTitle": "ワールドカップの作り方 2",
+  "@onboardingCreateTwoTitle": {
+    "description": "월드컵 만들기 2"
+  },
+  "onboardingCreateTwoBody": "自分で撮った写真を選んで\nリストに追加してみましょう",
+  "@onboardingCreateTwoBody": {
+    "description": "내가 직접 찍은 사진을 골라  리스트에 추가해보세요"
+  },
+  "onboardingPlayTitle": "ワールドカップで遊ぶ",
+  "@onboardingPlayTitle": {
+    "description": "월드컵 게임 진행"
+  },
+  "onboardingPlayBody": "2枚の写真から好きな方を選びましょう",
+  "@onboardingPlayBody": {
+    "description": "2개의 사진 중 마음에 든 사진을 선택해보세요"
+  },
+  "onboardingWinnerTitle": "ワールドカップの優勝者",
+  "@onboardingWinnerTitle": {
+    "description": "월드컵 게임 우승자"
+  },
+  "onboardingWinnerBody": "ワールドカップの優勝者を決めましょう！",
+  "@onboardingWinnerBody": {
+    "description": "월드컵 우승자를 가려봅시다!"
+  },
+  "onboardingSemantics": "ヘルプ、アプリ紹介画面",
+  "@onboardingSemantics": {
+    "description": "도움말, 소개 화면"
+  },
+  "onboardingSkip": "スキップ",
+  "@onboardingSkip": {
+    "description": "스킵하기"
+  },
+  "onboardingStart": "はじめる",
+  "@onboardingStart": {
+    "description": "시작하기"
+  },
+  "updateInstallFailed": "アップデートのインストールを開始できませんでした。しばらくしてからもう一度お試しください。",
+  "@updateInstallFailed": {
+    "description": "업데이트 설치를 시작하지 못했습니다. 잠시 후 다시 시도해 주세요."
+  },
+  "updateReady": "新しいバージョンのダウンロードが完了しました。再起動すると適用されます。",
+  "@updateReady": {
+    "description": "새 버전을 모두 받았습니다. 재시작하면 적용됩니다."
+  },
+  "updateRestart": "再起動",
+  "@updateRestart": {
+    "description": "재시작"
+  },
+  "updateRequiredSemantics": "アップデートが必要です",
+  "@updateRequiredSemantics": {
+    "description": "업데이트 필요"
+  },
+  "updateRequiredTitle": "アップデートが必要です",
+  "@updateRequiredTitle": {
+    "description": "업데이트가 필요합니다"
+  },
+  "updateAction": "アップデート",
+  "@updateAction": {
+    "description": "업데이트"
+  },
+  "editorEditTitle": "ワールドカップを編集",
+  "@editorEditTitle": {
+    "description": "월드컵 수정"
+  },
+  "editorCreateTitle": "ワールドカップを作成",
+  "@editorCreateTitle": {
+    "description": "월드컵 등록"
+  },
+  "editorEditSemantics": "ワールドカップ編集画面",
+  "@editorEditSemantics": {
+    "description": "월드컵 수정 화면"
+  },
+  "editorCreateSemantics": "ワールドカップ作成画面",
+  "@editorCreateSemantics": {
+    "description": "월드컵 등록 화면"
+  },
+  "editorTitleLabel": "タイトル",
+  "@editorTitleLabel": {
+    "description": "제목"
+  },
+  "editorTitleHint": "作成するワールドカップのタイトルを入力してください。",
+  "@editorTitleHint": {
+    "description": "만드실 월드컵의 제목을 입력해주세요."
+  },
+  "editorDescriptionHint": "作成するワールドカップの説明を簡単に入力してください。",
+  "@editorDescriptionHint": {
+    "description": "만드실 월드컵의 설명을 간단히 입력해주세요."
+  },
+  "editorSingleImage": "1枚追加",
+  "@editorSingleImage": {
+    "description": "단일 추가"
+  },
+  "editorPickImage": "画像を選択",
+  "@editorPickImage": {
+    "description": "이미지 선택"
+  },
+  "editorMultipleImages": "複数追加",
+  "@editorMultipleImages": {
+    "description": "복수 추가"
+  },
+  "editorPickMultiple": "複数選択",
+  "@editorPickMultiple": {
+    "description": "여러개 선택"
+  },
+  "editorTitleRequired": "タイトルを入力してください。",
+  "@editorTitleRequired": {
+    "description": "제목을 입력해주세요."
+  },
+  "editorDescriptionRequired": "説明を入力してください。",
+  "@editorDescriptionRequired": {
+    "description": "설명을 입력해주세요."
+  },
+  "editorDeleteImageConfirmation": "この画像を削除しますか？",
+  "@editorDeleteImageConfirmation": {
+    "description": "해당 이미지를 삭제하시겠습니까?"
+  },
+  "editorCancelEditTitle": "編集をキャンセル",
+  "@editorCancelEditTitle": {
+    "description": "수정 취소"
+  },
+  "editorCancelCreateTitle": "作成をキャンセル",
+  "@editorCancelCreateTitle": {
+    "description": "등록 취소"
+  },
+  "editorCancelEditBody": "編集をキャンセルしますか？",
+  "@editorCancelEditBody": {
+    "description": "수정을 취소하시겠습니까?"
+  },
+  "editorCancelCreateBody": "作成をキャンセルしますか？",
+  "@editorCancelCreateBody": {
+    "description": "등록을 취소하시겠습니까?"
+  },
+  "editorSaveFailed": "データを保存できません。しばらくしてからもう一度お試しください。",
+  "@editorSaveFailed": {
+    "description": "데이터를 저장할 수 없습니다. 잠시후에 다시 시도해주세요."
+  },
+  "editorStillLoading": "ワールドカップの情報を読み込んでいます。しばらくしてからもう一度お試しください。",
+  "@editorStillLoading": {
+    "description": "월드컵 정보를 아직 불러오는 중입니다. 잠시 후 다시 시도해주세요."
+  },
+  "editorUpdateFailed": "データを更新できません。しばらくしてからもう一度お試しください。",
+  "@editorUpdateFailed": {
+    "description": "데이터를 업데이트할 수 없습니다. 잠시후에 다시 시도해주세요."
+  },
+  "editorEditPhoto": "写真を編集",
+  "@editorEditPhoto": {
+    "description": "사진 수정"
+  },
+  "editorAddPhoto": "写真を追加",
+  "@editorAddPhoto": {
+    "description": "사진 추가"
+  },
+  "editorCamera": "カメラ",
+  "@editorCamera": {
+    "description": "카메라"
+  },
+  "editorAlbum": "アルバム",
+  "@editorAlbum": {
+    "description": "앨범"
+  },
+  "editorPhotoRequired": "写真を追加してください",
+  "@editorPhotoRequired": {
+    "description": "사진을 추가해주세요"
+  },
+  "editorPhotoDescription": "写真の説明",
+  "@editorPhotoDescription": {
+    "description": "사진 설명"
+  },
+  "editorPhotoDescriptionRequired": "写真の説明を入力してください。",
+  "@editorPhotoDescriptionRequired": {
+    "description": "사진 설명을 입력해주세요."
+  },
+  "editorImageDescription": "画像の説明",
+  "@editorImageDescription": {
+    "description": "이미지 설명"
+  },
+  "editorImageDescriptionHint": "画像の説明を入力してください",
+  "@editorImageDescriptionHint": {
+    "description": "이미지에 대한 설명을 입력하세요"
+  },
+  "listHelpMenu": "ヘルプ・お問い合わせメニュー",
+  "@listHelpMenu": {
+    "description": "도움말 및 소통 메뉴"
+  },
+  "listHelp": "ヘルプ",
+  "@listHelp": {
+    "description": "도움말"
+  },
+  "noticesTitle": "お知らせ",
+  "@noticesTitle": {
+    "description": "공지사항"
+  },
+  "inquiryTitle": "お問い合わせ",
+  "@inquiryTitle": {
+    "description": "문의함"
+  },
+  "listScreenSemantics": "自分で作るワールドカップ画面",
+  "@listScreenSemantics": {
+    "description": "내가 만든 월드컵 화면"
+  },
+  "listExitTitle": "アプリを終了",
+  "@listExitTitle": {
+    "description": "앱 종료"
+  },
+  "listExitBody": "自分で作るワールドカップを終了しますか？",
+  "@listExitBody": {
+    "description": "내가 만든 월드컵을 종료하시겠습니까?"
+  },
+  "listReadFileFailed": "選択したファイルを読み込めません。",
+  "@listReadFileFailed": {
+    "description": "선택한 파일을 읽을 수 없습니다."
+  },
+  "listImportFailed": "ワールドカップをインポートできません。しばらくしてからもう一度お試しください。",
+  "@listImportFailed": {
+    "description": "월드컵을 가져올 수 없습니다. 잠시 후 다시 시도해주세요."
+  },
+  "listEmptyBody": "右上の＋ボタンを押して\nワールドカップを追加してください",
+  "@listEmptyBody": {
+    "description": "오른쪽 상단의 + 버튼을 눌러  월드컵 게임을 추가해주세요"
+  },
+  "listEmptySemantics": "項目がありません",
+  "@listEmptySemantics": {
+    "description": "항목이 비어있음"
+  },
+  "listFirst": "先頭",
+  "@listFirst": {
+    "description": "맨 앞"
+  },
+  "listMiddle": "中央",
+  "@listMiddle": {
+    "description": "중간"
+  },
+  "listLast": "末尾",
+  "@listLast": {
+    "description": "맨 뒤"
+  },
+  "listNoSearchResults": "検索結果がありません",
+  "@listNoSearchResults": {
+    "description": "검색 결과가 없습니다"
+  },
+  "listLoadFailed": "ワールドカップを読み込めませんでした。もう一度お試しください。",
+  "@listLoadFailed": {
+    "description": "월드컵을 불러오지 못했습니다. 다시 시도해주세요."
+  },
+  "listOpenAll": "すべてのワールドカップを表示",
+  "@listOpenAll": {
+    "description": "전체 월드컵 목록 열기"
+  },
+  "listCloseSearch": "検索を閉じる",
+  "@listCloseSearch": {
+    "description": "검색 닫기"
+  },
+  "listSearch": "ワールドカップを検索",
+  "@listSearch": {
+    "description": "월드컵 검색"
+  },
+  "listSearchHint": "タイトルまたは説明で検索",
+  "@listSearchHint": {
+    "description": "월드컵 제목 또는 설명 검색"
+  },
+  "listClearSearch": "検索キーワードを消去",
+  "@listClearSearch": {
+    "description": "검색어 지우기"
+  },
+  "listPagerHint": "ダブルタップで現在のワールドカップを開くか、上下にスワイプしてください",
+  "@listPagerHint": {
+    "description": "두 번 탭하여 현재 월드컵을 열거나 위아래로 쓸어 넘기세요"
+  },
+  "listTitleSemantics": "ワールドカップのタイトル",
+  "@listTitleSemantics": {
+    "description": "월드컵 게임 타이틀"
+  },
+  "listMaxRoundSemantics": "ワールドカップの最大ラウンド",
+  "@listMaxRoundSemantics": {
+    "description": "월드컵 최대 라운드"
+  },
+  "worldCupTitleSemantics": "ワールドカップのタイトル",
+  "@worldCupTitleSemantics": {
+    "description": "월드컵 제목"
+  },
+  "worldCupDescriptionSemantics": "ワールドカップの説明",
+  "@worldCupDescriptionSemantics": {
+    "description": "월드컵 설명"
+  },
+  "worldCupChooseRound": "ラウンドを選択してください",
+  "@worldCupChooseRound": {
+    "description": "- 라운드 수를 선택해주세요- "
+  },
+  "sharePreparing": "共有ファイルを準備中…",
+  "@sharePreparing": {
+    "description": "공유 파일 준비 중..."
+  },
+  "shareChooseMethod": "共有方法を選択",
+  "@shareChooseMethod": {
+    "description": "공유 방법 선택"
+  },
+  "shareNearby": "近くのデバイスに送信",
+  "@shareNearby": {
+    "description": "주변 기기로 보내기"
+  },
+  "shareNearbyDescription": "インターネット不要で Nearby Connections から直接送信",
+  "@shareNearbyDescription": {
+    "description": "인터넷 없이 Nearby Connections로 직접 전송"
+  },
+  "shareOtherApp": "他のアプリで共有",
+  "@shareOtherApp": {
+    "description": "다른 앱으로 공유하기"
+  },
+  "shareOtherAppDescription": "Quick Share、AirDrop、またはインストール済みのアプリを使用",
+  "@shareOtherAppDescription": {
+    "description": "Quick Share, AirDrop 또는 설치된 앱 사용"
+  },
+  "sharePackageFailed": "ワールドカップを共有できません。しばらくしてからもう一度お試しください。",
+  "@sharePackageFailed": {
+    "description": "월드컵을 공유할 수 없습니다. 잠시 후 다시 시도해주세요."
+  },
+  "listDeleteFailed": "データを削除できません。しばらくしてからもう一度お試しください。",
+  "@listDeleteFailed": {
+    "description": "데이터를 삭제할 수 없습니다. 잠시후에 다시 시도해주세요."
+  },
+  "playExitTitle": "ゲームを終了",
+  "@playExitTitle": {
+    "description": "게임 종료"
+  },
+  "playExitBody": "ゲームを終了しますか？\n進行状況は保存されません。",
+  "@playExitBody": {
+    "description": "게임을 종료하시겠습니까? 진행 상황은 저장되지 않습니다."
+  },
+  "playFinal": "決勝",
+  "@playFinal": {
+    "description": "결승"
+  },
+  "playItemSemantics": "候補の名前",
+  "@playItemSemantics": {
+    "description": "항목 이름"
+  },
+  "resultScreenSemantics": "ワールドカップ優勝者画面",
+  "@resultScreenSemantics": {
+    "description": "월드컵 우승자 화면"
+  },
+  "resultCongratulations": "おめでとうございます！",
+  "@resultCongratulations": {
+    "description": "축하합니다!"
+  },
+  "resultCongratulationsSemantics": "お祝いのメッセージ",
+  "@resultCongratulationsSemantics": {
+    "description": "축하 문구"
+  },
+  "resultCelebrationSemantics": "お祝い",
+  "@resultCelebrationSemantics": {
+    "description": "축하"
+  },
+  "resultWinnerName": "優勝者の名前",
+  "@resultWinnerName": {
+    "description": "우승자 이름"
+  },
+  "resultReplayIcon": "もう一度遊ぶ",
+  "@resultReplayIcon": {
+    "description": "다시하기"
+  },
+  "resultReplay": "もう一度遊ぶ",
+  "@resultReplay": {
+    "description": "다시 하기"
+  },
+  "resultReplaySemantics": "もう一度遊ぶボタン",
+  "@resultReplaySemantics": {
+    "description": "다시 하기 버튼"
+  },
+  "resultShareFailed": "共有できません。しばらくしてからもう一度お試しください。",
+  "@resultShareFailed": {
+    "description": "공유할 수 없습니다. 잠시 후 다시 시도해주세요."
+  },
+  "commonSelectButton": "選択ボタン",
+  "@commonSelectButton": {
+    "description": "선택 버튼"
+  },
+  "inquiryResendTitle": "お問い合わせを再送信しますか？",
+  "@inquiryResendTitle": {
+    "description": "문의를 다시 전송할까요?"
+  },
+  "inquiryResendBody": "前のお問い合わせはすでに受け付けられている可能性があります。再送信すると、同じお問い合わせが重複して送信される場合があります。",
+  "@inquiryResendBody": {
+    "description": "이전 문의가 이미 접수되었을 수 있습니다. 다시 전송하면 같은 문의가 중복 접수될 수 있습니다."
+  },
+  "inquiryResend": "再送信",
+  "@inquiryResend": {
+    "description": "다시 전송"
+  },
+  "inquiryLeaveTitle": "入力をやめますか？",
+  "@inquiryLeaveTitle": {
+    "description": "작성을 그만둘까요?"
+  },
+  "inquiryLeaveBody": "入力中のお問い合わせは保存されません。",
+  "@inquiryLeaveBody": {
+    "description": "작성 중인 문의는 저장되지 않습니다."
+  },
+  "inquiryKeepWriting": "入力を続ける",
+  "@inquiryKeepWriting": {
+    "description": "계속 작성"
+  },
+  "inquiryLeave": "戻る",
+  "@inquiryLeave": {
+    "description": "나가기"
+  },
+  "inquirySuccess": "お問い合わせを受け付けました。",
+  "@inquirySuccess": {
+    "description": "문의가 접수되었습니다."
+  },
+  "inquiryHeading": "ご意見をお聞かせください",
+  "@inquiryHeading": {
+    "description": "의견을 들려주세요"
+  },
+  "inquiryIntroduction": "お困りのことやご提案をお寄せください。",
+  "@inquiryIntroduction": {
+    "description": "불편한 점이나 제안하고 싶은 내용을 남겨 주세요."
+  },
+  "inquiryEmailLabel": "メールアドレス（任意）",
+  "@inquiryEmailLabel": {
+    "description": "이메일 (선택)"
+  },
+  "inquiryEmailHint": "返信先のメールアドレスを入力してください。",
+  "@inquiryEmailHint": {
+    "description": "답변받을 이메일을 남겨 주세요."
+  },
+  "inquiryContentLabel": "お問い合わせ内容",
+  "@inquiryContentLabel": {
+    "description": "문의 내용"
+  },
+  "inquiryContentHint": "問題が発生した状況を詳しくお知らせください。",
+  "@inquiryContentHint": {
+    "description": "문제가 발생한 상황을 자세히 알려 주세요."
+  },
+  "inquiryPickingImage": "画像を選択中…",
+  "@inquiryPickingImage": {
+    "description": "이미지 선택 중…"
+  },
+  "inquiryAttachScreenshot": "スクリーンショットを添付（任意）",
+  "@inquiryAttachScreenshot": {
+    "description": "스크린샷 첨부 (선택)"
+  },
+  "inquiryChangeScreenshot": "スクリーンショットを変更",
+  "@inquiryChangeScreenshot": {
+    "description": "스크린샷 변경"
+  },
+  "inquiryImageLimit": "PNG、JPG、WEBP · 最大10MB · 1枚",
+  "@inquiryImageLimit": {
+    "description": "PNG, JPG, WEBP · 최대 10MB · 1장"
+  },
+  "inquirySelectedScreenshot": "選択したスクリーンショット",
+  "@inquirySelectedScreenshot": {
+    "description": "선택한 스크린샷"
+  },
+  "inquiryImageDisplayFailed": "画像を表示できません。別のファイルを選択してください。",
+  "@inquiryImageDisplayFailed": {
+    "description": "이미지를 표시할 수 없습니다. 다른 파일을 선택해 주세요."
+  },
+  "inquiryScreenshot": "スクリーンショット",
+  "@inquiryScreenshot": {
+    "description": "스크린샷"
+  },
+  "inquiryRemoveAttachment": "添付を削除",
+  "@inquiryRemoveAttachment": {
+    "description": "첨부 제거"
+  },
+  "inquiryImageNotice": "添付画像は外部の画像ホスティングサービスにアップロードされ、3日後に期限切れになります。個人情報が写っていないことをご確認ください。",
+  "@inquiryImageNotice": {
+    "description": "첨부 이미지는 외부 이미지 호스팅에 업로드되며 3일 후 만료됩니다. 개인정보가 보이지 않도록 확인해 주세요."
+  },
+  "inquiryDeliveryUncertain": "すでに受け付けられている可能性があります。再送信する場合は重複にご注意ください。",
+  "@inquiryDeliveryUncertain": {
+    "description": "이미 접수되었을 수 있습니다. 재전송 시 중복 접수에 유의해 주세요."
+  },
+  "inquiryUploading": "スクリーンショットをアップロード中…",
+  "@inquiryUploading": {
+    "description": "스크린샷 업로드 중…"
+  },
+  "inquirySubmitting": "お問い合わせを送信中…",
+  "@inquirySubmitting": {
+    "description": "문의 접수 중…"
+  },
+  "inquirySubmit": "送信",
+  "@inquirySubmit": {
+    "description": "문의 등록"
+  },
+  "noticesEmpty": "お知らせはありません。",
+  "@noticesEmpty": {
+    "description": "등록된 공지사항이 없습니다."
+  },
+  "noticesImageSemantics": "お知らせの添付画像",
+  "@noticesImageSemantics": {
+    "description": "공지 첨부 이미지"
+  },
+  "noticesImageFailed": "添付画像を読み込めません。",
+  "@noticesImageFailed": {
+    "description": "첨부 이미지를 불러올 수 없습니다."
+  },
+  "nearbySendIntroduction": "受信するデバイスで、先に「ワールドカップを受信」を開いてください。",
+  "@nearbySendIntroduction": {
+    "description": "받는 기기에서 먼저 ‘월드컵 받기’를 열어주세요."
+  },
+  "nearbyReceiveTitle": "ワールドカップを受信",
+  "@nearbyReceiveTitle": {
+    "description": "월드컵 받기"
+  },
+  "nearbyCancelSemantics": "近くのデバイスへの転送をキャンセル",
+  "@nearbyCancelSemantics": {
+    "description": "주변 기기 전송 취소"
+  },
+  "nearbyCancel": "転送をキャンセル",
+  "@nearbyCancel": {
+    "description": "전송 취소"
+  },
+  "nearbyOpenSettings": "アプリの設定を開く",
+  "@nearbyOpenSettings": {
+    "description": "앱 설정 열기"
+  },
+  "nearbyStatus": "転送状況",
+  "@nearbyStatus": {
+    "description": "전송 상태"
+  },
+  "nearbyFoundDevices": "見つかったデバイス",
+  "@nearbyFoundDevices": {
+    "description": "발견된 기기"
+  },
+  "nearbySearching": "近くのデバイスを検索しています。",
+  "@nearbySearching": {
+    "description": "주변 기기를 검색하고 있습니다."
+  },
+  "nearbyTapToConnect": "タップして接続",
+  "@nearbyTapToConnect": {
+    "description": "탭하여 연결"
+  },
+  "nearbyPeer": "相手のデバイス",
+  "@nearbyPeer": {
+    "description": "상대 기기"
+  },
+  "nearbyVerifyIntroduction": "両方のデバイスに同じ認証コードが表示されていることを確認してください。",
+  "@nearbyVerifyIntroduction": {
+    "description": "양쪽 기기에 아래 인증 코드가 동일하게 표시되는지 확인하세요."
+  },
+  "nearbyVerifyWarning": "コードが異なる場合は接続しないでください。",
+  "@nearbyVerifyWarning": {
+    "description": "코드가 다르면 연결하지 마세요."
+  },
+  "nearbyReject": "拒否",
+  "@nearbyReject": {
+    "description": "거절"
+  },
+  "nearbyAccept": "コード一致・許可",
+  "@nearbyAccept": {
+    "description": "코드 일치 · 수락"
+  },
+  "editorConfirmSemantics": "確認ボタン",
+  "@editorConfirmSemantics": {
+    "description": "확인 버튼"
+  },
+  "editorSingleButtonSemantics": "画像を1枚追加するボタン",
+  "@editorSingleButtonSemantics": {
+    "description": "이미지 한 장 추가 버튼"
+  },
+  "editorMultipleButtonSemantics": "画像を複数追加するボタン",
+  "@editorMultipleButtonSemantics": {
+    "description": "여러 이미지 추가 버튼"
+  },
+  "editorTakePhoto": "写真を撮る",
+  "@editorTakePhoto": {
+    "description": "사진 찍기"
+  },
+  "editorFromAlbum": "アルバムから写真を選択",
+  "@editorFromAlbum": {
+    "description": "앨범에서 사진 선택"
+  },
+  "editorItemCount": "登録した候補：{count}件",
+  "@editorItemCount": {
+    "description": "등록된 항목 개수 : {count}개",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "worldCupSampleTitle": "（サンプル）{title}",
+  "@worldCupSampleTitle": {
+    "description": "(샘플) {title}",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "worldCupMaxRound": "最大ラウンド：ベスト{round}",
+  "@worldCupMaxRound": {
+    "description": "최대 라운드 : {round}강",
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "worldCupRoundOption": "ベスト{round}",
+  "@worldCupRoundOption": {
+    "description": "{round} 강",
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "listPagerPosition": "ワールドカップ {current} / {total}",
+  "@listPagerPosition": {
+    "description": "월드컵 {current} / {total}",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "listAllCount": "すべてのワールドカップ（{count}件）",
+  "@listAllCount": {
+    "description": "전체 목록 ({count})",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "listSearchCount": "検索結果（{count}件）",
+  "@listSearchCount": {
+    "description": "검색 결과 ({count})",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "listImported": "ワールドカップ「{title}」をインポートしました。",
+  "@listImported": {
+    "description": "\"{title}\" 월드컵을 가져왔습니다.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "playScreenSemantics": "{title}のゲーム画面",
+  "@playScreenSemantics": {
+    "description": "{title} 게임 화면",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "resultTitle": "{title}の優勝者",
+  "@resultTitle": {
+    "description": "{title} 우승자",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "resultShareDescription": "{title}の優勝者：{winner}",
+  "@resultShareDescription": {
+    "description": "{title} 우승자 : {winner}",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "winner": {
+        "type": "String"
+      }
+    }
+  },
+  "playMatchProgress": "{current} / {total}",
+  "@playMatchProgress": {
+    "description": "{current} / {total}",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "inquiryReceipt": "受付番号：{id}",
+  "@inquiryReceipt": {
+    "description": "접수 번호: {id}",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "inquiryContentCounter": "{count} / 5000",
+  "@inquiryContentCounter": {
+    "description": "{count} / 5000",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "supportRetryAfter": "{seconds}秒後にもう一度お試しください。",
+  "@supportRetryAfter": {
+    "description": "{seconds}초 후 다시 시도해 주세요.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "noticesPage": "{page}ページ",
+  "@noticesPage": {
+    "description": "{page} 페이지",
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "supportErrorSemantics": "エラー：{message}",
+  "@supportErrorSemantics": {
+    "description": "오류: {message}",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "nearbyVerificationCode": "認証コード {code}",
+  "@nearbyVerificationCode": {
+    "description": "인증 코드 {code}",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "nearbyReceiveIntroduction": "このデバイスの名前：{name}\n\nBluetooth と Wi-Fi をオンにしてください。同じ Wi-Fi ルーターやインターネットへの接続は不要です。",
+  "@nearbyReceiveIntroduction": {
+    "description": "이 기기의 이름: {name}  Bluetooth와 Wi-Fi를 켜주세요. 같은 Wi-Fi 공유기나 인터넷 연결은 필요하지 않습니다.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "updateRequiredBody": "このバージョンではアプリを引き続きご利用いただけません。\n最新バージョンにアップデートしてください。",
+  "@updateRequiredBody": {
+    "description": "이 버전에서는 앱을 계속 사용할 수 없습니다. 최신 버전으로 업데이트해 주세요."
+  },
+  "unexpectedError": "処理できませんでした。しばらくしてからもう一度お試しください。",
+  "@unexpectedError": {
+    "description": "처리하지 못했습니다. 잠시 후 다시 시도해 주세요."
+  },
+  "packageTooFewItems": "共有するワールドカップの候補が不足しています。",
+  "@packageTooFewItems": {
+    "description": "공유할 월드컵 항목이 부족합니다."
+  },
+  "packageTooManyItems": "候補が多すぎるため共有できません。",
+  "@packageTooManyItems": {
+    "description": "항목이 너무 많아 공유할 수 없습니다."
+  },
+  "packageImageTooLarge": "画像ファイルが大きすぎます：{detail}",
+  "@packageImageTooLarge": {
+    "description": "이미지 파일이 너무 큽니다: {detail}",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "packageImageMissing": "画像ファイルが見つかりません：{detail}",
+  "@packageImageMissing": {
+    "description": "이미지 파일을 찾을 수 없습니다: {detail}",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "packageResourceTooLarge": "画像リソースのサイズが大きすぎます。",
+  "@packageResourceTooLarge": {
+    "description": "이미지 리소스의 크기가 너무 큽니다."
+  },
+  "packageCreateFailed": "ワールドカップの共有ファイルを作成できませんでした。",
+  "@packageCreateFailed": {
+    "description": "월드컵 공유 파일을 만들지 못했습니다."
+  },
+  "packageMissing": "共有ファイルが見つかりません。",
+  "@packageMissing": {
+    "description": "공유 파일을 찾을 수 없습니다."
+  },
+  "packageTooLarge": "共有ファイルが大きすぎます。",
+  "@packageTooLarge": {
+    "description": "공유 파일이 너무 큽니다."
+  },
+  "packageInvalid": "有効なワールドカップの共有ファイルではありません。",
+  "@packageInvalid": {
+    "description": "올바른 월드컵 공유 파일이 아닙니다."
+  },
+  "packageDuplicateResource": "共有ファイルに重複したリソースが含まれています。",
+  "@packageDuplicateResource": {
+    "description": "중복된 리소스가 있는 공유 파일입니다."
+  },
+  "packageManifestMissing": "ワールドカップの情報が見つからないか、破損しています。",
+  "@packageManifestMissing": {
+    "description": "월드컵 정보가 없거나 손상되었습니다."
+  },
+  "packageManifestUnreadable": "ワールドカップの情報を読み込めません。",
+  "@packageManifestUnreadable": {
+    "description": "월드컵 정보를 읽을 수 없습니다."
+  },
+  "packageUnsafePath": "安全でないリソースパスが含まれています。",
+  "@packageUnsafePath": {
+    "description": "안전하지 않은 리소스 경로가 포함되었습니다."
+  },
+  "packageDuplicateImage": "重複した画像リソースパスが含まれています。",
+  "@packageDuplicateImage": {
+    "description": "중복된 이미지 리소스 경로가 포함되었습니다."
+  },
+  "packageImageDamaged": "画像リソースが見つからないか、破損しています。",
+  "@packageImageDamaged": {
+    "description": "이미지 리소스가 없거나 손상되었습니다."
+  },
+  "packageImageUnreadable": "画像リソースを読み込めません。",
+  "@packageImageUnreadable": {
+    "description": "이미지 리소스를 읽을 수 없습니다."
+  },
+  "packageImportFailed": "ワールドカップの共有ファイルをインポートできませんでした。",
+  "@packageImportFailed": {
+    "description": "월드컵 공유 파일을 가져오지 못했습니다."
+  },
+  "packageUnsupported": "このワールドカップの共有ファイルには対応していません。",
+  "@packageUnsupported": {
+    "description": "지원하지 않는 월드컵 공유 파일입니다."
+  },
+  "packageManifestDamaged": "ワールドカップの情報が破損しています。",
+  "@packageManifestDamaged": {
+    "description": "월드컵 정보가 손상되었습니다."
+  },
+  "packageItemDamaged": "ワールドカップの候補情報が破損しています。",
+  "@packageItemDamaged": {
+    "description": "월드컵 항목 정보가 손상되었습니다."
+  },
+  "packageIncomplete": "受信したファイルが完全に保存されていません。",
+  "@packageIncomplete": {
+    "description": "수신 파일이 완전히 저장되지 않았습니다."
+  },
+  "supportConfiguration": "サービスの接続設定が完了していません。",
+  "@supportConfiguration": {
+    "description": "서비스 연결 설정이 준비되지 않았습니다."
+  },
+  "supportAddress": "サービスのアドレスを確認してください。",
+  "@supportAddress": {
+    "description": "서비스 주소를 확인해 주세요."
+  },
+  "supportNetwork": "サーバーに接続できませんでした。ネットワークを確認してください。",
+  "@supportNetwork": {
+    "description": "서버에 연결하지 못했습니다. 네트워크를 확인해 주세요."
+  },
+  "supportEmailInvalid": "有効なメールアドレスを入力してください。",
+  "@supportEmailInvalid": {
+    "description": "올바른 이메일 주소를 입력해 주세요."
+  },
+  "supportContentInvalid": "お問い合わせ内容は空白を除いて1～5,000文字で入力してください。",
+  "@supportContentInvalid": {
+    "description": "문의 내용은 공백을 제외하고 1~5,000자로 입력해 주세요."
+  },
+  "supportScreenshotInvalid": "スクリーンショットを添付し直すか、削除してください。",
+  "@supportScreenshotInvalid": {
+    "description": "스크린샷을 다시 첨부하거나 제거해 주세요."
+  },
+  "supportValidation": "入力内容を確認してください。",
+  "@supportValidation": {
+    "description": "입력 내용을 확인해 주세요."
+  },
+  "supportAuthentication": "サービスの認証に失敗しました。しばらくしてからもう一度お試しください。",
+  "@supportAuthentication": {
+    "description": "서비스 인증에 실패했습니다. 잠시 후 다시 시도해 주세요."
+  },
+  "supportNotFound": "リクエストされた情報が見つかりません。再読み込みしてください。",
+  "@supportNotFound": {
+    "description": "요청한 정보를 찾을 수 없습니다. 다시 불러와 주세요."
+  },
+  "supportThrottled": "リクエストが多いため、しばらくお待ちください。",
+  "@supportThrottled": {
+    "description": "요청이 많아 잠시 기다려야 합니다."
+  },
+  "supportServer": "リクエストを処理できませんでした。しばらくしてからもう一度お試しください。",
+  "@supportServer": {
+    "description": "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요."
+  },
+  "supportInvalidResponse": "サーバーの応答を確認できませんでした。",
+  "@supportInvalidResponse": {
+    "description": "서버 응답을 확인하지 못했습니다."
+  },
+  "supportNoticesResponse": "お知らせの応答を確認できませんでした。",
+  "@supportNoticesResponse": {
+    "description": "공지사항 응답을 확인하지 못했습니다."
+  },
+  "supportReceiptResponse": "受付結果を確認できませんでした。",
+  "@supportReceiptResponse": {
+    "description": "접수 결과를 확인하지 못했습니다."
+  },
+  "supportImageConfiguration": "画像のアップロード設定が完了していません。",
+  "@supportImageConfiguration": {
+    "description": "이미지 업로드 설정이 준비되지 않았습니다."
+  },
+  "supportImageUpload": "スクリーンショットをアップロードできませんでした。もう一度お試しいただくか、添付を削除してください。",
+  "@supportImageUpload": {
+    "description": "스크린샷을 업로드하지 못했습니다. 다시 시도하거나 첨부를 제거해 주세요."
+  },
+  "supportImageResponse": "アップロードした画像のアドレスをお問い合わせに使用できません。添付を削除して送信してください。",
+  "@supportImageResponse": {
+    "description": "업로드된 이미지 주소를 문의에 사용할 수 없습니다. 첨부를 제거하고 문의해 주세요."
+  },
+  "supportNoticesFailed": "お知らせを読み込めませんでした。",
+  "@supportNoticesFailed": {
+    "description": "공지사항을 불러오지 못했습니다."
+  },
+  "supportContentRequired": "お問い合わせ内容を入力してください。",
+  "@supportContentRequired": {
+    "description": "문의 내용을 입력해 주세요."
+  },
+  "supportContentTooLong": "お問い合わせ内容は5,000文字まで入力できます。",
+  "@supportContentTooLong": {
+    "description": "문의 내용은 5,000자까지 입력할 수 있습니다."
+  },
+  "supportImageSize": "10MB以下の画像を選択してください。",
+  "@supportImageSize": {
+    "description": "10MB 이하의 이미지를 선택해 주세요."
+  },
+  "supportImageSelection": "画像を開けませんでした。別のファイルを選択してください。",
+  "@supportImageSelection": {
+    "description": "이미지를 열지 못했습니다. 다른 파일을 선택해 주세요."
+  },
+  "supportImageEmpty": "空のファイルは添付できません。",
+  "@supportImageEmpty": {
+    "description": "비어 있는 파일은 첨부할 수 없습니다."
+  },
+  "supportInquiryFailed": "お問い合わせの受付を完了できませんでした。",
+  "@supportInquiryFailed": {
+    "description": "문의 접수를 완료하지 못했습니다."
+  },
+  "nearbyPreparing": "準備しています。",
+  "@nearbyPreparing": {
+    "description": "준비 중입니다."
+  },
+  "nearbyDiscovering": "受信するデバイスを検索しています。",
+  "@nearbyDiscovering": {
+    "description": "받는 기기를 찾고 있습니다."
+  },
+  "nearbyDiscoveryTimeout": "近くのデバイスが見つかりませんでした。受信するデバイスで「ワールドカップを受信」を開いて、もう一度お試しください。",
+  "@nearbyDiscoveryTimeout": {
+    "description": "주변 기기를 찾지 못했습니다. 받는 기기에서 월드컵 받기를 열고 다시 시도해주세요."
+  },
+  "nearbyReady": "ワールドカップを受信する準備ができました。",
+  "@nearbyReady": {
+    "description": "월드컵을 받을 준비가 되었습니다."
+  },
+  "nearbyRequestingConnection": "{detail}に接続をリクエストしています。",
+  "@nearbyRequestingConnection": {
+    "description": "{detail}에 연결을 요청하고 있습니다.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "nearbyConnectionTimeout": "デバイスの接続がタイムアウトしました。もう一度お試しください。",
+  "@nearbyConnectionTimeout": {
+    "description": "기기 연결 시간이 초과되었습니다. 다시 시도해주세요."
+  },
+  "nearbyWaitingForPeer": "相手のデバイスでの確認を待っています。",
+  "@nearbyWaitingForPeer": {
+    "description": "상대 기기의 확인을 기다리고 있습니다."
+  },
+  "nearbyVerificationTimeout": "接続の確認がタイムアウトしました。もう一度お試しください。",
+  "@nearbyVerificationTimeout": {
+    "description": "연결 확인 시간이 초과되었습니다. 다시 시도해주세요."
+  },
+  "nearbyRejectedLocally": "接続リクエストを拒否しました。",
+  "@nearbyRejectedLocally": {
+    "description": "연결 요청을 거절했습니다."
+  },
+  "nearbySendCanceled": "送信をキャンセルしました。",
+  "@nearbySendCanceled": {
+    "description": "전송을 취소했습니다."
+  },
+  "nearbyReceiveCanceled": "受信をキャンセルしました。",
+  "@nearbyReceiveCanceled": {
+    "description": "받기를 취소했습니다."
+  },
+  "nearbyPreparingCode": "{detail}の認証コードを準備しています。",
+  "@nearbyPreparingCode": {
+    "description": "{detail}의 인증 코드를 준비하고 있습니다.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "nearbyVerifyCode": "両方のデバイスの認証コードが同じか確認してください。",
+  "@nearbyVerifyCode": {
+    "description": "양쪽 기기의 인증 코드가 같은지 확인하세요."
+  },
+  "nearbySecuringConnection": "安全な接続を確立しています。",
+  "@nearbySecuringConnection": {
+    "description": "안전한 연결을 설정하고 있습니다."
+  },
+  "nearbyConnected": "{detail}に接続しました。",
+  "@nearbyConnected": {
+    "description": "{detail}와 연결되었습니다.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "nearbyReceiveTimeout": "ファイルの受信がタイムアウトしました。もう一度お試しください。",
+  "@nearbyReceiveTimeout": {
+    "description": "파일 수신 시간이 초과되었습니다. 다시 시도해주세요."
+  },
+  "nearbyRejectedByPeer": "相手のデバイスが接続を拒否しました。",
+  "@nearbyRejectedByPeer": {
+    "description": "상대 기기에서 연결을 거절했습니다."
+  },
+  "nearbyFinalizingDisconnected": "接続が終了したため、受信したファイルを確認しています。",
+  "@nearbyFinalizingDisconnected": {
+    "description": "연결이 종료되어 받은 파일을 확인하고 있습니다."
+  },
+  "nearbyFinalizationTimeout": "受信したファイルの確認がタイムアウトしました。もう一度お試しください。",
+  "@nearbyFinalizationTimeout": {
+    "description": "수신 파일 확인 시간이 초과되었습니다. 다시 시도해주세요."
+  },
+  "nearbyDisconnected": "デバイスとの接続が切れました。近くでもう一度お試しください。",
+  "@nearbyDisconnected": {
+    "description": "기기 연결이 끊겼습니다. 가까운 거리에서 다시 시도해주세요."
+  },
+  "nearbySending": "ワールドカップを送信しています。",
+  "@nearbySending": {
+    "description": "월드컵을 보내고 있습니다."
+  },
+  "nearbyReceiving": "ワールドカップを受信しています。",
+  "@nearbyReceiving": {
+    "description": "월드컵을 받고 있습니다."
+  },
+  "nearbySendTimeout": "ファイルの送信がタイムアウトしました。もう一度お試しください。",
+  "@nearbySendTimeout": {
+    "description": "파일 전송 시간이 초과되었습니다. 다시 시도해주세요."
+  },
+  "nearbySendSuccess": "ワールドカップの送信が完了しました。",
+  "@nearbySendSuccess": {
+    "description": "월드컵 전송을 완료했습니다."
+  },
+  "nearbyCheckingFile": "受信したファイルを確認しています。",
+  "@nearbyCheckingFile": {
+    "description": "수신 파일을 확인하고 있습니다."
+  },
+  "nearbyTransferCanceled": "ファイルの転送がキャンセルされました。",
+  "@nearbyTransferCanceled": {
+    "description": "파일 전송이 취소되었습니다."
+  },
+  "nearbyTransferFailed": "ファイルの転送に失敗しました。もう一度お試しください。",
+  "@nearbyTransferFailed": {
+    "description": "파일 전송에 실패했습니다. 다시 시도해주세요."
+  },
+  "nearbyCreatingFile": "ワールドカップの共有ファイルを作成しています。",
+  "@nearbyCreatingFile": {
+    "description": "월드컵 공유 파일을 만들고 있습니다."
+  },
+  "nearbyPreparationTimeout": "共有ファイルの準備がタイムアウトしました。もう一度お試しください。",
+  "@nearbyPreparationTimeout": {
+    "description": "공유 파일 준비 시간이 초과되었습니다. 다시 시도해주세요."
+  },
+  "nearbyImporting": "受信したワールドカップを自動登録しています。",
+  "@nearbyImporting": {
+    "description": "받은 월드컵을 자동 등록하고 있습니다."
+  },
+  "nearbyReceiveSuccess": "ワールドカップ「{detail}」を受信しました。",
+  "@nearbyReceiveSuccess": {
+    "description": "\"{detail}\" 월드컵을 받았습니다.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "nearbyUnsupported": "このデバイスでは Nearby Connections を利用できません。",
+  "@nearbyUnsupported": {
+    "description": "이 기기에서는 Nearby Connections를 사용할 수 없습니다."
+  },
+  "nearbyPermissionBlocked": "付近のデバイスへのアクセスがブロックされています。アプリの設定で権限を許可してください。",
+  "@nearbyPermissionBlocked": {
+    "description": "주변 기기 권한이 차단되었습니다. 앱 설정에서 권한을 허용해주세요."
+  },
+  "nearbyPermissionRequired": "付近のデバイスへのアクセス権限が必要です。",
+  "@nearbyPermissionRequired": {
+    "description": "주변 기기 권한이 필요합니다."
+  },
+  "nearbyRadiosDisabled": "Bluetooth と Wi-Fi をオンにしてから、もう一度お試しください。",
+  "@nearbyRadiosDisabled": {
+    "description": "Bluetooth와 Wi-Fi를 켠 뒤 다시 시도해주세요."
+  },
+  "nearbyStartFailed": "Nearby Connections を開始できません。",
+  "@nearbyStartFailed": {
+    "description": "Nearby Connections를 시작할 수 없습니다."
+  },
+  "nearbyImportFailed": "受信したワールドカップを登録できませんでした。送信側のデバイスからもう一度送信してください。",
+  "@nearbyImportFailed": {
+    "description": "받은 월드컵을 등록하지 못했습니다. 보내는 기기에서 다시 보내주세요."
+  },
+  "nearbyError": "近くのデバイスとの転送中にエラーが発生しました。もう一度お試しください。",
+  "@nearbyError": {
+    "description": "주변 기기 전송 중 오류가 발생했습니다. 다시 시도해주세요."
+  },
+  "listCardSemantics": "{title}、最大ラウンドはベスト{round}、{current} / {total}",
+  "@listCardSemantics": {
+    "description": "{title}, 최대 라운드 {round}강, {current} / {total}",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "round": {
+        "type": "int"
+      },
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "nearbyStatusSemantics": "転送状況 {message}{progress}",
+  "@nearbyStatusSemantics": {
+    "description": "전송 상태 {message}{progress}",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      },
+      "progress": {
+        "type": "String"
+      }
+    }
+  },
+  "nearbyProgressPercent": "{percent}%",
+  "@nearbyProgressPercent": {
+    "description": "{percent}%",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "resultShareButton": "自分で作るワールドカップで遊ぶ",
+  "@resultShareButton": {
+    "description": "내가 만든 월드컵 게임 체험하기"
+  },
+  "shareFileTitle": "{title}のワールドカップを共有",
+  "@shareFileTitle": {
+    "description": "{title} 월드컵 공유",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "shareFileSubject": "{title}のワールドカップ",
+  "@shareFileSubject": {
+    "description": "{title} 월드컵",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "sampleFemaleTitle": "女性アイドルワールドカップ",
+  "@sampleFemaleTitle": {
+    "description": "기본 샘플 -1의 title"
+  },
+  "sampleFemaleInfo": "最高の女性アイドルを選ぼう",
+  "@sampleFemaleInfo": {
+    "description": "기본 샘플 -1의 info"
+  },
+  "sampleItemAespaCarina": "エスパ カリナ",
+  "@sampleItemAespaCarina": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemHearts2Ian": "ハーツトゥハーツ イアン",
+  "@sampleItemHearts2Ian": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemNmixSul": "エンミックス ソリュン",
+  "@sampleItemNmixSul": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemIveJang": "アイヴ チャン・ウォニョン",
+  "@sampleItemIveJang": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemBabymonAhyun": "ベイビーモンスター アヒョン",
+  "@sampleItemBabymonAhyun": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemPromiseSong": "プロミスナイン ソン・ハヨン",
+  "@sampleItemPromiseSong": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemIlitWonhee": "アイリット ウォンヒ",
+  "@sampleItemIlitWonhee": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemNewjeansHaerin": "ニュージーンズ ヘリン",
+  "@sampleItemNewjeansHaerin": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemItzyYuna": "イッチ ユナ",
+  "@sampleItemItzyYuna": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemResceneWon": "リセンヌ ウォニ",
+  "@sampleItemResceneWon": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemMeovvAnna": "ミヤオ アンナ",
+  "@sampleItemMeovvAnna": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemTriplesChaewon": "トリプルエス キム・チェウォン",
+  "@sampleItemTriplesChaewon": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemChu": "チュウ",
+  "@sampleItemChu": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemIzoneHyewon": "カン・ヘウォン",
+  "@sampleItemIzoneHyewon": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemIdleMiyeon": "アイドゥル ミヨン",
+  "@sampleItemIdleMiyeon": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemLesserafimKimchaewon": "ル・セラフィム キム・チェウォン",
+  "@sampleItemLesserafimKimchaewon": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleMaleTitle": "男性アイドルワールドカップ",
+  "@sampleMaleTitle": {
+    "description": "기본 샘플 -2의 title"
+  },
+  "sampleMaleInfo": "最高の男性アイドルを選ぼう",
+  "@sampleMaleInfo": {
+    "description": "기본 샘플 -2의 info"
+  },
+  "sampleItemParkJiHun": "パク・ジフン",
+  "@sampleItemParkJiHun": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemCortisGunho": "コルティス ゴンホ",
+  "@sampleItemCortisGunho": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemNct127Jaehyun": "エヌシーティー127 ジェヒョン",
+  "@sampleItemNct127Jaehyun": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemTwsDohun": "トゥアス ドフン",
+  "@sampleItemTwsDohun": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemAnd2BleYujin": "アンダブル ハン・ユジン",
+  "@sampleItemAnd2BleYujin": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemBndMyung": "ボーイネクストドア ミョン・ジェヒョン",
+  "@sampleItemBndMyung": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemBtsV": "ビーティーエス ヴィ",
+  "@sampleItemBtsV": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemTxtYun": "トゥモロー・バイ・トゥギャザー ヨンジュン",
+  "@sampleItemTxtYun": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemTheboyzJuyeon": "ザ・ボーイズ ジュヨン",
+  "@sampleItemTheboyzJuyeon": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemRiizeWonbin": "ライズ ウォンビン",
+  "@sampleItemRiizeWonbin": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemNctwishRiku": "エヌシーティーウィッシュ リク",
+  "@sampleItemNctwishRiku": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemBtobYuk": "ビートゥービー ユク・ソンジェ",
+  "@sampleItemBtobYuk": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemEnhyphenSunwoo": "エンハイプン ソヌ",
+  "@sampleItemEnhyphenSunwoo": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemTxtTaehyun": "トゥモロー・バイ・トゥギャザー テヒョン",
+  "@sampleItemTxtTaehyun": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemAstroCha": "アストロ チャ・ウヌ",
+  "@sampleItemAstroCha": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "sampleItemGot7Jinyoung": "ガットセブン ジニョン",
+  "@sampleItemGot7Jinyoung": {
+    "description": "기본 샘플 후보 이름. 사용자 작성 내용에는 적용하지 않음"
+  },
+  "nativeBluetoothPermission": "近くのデバイスとワールドカップのファイルを直接送受信するために Bluetooth を使用します。",
+  "@nativeBluetoothPermission": {
+    "description": "주변 기기와 월드컵 파일을 직접 주고받기 위해 Bluetooth를 사용합니다."
+  },
+  "nativeLocalNetworkPermission": "インターネットを使わずに近くのデバイスとワールドカップのファイルを直接転送するために、ローカルネットワークを使用します。",
+  "@nativeLocalNetworkPermission": {
+    "description": "인터넷 없이 주변 기기와 월드컵 파일을 직접 전송하기 위해 로컬 네트워크를 사용합니다."
+  },
+  "nativeCameraPermission": "ワールドカップに使用する写真を撮影するためにカメラを使用します。",
+  "@nativeCameraPermission": {
+    "description": "월드컵에 사용할 사진을 찍기 위해 카메라를 사용합니다."
+  },
+  "nativePhotosPermission": "ワールドカップに使用する写真を選択するために写真ライブラリを使用します。",
+  "@nativePhotosPermission": {
+    "description": "월드컵에 사용할 사진을 선택하기 위해 사진 보관함을 사용합니다."
+  },
+  "noticesDate": "{date}",
+  "@noticesDate": {
+    "description": "공지 게시일. 언어별 날짜 형식",
+    "placeholders": {
+      "date": {
+        "type": "DateTime",
+        "format": "yMd"
+      }
+    }
+  },
+  "listAdvertisementSemantics": "バナー広告",
+  "@listAdvertisementSemantics": {
+    "description": "배너 광고"
+  },
+  "nearbyDeviceName": "ワールドカップ端末 {suffix}",
+  "@nearbyDeviceName": {
+    "description": "월드컵 기기 {suffix}",
+    "placeholders": {
+      "suffix": {
+        "type": "int"
+      }
+    }
+  },
+  "nearbyAlreadyBusy": "別の近くのデバイス操作が進行中です。操作を終了してからもう一度お試しください。",
+  "@nearbyAlreadyBusy": {
+    "description": "주변 기기 작업 중복 안내"
+  },
+  "nearbyInvalidState": "現在の状態ではこの操作を実行できません。転送画面を開き直してください。",
+  "@nearbyInvalidState": {
+    "description": "주변 기기 작업 상태 오류 안내"
+  },
+  "nearbyConnectionFailed": "デバイスに接続できませんでした。2台のデバイスを近づけて、もう一度お試しください。",
+  "@nearbyConnectionFailed": {
+    "description": "주변 기기 연결 실패 안내"
+  }
+}

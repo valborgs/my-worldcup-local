@@ -1,3 +1,4 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 // 결승전에서 bottom 아이템이 선택되지 않던 버그의 회귀 테스트.
 //
 // 원인: GameItem은 위젯 key로 WorldCupItemModel.idx만 사용한다. 새 라운드가
@@ -26,6 +27,12 @@ import 'package:feature_worldcup_play/src/widgets/game_item.dart';
 import 'package:feature_worldcup_play/src/widgets/worldcup_game.dart';
 
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
   // idx < 0 : 샘플 월드컵 항목 (Image.asset 경로)
   // idx >= 0 : 사용자가 직접 추가한(실제) 월드컵 항목 (Image.file 경로).
   // 테스트는 저장소 루트에서 실행되므로 아래 상대경로의 실제 파일이 존재한다.
@@ -54,6 +61,8 @@ void main() {
       return UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             // WorldCupGame.build와 동일한 구조: Flex 안에 top/bottom GameItem을
             // idx 기반 ValueKey로 배치한다.
@@ -160,6 +169,8 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(body: WorldCupGame(worldCupModel, items, 8)),
         ),
       ),

@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:developer';
 import 'dart:io';
 
@@ -88,15 +90,19 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           title: Text(
-            isEditMode ? "월드컵 수정" : "월드컵 등록",
-            semanticsLabel: isEditMode ? "월드컵 수정 화면" : "월드컵 등록 화면",
+            isEditMode
+                ? AppLocalizations.of(context).editorEditTitle
+                : AppLocalizations.of(context).editorCreateTitle,
+            semanticsLabel: isEditMode
+                ? AppLocalizations.of(context).editorEditSemantics
+                : AppLocalizations.of(context).editorCreateSemantics,
           ),
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 10),
               child: Semantics(
                 button: true,
-                label: "Confirm Button",
+                label: AppLocalizations.of(context).editorConfirmSemantics,
                 child: IconButton(
                   onPressed: () async {
                     if (isEditMode) {
@@ -110,9 +116,9 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
                     if (addedWorldCupIdx == null || !context.mounted) return;
                     Navigator.of(context).pop(addedWorldCupIdx);
                   },
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.check_rounded,
-                    semanticLabel: "확인",
+                    semanticLabel: AppLocalizations.of(context).commonConfirm,
                     size: 32,
                   ),
                 ),
@@ -133,10 +139,11 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
                       controller: _titleController,
                       validator: (value) => checkTitle(),
                       focusNode: _titleFocusNode,
-                      decoration: const InputDecoration(
-                        labelText: '제목',
-                        hintText: '만드실 월드컵의 제목을 입력해주세요.',
-                        hintStyle: TextStyle(
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)
+                            .editorTitleLabel,
+                        hintText: AppLocalizations.of(context).editorTitleHint,
+                        hintStyle: const TextStyle(
                           color: Colors.black38,
                           fontSize: 12,
                         ),
@@ -147,10 +154,12 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
                       controller: _infoController,
                       validator: (value) => checkInfo(),
                       focusNode: _infoFocusNode,
-                      decoration: const InputDecoration(
-                        labelText: '설명',
-                        hintText: '만드실 월드컵의 설명을 간단히 입력해주세요.',
-                        hintStyle: TextStyle(
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)
+                            .commonDescription,
+                        hintText: AppLocalizations.of(context)
+                            .editorDescriptionHint,
+                        hintStyle: const TextStyle(
                           color: Colors.black38,
                           fontSize: 12,
                         ),
@@ -162,7 +171,8 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
               ),
               const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
               Text(
-                "등록된 항목 개수 : ${_imagePathList.length}개",
+                AppLocalizations.of(context)
+                    .editorItemCount(_imagePathList.length),
                 style: (_imagePathList.isNotEmpty && _imagePathList.length > 3)
                     ? isPictureListNotEmpty()
                     : isPictureListEmpty(),
@@ -172,22 +182,27 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
                 children: [
                   Expanded(
                     child: Semantics(
-                      label: "Add Single Item Button",
+                      label: AppLocalizations.of(context)
+                          .editorSingleButtonSemantics,
                       child: InkWell(
                         onTap: () => showAddPictureDialog(context),
                         child: DottedBorder(
-                          child: const SizedBox(
+                          child: SizedBox(
                             height: 48,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
                                   Icons.add,
-                                  semanticLabel: "단일 추가",
+                                  semanticLabel: AppLocalizations.of(context)
+                                      .editorSingleImage,
                                   size: 20,
                                 ),
-                                SizedBox(width: 6),
-                                Text("이미지 선택", style: TextStyle(fontSize: 14)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  AppLocalizations.of(context).editorPickImage,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
                               ],
                             ),
                           ),
@@ -198,22 +213,28 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Semantics(
-                      label: "Add Multiple Items Button",
+                      label: AppLocalizations.of(context)
+                          .editorMultipleButtonSemantics,
                       child: InkWell(
                         onTap: () => showMultipleImagePicker(context),
                         child: DottedBorder(
-                          child: const SizedBox(
+                          child: SizedBox(
                             height: 48,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
                                   Icons.add,
-                                  semanticLabel: "복수 추가",
+                                  semanticLabel: AppLocalizations.of(context)
+                                      .editorMultipleImages,
                                   size: 20,
                                 ),
-                                SizedBox(width: 6),
-                                Text("여러개 선택", style: TextStyle(fontSize: 14)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  AppLocalizations.of(context)
+                                      .editorPickMultiple,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
                               ],
                             ),
                           ),
@@ -261,7 +282,7 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
   String? checkTitle() {
     if (_titleController.text.isEmpty) {
       _titleFocusNode.requestFocus();
-      return '제목을 입력해주세요.';
+      return AppLocalizations.of(context).editorTitleRequired;
     }
     return null;
   }
@@ -271,7 +292,7 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
       if (_titleController.text.isNotEmpty) {
         _infoFocusNode.requestFocus();
       }
-      return '설명을 입력해주세요.';
+      return AppLocalizations.of(context).editorDescriptionRequired;
     }
     return null;
   }
@@ -323,10 +344,10 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 visualDensity: VisualDensity.compact,
-                icon: const Icon(
+                icon: Icon(
                   Icons.highlight_remove_rounded,
                   color: Colors.red,
-                  semanticLabel: "삭제",
+                  semanticLabel: AppLocalizations.of(context).commonDelete,
                 ),
                 onPressed: () => deleteDialog(index),
               ),
@@ -342,8 +363,10 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('삭제'),
-          content: const Text('해당 이미지를 삭제하시겠습니까?'),
+          title: Text(AppLocalizations.of(context).commonDelete),
+          content: Text(
+            AppLocalizations.of(context).editorDeleteImageConfirmation,
+          ),
           actions: [
             TextButton(
               onPressed: () {
@@ -352,13 +375,13 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
                 // 화면이 다시 그려지므로 setState는 필요 없다.
                 _vm.removeItemAt(index);
               },
-              child: const Text('네'),
+              child: Text(AppLocalizations.of(context).commonYes),
             ),
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text('아니오'),
+              child: Text(AppLocalizations.of(context).commonNo),
             ),
           ],
         );
@@ -372,21 +395,29 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text(isEditMode ? '수정 취소' : '등록 취소'),
-          content: Text(isEditMode ? '수정을 취소하시겠습니까?' : '등록을 취소하시겠습니까?'),
+          title: Text(
+            isEditMode
+                ? AppLocalizations.of(context).editorCancelEditTitle
+                : AppLocalizations.of(context).editorCancelCreateTitle,
+          ),
+          content: Text(
+            isEditMode
+                ? AppLocalizations.of(context).editorCancelEditBody
+                : AppLocalizations.of(context).editorCancelCreateBody,
+          ),
           actions: <Widget>[
             TextButton(
               style: TextButton.styleFrom(
                 textStyle: Theme.of(dialogContext).textTheme.labelLarge,
               ),
-              child: const Text('아니오'),
+              child: Text(AppLocalizations.of(context).commonNo),
               onPressed: () => Navigator.pop(dialogContext),
             ),
             TextButton(
               style: TextButton.styleFrom(
                 textStyle: Theme.of(dialogContext).textTheme.labelLarge,
               ),
-              child: const Text('네'),
+              child: Text(AppLocalizations.of(context).commonYes),
               onPressed: () {
                 Navigator.pop(dialogContext); // 다이얼로그 닫기
                 Navigator.of(context).pop(); // 등록 화면 닫기
@@ -414,7 +445,9 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
       log('DB Error', error: e, name: 'add_worldcup_screen');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("데이터를 저장할 수 없습니다. 잠시후에 다시 시도해주세요.")),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).editorSaveFailed),
+          ),
         );
       }
       return null;
@@ -450,8 +483,8 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
       // 한순간뿐이지만, 아무 반응 없이 끝나면 안 되므로 알린다.
       if (!updated && !_vm.isReady && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("월드컵 정보를 아직 불러오는 중입니다. 잠시 후 다시 시도해주세요."),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).editorStillLoading),
           ),
         );
       }
@@ -460,7 +493,9 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
       log('DB Error', error: e, name: 'add_worldcup_screen');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("데이터를 업데이트할 수 없습니다. 잠시후에 다시 시도해주세요.")),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).editorUpdateFailed),
+          ),
         );
       }
       return false;

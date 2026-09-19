@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/generated/app_localizations.dart';
+
 enum WorldCupAction { create, receiveNearby, importFile }
 
 class WorldCupActionMenuButton extends StatelessWidget {
@@ -18,14 +20,15 @@ class WorldCupActionMenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.only(right: 10),
       child: Semantics(
         button: true,
         enabled: !isBusy,
-        label: '월드컵 추가 메뉴',
+        label: l10n.worldCupAddMenu,
         child: IconButton(
-          tooltip: '월드컵 추가 메뉴',
+          tooltip: l10n.worldCupAddMenu,
           onPressed: isBusy ? null : () => _showActionSheet(context),
           icon: isBusy
               ? const SizedBox(
@@ -33,13 +36,14 @@ class WorldCupActionMenuButton extends StatelessWidget {
                   height: 22,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.add, semanticLabel: '월드컵 추가 메뉴', size: 32),
+              : Icon(Icons.add, semanticLabel: l10n.worldCupAddMenu, size: 32),
         ),
       ),
     );
   }
 
   Future<void> _showActionSheet(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
     final action = await showModalBottomSheet<WorldCupAction>(
       context: context,
       showDragHandle: true,
@@ -56,28 +60,28 @@ class WorldCupActionMenuButton extends StatelessWidget {
               Semantics(
                 header: true,
                 child: Text(
-                  '월드컵 추가 방법 선택',
+                  l10n.worldCupAddMethodTitle,
                   style: Theme.of(sheetContext).textTheme.titleLarge,
                 ),
               ),
               const SizedBox(height: 8),
               ListTile(
                 leading: const Icon(Icons.add_photo_alternate_outlined),
-                title: const Text('새 월드컵 만들기'),
-                subtitle: const Text('사진을 골라 나만의 월드컵 만들기'),
+                title: Text(l10n.worldCupCreate),
+                subtitle: Text(l10n.worldCupCreateDescription),
                 onTap: () => Navigator.pop(sheetContext, WorldCupAction.create),
               ),
               ListTile(
                 leading: const Icon(Icons.devices_other),
-                title: const Text('주변 기기에서 받기'),
-                subtitle: const Text('인터넷 없이 Nearby Connections로 직접 받기'),
+                title: Text(l10n.worldCupReceiveNearby),
+                subtitle: Text(l10n.worldCupReceiveNearbyDescription),
                 onTap: () =>
                     Navigator.pop(sheetContext, WorldCupAction.receiveNearby),
               ),
               ListTile(
                 leading: const Icon(Icons.file_download_outlined),
-                title: const Text('파일에서 가져오기'),
-                subtitle: const Text('.myworldcup 파일을 직접 선택하여 가져오기'),
+                title: Text(l10n.worldCupImportFile),
+                subtitle: Text(l10n.worldCupImportFileDescription),
                 onTap: () =>
                     Navigator.pop(sheetContext, WorldCupAction.importFile),
               ),

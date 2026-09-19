@@ -1,3 +1,4 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 // 시작, 랭킹, 찜 버튼 커스텀 위젯
 import 'package:flutter/material.dart';
 
@@ -28,7 +29,11 @@ class IconOutlinedButton extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: textColor, semanticLabel: "선택 버튼"),
+          Icon(
+            icon,
+            color: textColor,
+            semanticLabel: AppLocalizations.of(context).commonSelectButton,
+          ),
           const Padding(padding: EdgeInsets.only(right: 10)),
           Text(text, style: TextStyle(color: textColor)),
         ],

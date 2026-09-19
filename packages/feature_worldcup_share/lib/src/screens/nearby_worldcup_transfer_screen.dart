@@ -1,3 +1,5 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -59,6 +61,9 @@ class _NearbyWorldCupSendScreenState
         packageGateway:
             widget.packageGateway ?? ref.read(worldCupPackageProvider),
         worldCup: model,
+        displayNameProvider: () => AppLocalizations.of(
+          context,
+        ).nearbyDeviceName(NearbyWorldCupTransferController.displayNameSuffix),
       ),
     );
   }
@@ -92,19 +97,19 @@ class _NearbyWorldCupSendScreenState
 
   @override
   Widget build(BuildContext context) {
-    const title = '주변 기기로 보내기';
+    final title = AppLocalizations.of(context).shareNearby;
     final controller = _controller;
     if (controller == null) {
       // 월드컵을 불러오는 동안. 보통 한 프레임 안에 끝난다.
       return Scaffold(
-        appBar: AppBar(title: const Text(title)),
+        appBar: AppBar(title: Text(title)),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
     return _NearbyTransferScaffold(
       title: title,
       controller: controller,
-      introduction: '받는 기기에서 먼저 ‘월드컵 받기’를 열어주세요.',
+      introduction: AppLocalizations.of(context).nearbySendIntroduction,
     );
   }
 }
@@ -138,6 +143,7 @@ class _NearbyWorldCupReceiveScreenState
     extends ConsumerState<NearbyWorldCupReceiveScreen>
     with WidgetsBindingObserver {
   late final NearbyWorldCupTransferController _controller;
+  bool _initialized = false;
 
   /// 가져오기에 성공한 월드컵. 화면이 닫힐 때 pop 결과로 돌려준다.
   ImportedWorldCup? _imported;
@@ -146,6 +152,13 @@ class _NearbyWorldCupReceiveScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
     _controller =
         widget.controller ??
         NearbyWorldCupTransferController.receiver(
@@ -153,6 +166,10 @@ class _NearbyWorldCupReceiveScreenState
           packageGateway:
               widget.packageGateway ?? ref.read(worldCupPackageProvider),
           onImported: _handleImported,
+          displayNameProvider: () => AppLocalizations.of(context)
+              .nearbyDeviceName(
+                NearbyWorldCupTransferController.displayNameSuffix,
+              ),
         );
     _controller.addListener(_onChanged);
     _controller.start();
@@ -196,11 +213,10 @@ class _NearbyWorldCupReceiveScreenState
         Navigator.of(context).pop(_imported);
       },
       child: _NearbyTransferScaffold(
-        title: '월드컵 받기',
+        title: AppLocalizations.of(context).nearbyReceiveTitle,
         controller: _controller,
-        introduction:
-            '이 기기의 이름: ${_controller.displayName}\n\n'
-            'Bluetooth와 Wi-Fi를 켜주세요. 같은 Wi-Fi 공유기나 인터넷 연결은 필요하지 않습니다.',
+        introduction: AppLocalizations.of(context)
+            .nearbyReceiveIntroduction(_controller.displayName),
       ),
     );
   }
@@ -227,9 +243,9 @@ class _NearbyTransferScaffold extends StatelessWidget {
           if (!controller.finished)
             Semantics(
               button: true,
-              label: '주변 기기 전송 취소',
+              label: AppLocalizations.of(context).nearbyCancelSemantics,
               child: IconButton(
-                tooltip: '전송 취소',
+                tooltip: AppLocalizations.of(context).nearbyCancel,
                 onPressed:
                     controller.busy &&
                         controller.phase == NearbyTransferPhase.importing
@@ -266,7 +282,7 @@ class _NearbyTransferScaffold extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: controller.openSettings,
                 icon: const Icon(Icons.settings_outlined),
-                label: const Text('앱 설정 열기'),
+                label: Text(AppLocalizations.of(context).nearbyOpenSettings),
               ),
             ],
             if (controller.finished ||
@@ -274,7 +290,7 @@ class _NearbyTransferScaffold extends StatelessWidget {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () => Navigator.of(context).maybePop(),
-                child: const Text('닫기'),
+                child: Text(AppLocalizations.of(context).commonClose),
               ),
             ],
           ],
@@ -297,7 +313,10 @@ class _InformationCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline, semanticLabel: '안내'),
+            Icon(
+              Icons.info_outline,
+              semanticLabel: AppLocalizations.of(context).commonInfo,
+            ),
             const SizedBox(width: 12),
             Expanded(child: Text(text)),
           ],
@@ -319,21 +338,28 @@ class _StatusSection extends StatelessWidget {
         controller.phase == NearbyTransferPhase.importing;
     final percent = controller.progress == null
         ? null
-        : '${(controller.progress! * 100).round()}%';
+        : AppLocalizations.of(context)
+              .nearbyProgressPercent((controller.progress! * 100).round());
     return Semantics(
       liveRegion: true,
-      label: '전송 상태 ${controller.message}${percent == null ? '' : ' $percent'}',
+      label: AppLocalizations.of(context).nearbyStatusSemantics(
+        AppLocalizations.of(context).message(controller.message),
+        percent == null ? '' : ' $percent',
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(_statusIcon(controller.phase), semanticLabel: '전송 상태'),
+              Icon(
+                _statusIcon(controller.phase),
+                semanticLabel: AppLocalizations.of(context).nearbyStatus,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  controller.message,
+                  AppLocalizations.of(context).message(controller.message),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
@@ -380,16 +406,19 @@ class _EndpointList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('발견된 기기', style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          AppLocalizations.of(context).nearbyFoundDevices,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         const SizedBox(height: 8),
         if (endpoints.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
             child: Column(
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 12),
-                Text('주변 기기를 검색하고 있습니다.'),
+                const CircularProgressIndicator(),
+                const SizedBox(height: 12),
+                Text(AppLocalizations.of(context).nearbySearching),
               ],
             ),
           )
@@ -399,7 +428,7 @@ class _EndpointList extends StatelessWidget {
               child: ListTile(
                 leading: const Icon(Icons.smartphone),
                 title: Text(endpoint.name, maxLines: 2),
-                subtitle: const Text('탭하여 연결'),
+                subtitle: Text(AppLocalizations.of(context).nearbyTapToConnect),
                 trailing: const Icon(Icons.chevron_right),
                 enabled: !controller.busy,
                 onTap: () => controller.connect(endpoint),
@@ -428,16 +457,17 @@ class _ConnectionDecision extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              controller.peer?.name ?? '상대 기기',
+              controller.peer?.name ?? AppLocalizations.of(context).nearbyPeer,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
-            const Text('양쪽 기기에 아래 인증 코드가 동일하게 표시되는지 확인하세요.'),
+            Text(AppLocalizations.of(context).nearbyVerifyIntroduction),
             const SizedBox(height: 16),
             Semantics(
-              label: '인증 코드 $verificationCode',
+              label: AppLocalizations.of(context)
+                  .nearbyVerificationCode(verificationCode),
               readOnly: true,
               child: SelectableText(
                 verificationCode,
@@ -447,7 +477,10 @@ class _ConnectionDecision extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text('코드가 다르면 연결하지 마세요.', textAlign: TextAlign.center),
+            Text(
+              AppLocalizations.of(context).nearbyVerifyWarning,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
             Wrap(
               alignment: WrapAlignment.end,
@@ -458,13 +491,13 @@ class _ConnectionDecision extends StatelessWidget {
                   onPressed: controller.busy
                       ? null
                       : controller.rejectConnection,
-                  child: const Text('거절'),
+                  child: Text(AppLocalizations.of(context).nearbyReject),
                 ),
                 FilledButton(
                   onPressed: controller.busy
                       ? null
                       : controller.acceptConnection,
-                  child: const Text('코드 일치 · 수락'),
+                  child: Text(AppLocalizations.of(context).nearbyAccept),
                 ),
               ],
             ),

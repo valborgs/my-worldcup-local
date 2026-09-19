@@ -4,6 +4,8 @@
 /// 상태를 전혀 모르며, 보여줄 항목과 콜백만 받는다.
 library;
 
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -333,12 +335,13 @@ class CoverFlowPagerState<T> extends State<CoverFlowPager<T>> {
           widget.items[currentIndex],
           currentIndex,
         ) ??
-        '월드컵 ${currentIndex + 1} / ${widget.items.length}';
+        AppLocalizations.of(context)
+            .listPagerPosition(currentIndex + 1, widget.items.length);
     return Semantics(
       container: true,
       button: true,
       label: label,
-      hint: '두 번 탭하여 현재 월드컵을 열거나 위아래로 쓸어 넘기세요',
+      hint: AppLocalizations.of(context).listPagerHint,
       onTap: () => widget.onCurrentItemTap?.call(
         context,
         widget.items[currentIndex],

@@ -160,7 +160,10 @@ class _MyWorldCupState extends State<MyWorldCup> {
     );
 
     return MaterialApp(
-      title: "내가 만든 월드컵",
+      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      // 한국어를 첫 지원 언어로 생성하여 미지원 기기 언어도 한국어로 연다.
+      supportedLocales: AppLocalizations.supportedLocales,
       themeMode: ThemeMode.light,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),

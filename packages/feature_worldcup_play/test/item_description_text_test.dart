@@ -1,3 +1,4 @@
+import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 // #19 회귀 테스트.
 //
 // 항목 설명은 20자로 제한하는 것이 기획 의도였지만, 여러 장 업로드 경로에는
@@ -16,6 +17,12 @@ import 'package:feature_worldcup_play/src/widgets/game_item.dart';
 import 'package:feature_worldcup_play/src/widgets/item_description_text.dart';
 
 void main() {
+  // Keep Korean regression expectations independent of supported device locales.
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() {
+    binding.platformDispatcher.localesTestValue = [const Locale('ko')];
+  });
+  tearDown(binding.platformDispatcher.clearLocalesTestValue);
   // 게임 화면이 실제로 쓰는 값에 맞춘 상자. 세로 폰(가로 411dp) 기준으로
   // 항목 하나의 높이가 약 380dp일 때 설명이 쓸 수 있는 크기다.
   const preferredFontSize = 24.0;
@@ -118,7 +125,13 @@ void main() {
     const long =
         '가나다라마바사아자차카타파하가나다라마바'
         '사아자차카타파하가나다라마바사아자차카타';
-    const item = WorldCupItemModel(1, 'assets/sample/female/chu.jpg', long, -1);
+    // Arbitrary text layout, not the built-in sample's translated name.
+    const item = WorldCupItemModel(
+      1,
+      'assets/sample/female/chu.jpg',
+      long,
+      -9999,
+    );
 
     final container = ProviderContainer();
     addTearDown(container.dispose);
@@ -127,6 +140,8 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(
               children: [

@@ -1,3 +1,5 @@
+import 'package:worldcup_core/worldcup_core.dart';
+
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -23,6 +25,7 @@ class ImgbbInquiryUploader implements InquiryImageUploadPort {
       throw const SupportFailure(
         'image_configuration',
         '이미지 업로드 설정이 준비되지 않았습니다.',
+        userMessage: AppMessage(AppMessageId.supportImageConfiguration),
       );
     }
     final http.Response response;
@@ -45,6 +48,7 @@ class ImgbbInquiryUploader implements InquiryImageUploadPort {
       throw const SupportFailure(
         'image_upload',
         '스크린샷을 업로드하지 못했습니다. 다시 시도하거나 첨부를 제거해 주세요.',
+        userMessage: AppMessage(AppMessageId.supportImageUpload),
       );
     }
     try {
@@ -65,6 +69,7 @@ class ImgbbInquiryUploader implements InquiryImageUploadPort {
       throw const SupportFailure(
         'image_response',
         '업로드된 이미지 주소를 문의에 사용할 수 없습니다. 첨부를 제거하고 문의해 주세요.',
+        userMessage: AppMessage(AppMessageId.supportImageResponse),
       );
     }
   }
