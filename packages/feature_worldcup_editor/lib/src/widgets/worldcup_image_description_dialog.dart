@@ -51,6 +51,9 @@ class _WorldCupImageDescriptionDialogState
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      // autofocus로 키보드가 바로 올라오므로, 남은 높이가 200dp 미리보기보다
+      // 작아질 수 있다. 단일 사진 다이얼로그와 마찬가지로 스크롤되게 둔다.
+      scrollable: true,
       title: Text(AppLocalizations.of(context).editorImageDescription),
       content: Column(
         mainAxisSize: MainAxisSize.min,

@@ -96,6 +96,21 @@ void main() {
     expect(results.single, hasLength(20));
   });
 
+  testWidgets('키보드가 올라와 공간이 좁아도 넘치지 않는다', (tester) async {
+    // 여러 장 선택 시 뜨는 이 다이얼로그는 autofocus로 키보드가 바로 올라온다.
+    // 스크롤이 없던 시절에는 200dp 미리보기가 남은 높이를 넘겨
+    // "BOTTOM OVERFLOWED" 경고가 떴다.
+    tester.view.devicePixelRatio = 2.625;
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 1150);
+    addTearDown(tester.view.reset);
+
+    await pumpDialog(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(TextFormField), findsOneWidget);
+  });
+
   testWidgets('취소하면 null을 돌려준다', (tester) async {
     final results = await pumpDialog(tester);
 
