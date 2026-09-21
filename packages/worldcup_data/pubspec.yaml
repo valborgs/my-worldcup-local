@@ -20,6 +20,7 @@ dependencies:
   path_provider: ^2.1.3
   http: ^1.2.1
   archive: ^4.2.0
+  image: ^4.2.0 # 사진 메타데이터 제거용 재인코딩
   share_plus: ^12.0.2
   kakao_flutter_sdk_share: ^1.10.0
   firebase_remote_config: ^6.6.0

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:feature_worldcup_list/src/widgets/worldcup_select_dialog.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:worldcup_core/worldcup_core.dart';
 
 void main() {
   // Keep Korean regression expectations independent of supported device locales.
@@ -165,4 +166,95 @@ void main() {
     expect(find.text('주변 기기로 보내기'), findsOneWidget);
     expect(find.text('다른 앱으로 공유하기'), findsOneWidget);
   });
+  group('공유 전 민감한 사진 확인', () {
+    const warning = '민감한 내용의 사진이 있는지 한 번 더 확인해주세요.';
+
+    Future<List<String>> pumpShareDialog(
+      WidgetTester tester,
+      _FakePackagePort port,
+    ) async {
+      final pushedRoutes = <String>[];
+      final model = WorldCupModel(5, '공유 월드컵', '설명', DateTime(2026), '', 4);
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: WorldCupSelectDialog(
+                model,
+                onChanged: () {},
+                packageGateway: port,
+              ),
+            ),
+            onGenerateRoute: (settings) {
+              pushedRoutes.add(settings.name!);
+              return MaterialPageRoute<void>(builder: (_) => const Text('전송'));
+            },
+          ),
+        ),
+      );
+      return pushedRoutes;
+    }
+
+    Future<void> choose(WidgetTester tester, String method) async {
+      await tester.tap(find.widgetWithText(OutlinedButton, '공유하기'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(method));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('다른 앱 공유는 확인을 눌러야 공유 파일을 보낸다', (tester) async {
+      final port = _FakePackagePort();
+      await pumpShareDialog(tester, port);
+
+      await choose(tester, '다른 앱으로 공유하기');
+      expect(find.textContaining(warning), findsOneWidget);
+      await tester.tap(find.text('취소'));
+      await tester.pumpAndSettle();
+      expect(port.sharedCount, 0);
+
+      await choose(tester, '다른 앱으로 공유하기');
+      await tester.tap(find.text('확인'));
+      await tester.pumpAndSettle();
+      expect(port.sharedCount, 1);
+    });
+
+    testWidgets('주변 기기 전송도 확인을 눌러야 전송 화면으로 간다', (tester) async {
+      final pushedRoutes = await pumpShareDialog(tester, _FakePackagePort());
+
+      await choose(tester, '주변 기기로 보내기');
+      expect(find.textContaining(warning), findsOneWidget);
+      await tester.tap(find.text('취소'));
+      await tester.pumpAndSettle();
+      expect(pushedRoutes, isEmpty);
+
+      await choose(tester, '주변 기기로 보내기');
+      await tester.tap(find.text('확인'));
+      await tester.pumpAndSettle();
+      expect(pushedRoutes, [AppRoutes.nearbySend]);
+    });
+  });
+}
+
+class _FakePackagePort implements WorldCupPackagePort {
+  int sharedCount = 0;
+
+  @override
+  Future<void> share(
+    WorldCupModel model, {
+    ShareOrigin? origin,
+    required String title,
+    required String subject,
+  }) async {
+    sharedCount++;
+  }
+
+  @override
+  Future<String> createPackage(WorldCupModel model) =>
+      throw UnimplementedError();
+
+  @override
+  Future<ImportedWorldCup> importPackage(String packagePath) =>
+      throw UnimplementedError();
 }

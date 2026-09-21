@@ -12,6 +12,7 @@ export 'src/entities/worldcup_item_model.dart';
 export 'src/entities/worldcup_model.dart';
 export 'src/ports/ad_unit_port.dart';
 export 'src/ports/feature_flag_port.dart';
+export 'src/ports/image_metadata_port.dart';
 export 'src/ports/image_upload_port.dart';
 export 'src/ports/social_share_port.dart';
 export 'src/ports/worldcup_package_port.dart';

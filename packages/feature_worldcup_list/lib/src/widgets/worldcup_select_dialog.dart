@@ -209,6 +209,9 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
       ),
     );
     if (!mounted || choice == null) return;
+    // 공유 파일에는 이 월드컵의 사진이 전부 들어가 상대에게 그대로 남는다.
+    // 어느 방법이든 보내기 전에 한 번 더 확인받는다.
+    if (!await _confirmShare() || !mounted) return;
     if (choice == _ShareChoice.nearby) {
       await Navigator.of(context).pushNamed<void>(
         AppRoutes.nearbySend,
@@ -217,6 +220,30 @@ class _WorldCupSelectDialogState extends ConsumerState<WorldCupSelectDialog> {
       return;
     }
     await _shareWorldCup(sharePositionOrigin);
+  }
+
+  /// 민감한 사진이 없는지 확인받는다. 확인을 눌렀을 때만 true.
+  Future<bool> _confirmShare() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final l10n = AppLocalizations.of(dialogContext);
+        return AlertDialog(
+          content: Text(l10n.shareConfirmBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(l10n.commonCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(l10n.commonConfirm),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed ?? false;
   }
 
   Future<void> _shareWorldCup(Rect? sharePositionOrigin) async {

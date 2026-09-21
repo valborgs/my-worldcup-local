@@ -432,6 +432,10 @@
   "@shareOtherAppDescription": {
     "description": "Quick Share, AirDrop 또는 설치된 앱 사용"
   },
+  "shareConfirmBody": "All photos and descriptions in this World Cup will be sent to other people.\nPlease check once more for photos with sensitive content.",
+  "@shareConfirmBody": {
+    "description": "이 월드컵의 모든 사진과 설명이 다른 사람에게 전달됩니다. 민감한 내용의 사진이 있는지 한 번 더 확인해주세요."
+  },
   "sharePackageFailed": "Could not share the World Cup. Please try again later.",
   "@sharePackageFailed": {
     "description": "월드컵을 공유할 수 없습니다. 잠시 후 다시 시도해주세요."
@@ -491,6 +495,39 @@
   "resultShareFailed": "Could not share. Please try again later.",
   "@resultShareFailed": {
     "description": "공유할 수 없습니다. 잠시 후 다시 시도해주세요."
+  },
+  "editorImageProcessing": "Removing location and other details from the photo…",
+  "@editorImageProcessing": {
+    "description": "사진의 위치 정보 등을 지우는 중…"
+  },
+  "editorImageProcessFailed": "Could not process this photo. Please choose another one.",
+  "@editorImageProcessFailed": {
+    "description": "사진을 처리하지 못했습니다. 다른 사진을 선택해 주세요."
+  },
+  "editorImageProcessingProgress": "Processing photos {done}/{total}",
+  "@editorImageProcessingProgress": {
+    "description": "사진 처리 중 {done}/{total}",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "editorImagesProcessFailed": "{count, plural, =1{1 photo could not be processed and was skipped.} other{{count} photos could not be processed and were skipped.}}",
+  "@editorImagesProcessFailed": {
+    "description": "사진 {count}장을 처리하지 못해 제외했습니다.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultShareConfirmBody": "Share this photo with other people?\nPlease check once more that it contains nothing sensitive.",
+  "@resultShareConfirmBody": {
+    "description": "해당 사진을 다른 사람과 공유하시겠습니까? 민감한 내용이 없는지 한 번 더 확인해주세요."
   },
   "commonSelectButton": "Select button",
   "@commonSelectButton": {

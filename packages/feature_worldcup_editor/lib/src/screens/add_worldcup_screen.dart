@@ -1,5 +1,6 @@
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
@@ -29,6 +30,7 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
   /// 항목 목록과 저장 규칙. 화면은 입력 위젯만 들고 있는다.
   late final WorldCupEditorViewModel _vm = WorldCupEditorViewModel(
     ref.read(worldCupRepositoryProvider),
+    imageMetadata: ref.read(imageMetadataProvider),
     editWorldCupId: widget.editWorldCupId,
   );
 
@@ -105,6 +107,8 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
                 label: AppLocalizations.of(context).editorConfirmSemantics,
                 child: IconButton(
                   onPressed: () async {
+                    // 사진을 처리하는 동안에는 항목 목록이 아직 확정되지 않았다.
+                    if (_vm.isProcessingImage) return;
                     if (isEditMode) {
                       final success = await updateWorldCup();
                       if (!success || !context.mounted) return;
@@ -126,154 +130,195 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
             ),
           ],
         ),
-        body: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _titleController,
-                      validator: (value) => checkTitle(),
-                      focusNode: _titleFocusNode,
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context)
-                            .editorTitleLabel,
-                        hintText: AppLocalizations.of(context).editorTitleHint,
-                        hintStyle: const TextStyle(
-                          color: Colors.black38,
-                          fontSize: 12,
-                        ),
-                      ),
-                      maxLength: 100,
-                    ),
-                    TextFormField(
-                      controller: _infoController,
-                      validator: (value) => checkInfo(),
-                      focusNode: _infoFocusNode,
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context)
-                            .commonDescription,
-                        hintText: AppLocalizations.of(context)
-                            .editorDescriptionHint,
-                        hintStyle: const TextStyle(
-                          color: Colors.black38,
-                          fontSize: 12,
-                        ),
-                      ),
-                      maxLength: 150,
-                    ),
-                  ],
+        body: Stack(
+          children: [
+            _buildBody(context),
+            if (_vm.isProcessingImage)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: Colors.black26,
+                  child: Center(child: _buildImageProcessingIndicator(context)),
                 ),
               ),
-              const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-              Text(
-                AppLocalizations.of(context)
-                    .editorItemCount(_imagePathList.length),
-                style: (_imagePathList.isNotEmpty && _imagePathList.length > 3)
-                    ? isPictureListNotEmpty()
-                    : isPictureListEmpty(),
-              ),
-              const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
-              Row(
-                children: [
-                  Expanded(
-                    child: Semantics(
-                      label: AppLocalizations.of(context)
-                          .editorSingleButtonSemantics,
-                      child: InkWell(
-                        onTap: () => showAddPictureDialog(context),
-                        child: DottedBorder(
-                          child: SizedBox(
-                            height: 48,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.add,
-                                  semanticLabel: AppLocalizations.of(context)
-                                      .editorSingleImage,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  AppLocalizations.of(context).editorPickImage,
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 한 장이면 스피너, 여러 장이면 몇 장째인지 보이는 진행률 바.
+  Widget _buildImageProcessingIndicator(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final total = _vm.processingImageTotal;
+    if (total <= 1) {
+      return CircularProgressIndicator(
+        semanticsLabel: l10n.editorImageProcessing,
+      );
+    }
+    final done = _vm.processedImageCount;
+    final label = l10n.editorImageProcessingProgress(done, total);
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 40),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label),
+            const SizedBox(height: 12),
+            LinearProgressIndicator(
+              value: done / total,
+              semanticsLabel: l10n.editorImageProcessing,
+              semanticsValue: label,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  validator: (value) => checkTitle(),
+                  focusNode: _titleFocusNode,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).editorTitleLabel,
+                    hintText: AppLocalizations.of(context).editorTitleHint,
+                    hintStyle: const TextStyle(
+                      color: Colors.black38,
+                      fontSize: 12,
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Semantics(
-                      label: AppLocalizations.of(context)
-                          .editorMultipleButtonSemantics,
-                      child: InkWell(
-                        onTap: () => showMultipleImagePicker(context),
-                        child: DottedBorder(
-                          child: SizedBox(
-                            height: 48,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.add,
-                                  semanticLabel: AppLocalizations.of(context)
-                                      .editorMultipleImages,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  AppLocalizations.of(context)
-                                      .editorPickMultiple,
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                  maxLength: 100,
+                ),
+                TextFormField(
+                  controller: _infoController,
+                  validator: (value) => checkInfo(),
+                  focusNode: _infoFocusNode,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).commonDescription,
+                    hintText: AppLocalizations.of(context)
+                        .editorDescriptionHint,
+                    hintStyle: const TextStyle(
+                      color: Colors.black38,
+                      fontSize: 12,
                     ),
                   ),
-                ],
-              ),
-              const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
+                  maxLength: 150,
+                ),
+              ],
+            ),
+          ),
+          const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
+          Text(
+            AppLocalizations.of(context).editorItemCount(_imagePathList.length),
+            style: (_imagePathList.isNotEmpty && _imagePathList.length > 3)
+                ? isPictureListNotEmpty()
+                : isPictureListEmpty(),
+          ),
+          const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
+          Row(
+            children: [
               Expanded(
-                child: Container(
-                  padding: const EdgeInsetsDirectional.fromSTEB(20, 5, 20, 0),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withAlpha(50),
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(30),
+                child: Semantics(
+                  label: AppLocalizations.of(context)
+                      .editorSingleButtonSemantics,
+                  child: InkWell(
+                    onTap: () => showAddPictureDialog(context),
+                    child: DottedBorder(
+                      child: SizedBox(
+                        height: 48,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add,
+                              semanticLabel: AppLocalizations.of(context)
+                                  .editorSingleImage,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              AppLocalizations.of(context).editorPickImage,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  child: GridView.builder(
-                    itemCount: _imageInfoList.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Semantics(
+                  label: AppLocalizations.of(context)
+                      .editorMultipleButtonSemantics,
+                  child: InkWell(
+                    onTap: () => showMultipleImagePicker(context),
+                    child: DottedBorder(
+                      child: SizedBox(
+                        height: 48,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add,
+                              semanticLabel: AppLocalizations.of(context)
+                                  .editorMultipleImages,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              AppLocalizations.of(context).editorPickMultiple,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ],
                         ),
-                    itemBuilder: (context, index) => makeListItem(
-                      context,
-                      index,
-                      _imagePathList[index],
-                      _imageInfoList[index],
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
           ),
-        ),
+          const Padding(padding: EdgeInsetsDirectional.only(bottom: 10)),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsetsDirectional.fromSTEB(20, 5, 20, 0),
+              decoration: BoxDecoration(
+                color: Colors.grey.withAlpha(50),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(30),
+                ),
+              ),
+              child: GridView.builder(
+                itemCount: _imageInfoList.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemBuilder: (context, index) => makeListItem(
+                  context,
+                  index,
+                  _imagePathList[index],
+                  _imageInfoList[index],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -514,8 +559,23 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
 
     if (!mounted) return;
     if (result != null && result.isNotEmpty) {
-      _vm.addItem(EditorItem(imagePath: result[0], imageInfo: result[1]));
+      final path = await _prepareImage(result[0]);
+      if (path == null) return;
+      _vm.addItem(EditorItem(imagePath: path, imageInfo: result[1]));
     }
+  }
+
+  /// 새로 고른 사진의 메타데이터를 지운 사본 경로. 실패하면 알리고 null.
+  Future<String?> _prepareImage(String sourcePath) async {
+    final path = await _vm.prepareImage(sourcePath);
+    if (path == null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).editorImageProcessFailed),
+        ),
+      );
+    }
+    return path;
   }
 
   Future<void> showEditPictureDialog(BuildContext context, int index) async {
@@ -534,10 +594,12 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
 
     if (!mounted) return;
     if (result != null && result.isNotEmpty) {
-      _vm.replaceItem(
-        index,
-        EditorItem(imagePath: result[0], imageInfo: result[1]),
-      );
+      // 설명만 고쳤으면 이미 저장된 사진을 다시 처리하지 않는다.
+      final path = result[0] == _imagePathList[index]
+          ? result[0]
+          : await _prepareImage(result[0]);
+      if (path == null || !mounted) return;
+      _vm.replaceItem(index, EditorItem(imagePath: path, imageInfo: result[1]));
     }
   }
 
@@ -550,9 +612,28 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
     );
 
     if (result != null && result.files.isNotEmpty) {
-      for (PlatformFile file in result.files) {
+      final pickedPaths = [
+        for (final PlatformFile file in result.files)
+          if (file.path != null) file.path!,
+      ];
+      // 설명을 묻기 전에 모두 처리해 둔다. 기다림이 한 번으로 모이고,
+      // 그동안 진행률 바로 몇 장째인지 보여 준다.
+      final preparedPaths = await _vm.prepareImages(pickedPaths);
+      if (!context.mounted) return;
+      final failedCount = preparedPaths.where((path) => path == null).length;
+      if (failedCount > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)
+                  .editorImagesProcessFailed(failedCount),
+            ),
+          ),
+        );
+      }
+
+      for (final String? path in preparedPaths) {
         if (!context.mounted) return;
-        final String? path = file.path;
         if (path == null) continue;
 
         // 설명 입력 규칙(20자 제한, 빈 값 금지)은 다이얼로그가 들고 있다.
@@ -565,6 +646,9 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
         if (!mounted) return;
         if (description != null) {
           _vm.addItem(EditorItem(imagePath: path, imageInfo: description));
+        } else {
+          // 이 사진은 넣지 않기로 했다. 미리 만들어 둔 사본을 지운다.
+          unawaited(_vm.discardPreparedImage(path));
         }
       }
     }

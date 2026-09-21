@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' show min;
+import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
 import 'package:flutter/services.dart';
@@ -225,11 +227,16 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
       );
     }
 
+    // ZipDecoder 대신 중앙 디렉터리만 읽는다. ZipDecoder는 디코딩 도중
+    // 심볼릭 링크로 표시된 항목을 크기 제한 없이 풀어 버리고, 그 뒤의
+    // readBytes()도 헤더에 적힌 크기와 상관없이 끝까지 압축을 푼다.
+    // 크기를 속인 패키지 하나로 메모리를 소진시킬 수 있으므로 해제는
+    // [_readEntry]가 한도를 지키며 직접 한다.
     InputFileStream? input;
-    late final Archive archive;
+    late final ZipDirectory directory;
     try {
       input = InputFileStream(packageFile.path);
-      archive = ZipDecoder().decodeStream(input, verify: true);
+      directory = ZipDirectory()..read(input);
     } catch (_) {
       input?.closeSync();
       throw const PackageFailure(
@@ -241,27 +248,31 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
     Directory? importDirectory;
     var databaseCommitted = false;
     try {
-      final entries = <String, ArchiveFile>{};
-      for (final entry in archive) {
-        if (!entry.isFile) continue;
-        if (entries.containsKey(entry.name)) {
+      final entries = <String, ZipFile>{};
+      for (final header in directory.fileHeaders) {
+        final entry = header.file;
+        if (entry == null) continue;
+        final name = entry.filename;
+        if (name.endsWith('/') || name.endsWith(r'\')) continue;
+        if (entries.containsKey(name)) {
           throw const PackageFailure(
             '중복된 리소스가 있는 공유 파일입니다.',
             userMessage: AppMessage(AppMessageId.packageDuplicateResource),
           );
         }
-        entries[entry.name] = entry;
+        entries[name] = entry;
       }
 
       final manifestEntry = entries[_manifestName];
-      if (manifestEntry == null || manifestEntry.size > _maxManifestBytes) {
+      if (manifestEntry == null ||
+          manifestEntry.uncompressedSize > _maxManifestBytes) {
         throw const PackageFailure(
           '월드컵 정보가 없거나 손상되었습니다.',
           userMessage: AppMessage(AppMessageId.packageManifestMissing),
         );
       }
-      final manifestBytes = manifestEntry.readBytes();
-      if (manifestBytes == null || manifestBytes.length > _maxManifestBytes) {
+      final manifestBytes = _readEntry(manifestEntry);
+      if (manifestBytes == null) {
         throw const PackageFailure(
           '월드컵 정보를 읽을 수 없습니다.',
           userMessage: AppMessage(AppMessageId.packageManifestUnreadable),
@@ -288,14 +299,14 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
         }
         final imageEntry = entries[item.image];
         if (imageEntry == null ||
-            imageEntry.size <= 0 ||
-            imageEntry.size > _maxImageBytes) {
+            imageEntry.uncompressedSize <= 0 ||
+            imageEntry.uncompressedSize > _maxImageBytes) {
           throw const PackageFailure(
             '이미지 리소스가 없거나 손상되었습니다.',
             userMessage: AppMessage(AppMessageId.packageImageDamaged),
           );
         }
-        declaredTotalImageBytes += imageEntry.size;
+        declaredTotalImageBytes += imageEntry.uncompressedSize;
         if (declaredTotalImageBytes > _maxTotalImageBytes) {
           throw const PackageFailure(
             '이미지 리소스의 크기가 너무 큽니다.',
@@ -322,11 +333,17 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
       for (var index = 0; index < manifest.items.length; index++) {
         final item = manifest.items[index];
         final imageEntry = entries[item.image]!;
-        final bytes = imageEntry.readBytes();
-        if (bytes == null || bytes.isEmpty || bytes.length > _maxImageBytes) {
+        final bytes = _readEntry(imageEntry);
+        if (bytes == null || bytes.isEmpty) {
           throw const PackageFailure(
             '이미지 리소스를 읽을 수 없습니다.',
             userMessage: AppMessage(AppMessageId.packageImageUnreadable),
+          );
+        }
+        if (!_hasImageSignature(bytes)) {
+          throw const PackageFailure(
+            '이미지가 아닌 리소스가 포함되었습니다.',
+            userMessage: AppMessage(AppMessageId.packageImageDamaged),
           );
         }
         extractedTotalImageBytes += bytes.length;
@@ -345,7 +362,6 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
         );
         await outputFile.writeAsBytes(bytes, flush: true);
         importedImagePaths.add(outputFile.path);
-        imageEntry.clear();
       }
 
       final worldCup = WorldCupModel(
@@ -377,13 +393,81 @@ class WorldCupPackageRepository implements WorldCupPackagePort {
       );
     } finally {
       input.closeSync();
-      archive.clearSync();
       if (!databaseCommitted &&
           importDirectory != null &&
           await importDirectory.exists()) {
         await importDirectory.delete(recursive: true);
       }
     }
+  }
+
+  /// [entry]의 압축을 풀되, 중앙 디렉터리에 적힌 크기를 한 바이트라도
+  /// 넘기면 그 자리에서 멈춘다. 크기나 CRC가 맞지 않으면 null.
+  ///
+  /// 호출 전에 선언 크기가 허용 한도 안인지 확인해야 한다. 여기서는 그
+  /// 선언을 실제 해제량의 상한으로 쓴다.
+  static Uint8List? _readEntry(ZipFile entry) {
+    // 암호화된 항목은 이 앱이 만들지 않는다. 비밀번호 없이 읽으면
+    // 라이브러리가 복호화를 건너뛰고 암호문을 그대로 돌려준다.
+    if (entry.flags & 0x1 != 0) return null;
+    final declared = entry.uncompressedSize;
+    final raw = entry.getStream(decompress: false);
+    final output = BytesBuilder(copy: false);
+
+    switch (entry.compressionMethod) {
+      case CompressionType.none:
+        if (raw.length != declared) return null;
+        output.add(raw.toUint8List());
+      case CompressionType.deflate:
+        final filter = RawZLibFilter.inflateFilter(raw: true);
+        bool drain({required bool end}) {
+          List<int>? chunk;
+          while ((chunk = filter.processed(flush: false, end: end)) != null) {
+            output.add(chunk!);
+            if (output.length > declared) return false;
+          }
+          return true;
+        }
+
+        while (!raw.isEOS) {
+          final chunk = raw.readBytes(min(16 * 1024, raw.length)).toUint8List();
+          filter.process(chunk, 0, chunk.length);
+          if (!drain(end: false)) return null;
+        }
+        if (!drain(end: true)) return null;
+      default:
+        // bzip2 등은 이 앱이 쓰지 않는 방식이다.
+        return null;
+    }
+
+    final bytes = output.takeBytes();
+    if (bytes.length != declared || getCrc32(bytes) != entry.crc32) {
+      return null;
+    }
+    return bytes;
+  }
+
+  /// 이미지 디코더에 넘길 만한 파일인지 시그니처로 확인한다.
+  /// 확장자는 패키지를 만든 쪽이 마음대로 붙일 수 있어 믿지 않는다.
+  static bool _hasImageSignature(Uint8List bytes) {
+    bool startsWith(List<int> signature, [int offset = 0]) {
+      if (bytes.length < offset + signature.length) return false;
+      for (var i = 0; i < signature.length; i++) {
+        if (bytes[offset + i] != signature[i]) return false;
+      }
+      return true;
+    }
+
+    const ascii = AsciiCodec();
+    return startsWith(const [0xFF, 0xD8, 0xFF]) || // JPEG
+        startsWith(const [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]) ||
+        startsWith(ascii.encode('GIF87a')) ||
+        startsWith(ascii.encode('GIF89a')) ||
+        (startsWith(ascii.encode('RIFF')) &&
+            startsWith(ascii.encode('WEBP'), 8)) ||
+        startsWith(ascii.encode('BM')) ||
+        // HEIC/HEIF/AVIF: ISO BMFF의 ftyp 상자
+        startsWith(ascii.encode('ftyp'), 4);
   }
 
   static String _safeImageExtension(String sourcePath) {

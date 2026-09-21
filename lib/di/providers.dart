@@ -75,6 +75,7 @@ final portOverrides = [
       repository: ref.watch(worldCupRepositoryProvider),
     ),
   ),
+  imageMetadataProvider.overrideWith((ref) => ImageMetadataStripper()),
   imageUploadProvider.overrideWith(
     (ref) => ImgbbImageUploader(apiKey: dotenv.env['imgbb_apiKey'] ?? ''),
   ),

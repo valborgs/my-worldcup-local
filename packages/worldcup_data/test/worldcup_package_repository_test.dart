@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -147,6 +148,189 @@ void main() {
       ),
     );
   });
+
+  test('헤더에 적힌 크기보다 크게 풀리는 이미지 항목은 거부한다', () async {
+    final testDirectory = await Directory.systemTemp.createTemp(
+      'my_worldcup_zip_bomb_test_',
+    );
+    addTearDown(() async {
+      if (await testDirectory.exists()) {
+        await testDirectory.delete(recursive: true);
+      }
+    });
+    final service = _importService(testDirectory);
+    // 압축하면 수십 KB지만 풀면 20MB가 되는 항목의 크기 필드를 1KB로 속인다.
+    final bomb = Uint8List(20 * 1024 * 1024)..setAll(0, _pngSignature);
+    final package = await _writePackage(
+      testDirectory,
+      images: const [
+        'images/0000.png',
+        'images/0001.png',
+        'images/0002.png',
+        'images/0003.png',
+      ],
+      maxRound: 4,
+      imageBytes: {'images/0000.png': bomb},
+      declaredSizes: {'images/0000.png': 1024},
+    );
+
+    await expectLater(
+      service.importPackage(package.path),
+      throwsA(isA<PackageFailure>()),
+    );
+    expect(
+      await _importedImageCount(testDirectory),
+      0,
+      reason: '거부된 패키지의 이미지가 남아 있으면 안 된다.',
+    );
+  });
+
+  test('이미지 형식이 아닌 리소스는 거부한다', () async {
+    final testDirectory = await Directory.systemTemp.createTemp(
+      'my_worldcup_signature_test_',
+    );
+    addTearDown(() async {
+      if (await testDirectory.exists()) {
+        await testDirectory.delete(recursive: true);
+      }
+    });
+    final service = _importService(testDirectory);
+    final package = await _writePackage(
+      testDirectory,
+      images: const [
+        'images/0000.png',
+        'images/0001.png',
+        'images/0002.png',
+        'images/0003.png',
+      ],
+      maxRound: 4,
+      imageBytes: {
+        'images/0002.png': Uint8List.fromList(utf8.encode('<html></html>')),
+      },
+    );
+
+    await expectLater(
+      service.importPackage(package.path),
+      throwsA(
+        isA<PackageFailure>().having(
+          (error) => error.userMessage.id,
+          'userMessage',
+          AppMessageId.packageImageDamaged,
+        ),
+      ),
+    );
+  });
+
+  test('암호화된 항목이 있는 패키지는 거부한다', () async {
+    final testDirectory = await Directory.systemTemp.createTemp(
+      'my_worldcup_encrypted_test_',
+    );
+    addTearDown(() async {
+      if (await testDirectory.exists()) {
+        await testDirectory.delete(recursive: true);
+      }
+    });
+    final service = _importService(testDirectory);
+    final package = await _writePackage(
+      testDirectory,
+      images: const [
+        'images/0000.png',
+        'images/0001.png',
+        'images/0002.png',
+        'images/0003.png',
+      ],
+      maxRound: 4,
+      password: 'secret',
+    );
+
+    await expectLater(
+      service.importPackage(package.path),
+      throwsA(isA<PackageFailure>()),
+    );
+  });
+
+  test('올바른 PNG 리소스만 있는 패키지는 가져온다', () async {
+    final testDirectory = await Directory.systemTemp.createTemp(
+      'my_worldcup_valid_png_test_',
+    );
+    addTearDown(() async {
+      if (await testDirectory.exists()) {
+        await testDirectory.delete(recursive: true);
+      }
+    });
+    final dao = _FakeWorldCupDao(const []);
+    final service = WorldCupPackageRepository(
+      repository: dao,
+      temporaryDirectoryProvider: () async => testDirectory,
+      documentsDirectoryProvider: () async => testDirectory,
+    );
+    final package = await _writePackage(
+      testDirectory,
+      images: const [
+        'images/0000.png',
+        'images/0001.png',
+        'images/0002.png',
+        'images/0003.png',
+      ],
+      maxRound: 4,
+    );
+
+    final imported = await service.importPackage(package.path);
+
+    expect(imported.idx, 77);
+    for (final item in dao.addedItems) {
+      final bytes = await File(item.imagePath).readAsBytes();
+      expect(bytes.take(_pngSignature.length), _pngSignature);
+    }
+  });
+}
+
+const List<int> _pngSignature = [
+  0x89,
+  0x50,
+  0x4E,
+  0x47,
+  0x0D,
+  0x0A,
+  0x1A,
+  0x0A,
+];
+
+Future<int> _importedImageCount(Directory directory) async {
+  final importRoot = Directory('${directory.path}/imported_worldcups');
+  if (!await importRoot.exists()) return 0;
+  return importRoot.list(recursive: true).where((e) => e is File).length;
+}
+
+/// ZIP 로컬 헤더와 중앙 디렉터리에 기록된 [name] 항목의 해제 크기를 바꾼다.
+Uint8List _overrideDeclaredSize(Uint8List zip, String name, int size) {
+  final data = ByteData.sublistView(zip);
+  final nameBytes = utf8.encode(name);
+  bool nameAt(int offset) {
+    if (offset + nameBytes.length > zip.length) return false;
+    for (var i = 0; i < nameBytes.length; i++) {
+      if (zip[offset + i] != nameBytes[i]) return false;
+    }
+    return true;
+  }
+
+  var patched = 0;
+  for (var offset = 0; offset + 46 <= zip.length; offset++) {
+    final signature = data.getUint32(offset, Endian.little);
+    if (signature == 0x04034b50 &&
+        data.getUint16(offset + 26, Endian.little) == nameBytes.length &&
+        nameAt(offset + 30)) {
+      data.setUint32(offset + 22, size, Endian.little);
+      patched++;
+    } else if (signature == 0x02014b50 &&
+        data.getUint16(offset + 28, Endian.little) == nameBytes.length &&
+        nameAt(offset + 46)) {
+      data.setUint32(offset + 24, size, Endian.little);
+      patched++;
+    }
+  }
+  if (patched != 2) throw StateError('ZIP 헤더를 찾지 못했습니다: $name');
+  return zip;
 }
 
 WorldCupPackageRepository _importService(Directory directory) {
@@ -161,6 +345,9 @@ Future<File> _writePackage(
   Directory directory, {
   required List<String> images,
   required int maxRound,
+  Map<String, Uint8List> imageBytes = const {},
+  Map<String, int> declaredSizes = const {},
+  String? password,
 }) async {
   final manifest = <String, Object>{
     'format': 'my-worldcup',
@@ -177,9 +364,17 @@ Future<File> _writePackage(
   final archive = Archive()
     ..addFile(ArchiveFile.string('manifest.json', jsonEncode(manifest)));
   for (final image in images.toSet()) {
-    archive.addFile(ArchiveFile.string(image, 'image'));
+    archive.addFile(
+      ArchiveFile.bytes(
+        image,
+        imageBytes[image] ?? Uint8List.fromList([..._pngSignature, 0, 0]),
+      ),
+    );
   }
-  final encoded = ZipEncoder().encode(archive);
+  var encoded = ZipEncoder(password: password).encodeBytes(archive);
+  for (final entry in declaredSizes.entries) {
+    encoded = _overrideDeclaredSize(encoded, entry.key, entry.value);
+  }
   final package = File(
     '${directory.path}/validation_${DateTime.now().microsecondsSinceEpoch}.myworldcup',
   );
