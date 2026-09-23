@@ -111,6 +111,30 @@ void main() {
     expect(find.byType(TextFormField), findsOneWidget);
   });
 
+  testWidgets('키보드가 올라와도 입력창과 버튼이 겹치지 않는다', (tester) async {
+    // 스크롤이 없던 시절에는 넘친 content가 잘리지 않고 그려져, 입력창이
+    // 취소/확인 버튼 아래로 파고들어 둘이 겹쳐 보였다 (#34). 키보드를 기존
+    // 테스트보다 높게 잡아야 그 레이아웃에서 버튼이 가시 영역 밖으로 밀려난다.
+    tester.view.devicePixelRatio = 2.625;
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 1350);
+    addTearDown(tester.view.reset);
+
+    await pumpDialog(tester);
+
+    expect(tester.takeException(), isNull);
+    final Rect field = tester.getRect(find.byType(EditableText));
+    // 키보드 위로 남은 영역 안에 두 버튼이 온전히 있고, 입력창은 그 위에 있어야 한다.
+    const double visibleBottom = (2340 - 1350) / 2.625;
+    for (final label in ['취소', '확인']) {
+      final Rect button = tester.getRect(
+        find.widgetWithText(TextButton, label),
+      );
+      expect(field.bottom, lessThanOrEqualTo(button.top), reason: label);
+      expect(button.bottom, lessThanOrEqualTo(visibleBottom), reason: label);
+    }
+  });
+
   testWidgets('취소하면 null을 돌려준다', (tester) async {
     final results = await pumpDialog(tester);
 

@@ -204,7 +204,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('다른 앱 공유는 확인을 눌러야 공유 파일을 보낸다', (tester) async {
+    testWidgets('다른 앱 공유는 공유하기를 눌러야 공유 파일을 보낸다', (tester) async {
       final port = _FakePackagePort();
       await pumpShareDialog(tester, port);
 
@@ -215,12 +215,12 @@ void main() {
       expect(port.sharedCount, 0);
 
       await choose(tester, '다른 앱으로 공유하기');
-      await tester.tap(find.text('확인'));
+      await tester.tap(find.widgetWithText(TextButton, '공유하기'));
       await tester.pumpAndSettle();
       expect(port.sharedCount, 1);
     });
 
-    testWidgets('주변 기기 전송도 확인을 눌러야 전송 화면으로 간다', (tester) async {
+    testWidgets('주변 기기 전송도 공유하기를 눌러야 전송 화면으로 간다', (tester) async {
       final pushedRoutes = await pumpShareDialog(tester, _FakePackagePort());
 
       await choose(tester, '주변 기기로 보내기');
@@ -230,7 +230,7 @@ void main() {
       expect(pushedRoutes, isEmpty);
 
       await choose(tester, '주변 기기로 보내기');
-      await tester.tap(find.text('확인'));
+      await tester.tap(find.widgetWithText(TextButton, '공유하기'));
       await tester.pumpAndSettle();
       expect(pushedRoutes, [AppRoutes.nearbySend]);
     });
