@@ -376,7 +376,7 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
             ),
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(l10n.commonConfirm),
+              child: Text(l10n.commonShare),
             ),
           ],
         );
