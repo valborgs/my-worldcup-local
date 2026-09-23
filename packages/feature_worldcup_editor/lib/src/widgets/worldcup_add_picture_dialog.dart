@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 
+import 'item_description_rules.dart';
+
 class WorldCupAddPictureDialog extends StatefulWidget {
   final bool isEditMode;
   final String? existingImageInfo;
@@ -185,7 +187,7 @@ class _WorldCupAddPictureDialogState extends State<WorldCupAddPictureDialog> {
                         fontSize: 12,
                       ),
                     ),
-                    maxLength: 20,
+                    maxLength: worldCupItemDescriptionMaxLength,
                   ),
                 ],
               ),
