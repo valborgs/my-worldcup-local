@@ -4,11 +4,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import 'item_description_rules.dart';
-
 /// 여러 장을 한 번에 고른 뒤 장당 한 번씩 열리는 설명 입력 다이얼로그.
 ///
-/// 설명 규칙은 [WorldCupAddPictureDialog]와 같다 — [worldCupItemDescriptionMaxLength]자 제한, 빈 값 금지.
+/// 설명 규칙은 [WorldCupAddPictureDialog]와 같다 — 20자 제한, 빈 값 금지.
 ///
 /// 컨트롤러를 이 위젯이 소유하는 것이 중요하다. 호출부가 `showDialog`를 await한
 /// 뒤 곧바로 dispose하면 안 된다: pop된 라우트의 Future는 퇴장 애니메이션이
@@ -74,7 +72,7 @@ class _WorldCupImageDescriptionDialogState
             child: TextFormField(
               controller: _controller,
               autofocus: true,
-              maxLength: worldCupItemDescriptionMaxLength,
+              maxLength: 20,
               validator: (value) => (value == null || value.isEmpty)
                   ? AppLocalizations.of(context).editorPhotoDescriptionRequired
                   : null,

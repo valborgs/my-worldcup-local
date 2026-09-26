@@ -86,14 +86,14 @@ void main() {
     expect(results, isEmpty);
   });
 
-  testWidgets('설명은 50자를 넘길 수 없다', (tester) async {
+  testWidgets('설명은 20자를 넘길 수 없다', (tester) async {
     final results = await pumpDialog(tester);
 
-    await tester.enterText(find.byType(TextFormField), 'ㄱ' * 55);
+    await tester.enterText(find.byType(TextFormField), 'ㄱ' * 25);
     await tester.tap(find.text('확인'));
     await tester.pumpAndSettle();
 
-    expect(results.single, hasLength(50));
+    expect(results.single, hasLength(20));
   });
 
   testWidgets('키보드가 올라와 공간이 좁아도 넘치지 않는다', (tester) async {

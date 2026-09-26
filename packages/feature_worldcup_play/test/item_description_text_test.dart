@@ -98,18 +98,6 @@ void main() {
     expect(fit.fontSize, greaterThanOrEqualTo(minFontSize));
   });
 
-  test('입력 제한 최대치(50자) 설명도 잘리지 않고 상자 안에 들어간다', () {
-    // #35에서 입력 제한이 20자에서 50자로 늘었다.
-    final fifty = '가나다라마바사아자차' * 5;
-    expect(fifty.length, 50);
-
-    final fit = fitFor(fifty);
-
-    expect(fit.maxLines, isNull);
-    expect(laidOutHeight(fifty, fit), lessThanOrEqualTo(maxHeight));
-    expect(fit.fontSize, greaterThanOrEqualTo(minFontSize));
-  });
-
   test('상자가 좁으면 최소 글자 크기까지 줄인다', () {
     const long =
         '가나다라마바사아자차카타파하가나다라마바'
