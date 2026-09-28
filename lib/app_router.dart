@@ -35,6 +35,11 @@ class AppRouter {
 
   Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case AppRoutes.animationSettings:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const AnimationSettingsScreen(),
+        );
       case AppRoutes.notices:
         return MaterialPageRoute<void>(
           settings: settings,

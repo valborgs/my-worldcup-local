@@ -1173,4 +1173,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get nearbyConnectionFailed =>
       'Could not connect to the device. Move the devices closer together and try again.';
+
+  @override
+  String get animationSettingsTitle => 'Animation settings';
+
+  @override
+  String get animationSettingsDescription =>
+      'Your choice applies to the next game and is saved for future sessions.';
+
+  @override
+  String get animationClassic => 'Default';
+
+  @override
+  String get animationClassicDescription =>
+      'The selected image moves to the center while the other slides out.';
+
+  @override
+  String get animationOption2 => 'Option 1';
+
+  @override
+  String get animationOption2Description => 'Adds dynamic effects';
+
+  @override
+  String get animationSaveFailed =>
+      'Could not save your choice. Please try again.';
+
+  @override
+  String get animationAdvance => 'Advances!';
+
+  @override
+  String get animationChampion => 'Champion!';
 }

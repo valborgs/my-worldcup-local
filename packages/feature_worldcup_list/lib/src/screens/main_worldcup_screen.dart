@@ -72,6 +72,12 @@ class _MainWorldCupScreenState extends ConsumerState<MainWorldCupScreen> {
                 value: AppRoutes.inquiry,
                 child: Text(AppLocalizations.of(context).inquiryTitle),
               ),
+              PopupMenuItem(
+                value: AppRoutes.animationSettings,
+                child: Text(
+                  AppLocalizations.of(context).animationSettingsTitle,
+                ),
+              ),
             ],
           ),
           title: Text(

@@ -1534,5 +1534,14 @@
   "nearbyConnectionFailed": "Could not connect to the device. Move the devices closer together and try again.",
   "@nearbyConnectionFailed": {
     "description": "주변 기기 연결 실패 안내"
-  }
+  },
+  "animationSettingsTitle": "Animation settings",
+  "animationSettingsDescription": "Your choice applies to the next game and is saved for future sessions.",
+  "animationClassic": "Default",
+  "animationClassicDescription": "The selected image moves to the center while the other slides out.",
+  "animationOption2": "Option 1",
+  "animationOption2Description": "Adds dynamic effects",
+  "animationSaveFailed": "Could not save your choice. Please try again.",
+  "animationAdvance": "Advances!",
+  "animationChampion": "Champion!"
 }

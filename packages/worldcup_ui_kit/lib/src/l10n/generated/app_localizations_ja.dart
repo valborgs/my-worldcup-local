@@ -1097,4 +1097,32 @@ class AppLocalizationsJa extends AppLocalizations {
   @override
   String get nearbyConnectionFailed =>
       'デバイスに接続できませんでした。2台のデバイスを近づけて、もう一度お試しください。';
+
+  @override
+  String get animationSettingsTitle => 'アニメーション設定';
+
+  @override
+  String get animationSettingsDescription =>
+      '選んだ効果は次のゲームから適用され、アプリを再起動しても保持されます。';
+
+  @override
+  String get animationClassic => 'デフォルト';
+
+  @override
+  String get animationClassicDescription => '選んだ画像が中央に移動し、相手は画面の外へ退場します。';
+
+  @override
+  String get animationOption2 => 'オプション 1';
+
+  @override
+  String get animationOption2Description => 'ダイナミックな効果を追加';
+
+  @override
+  String get animationSaveFailed => '設定を保存できませんでした。もう一度お試しください。';
+
+  @override
+  String get animationAdvance => '進出！';
+
+  @override
+  String get animationChampion => '優勝！';
 }
