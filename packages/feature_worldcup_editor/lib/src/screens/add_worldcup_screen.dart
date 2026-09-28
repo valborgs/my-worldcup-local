@@ -636,7 +636,7 @@ class _AddWorldCupScreenState extends ConsumerState<AddWorldCupScreen> {
         if (!context.mounted) return;
         if (path == null) continue;
 
-        // 설명 입력 규칙(50자 제한, 빈 값 금지)은 다이얼로그가 들고 있다.
+        // 설명 입력 규칙(100자 제한, 빈 값 금지)은 다이얼로그가 들고 있다.
         // 컨트롤러도 다이얼로그가 소유하므로 여기서 해제하지 않는다.
         final String? description = await showDialog<String>(
           context: context,

@@ -108,7 +108,7 @@ DescriptionTextFit resolveDescriptionTextFit({
 /// 게임 화면의 항목 설명. 주어진 상자를 넘치면 글자 크기를 줄여서라도
 /// 설명 전체를 보여준다.
 ///
-/// 설명은 50자로 제한되지만(#35, 이전에는 20자), 제한이 없던 시절에 여러 장
+/// 설명은 100자로 제한되지만, 제한이 없던 시절에 여러 장
 /// 업로드로 만들어진 월드컵에는 그보다 긴 설명이 이미 저장되어 있을 수 있다. 그런 항목이 줄임표로
 /// 잘리지 않게 하는 것이 이 위젯의 존재 이유다.
 class ItemDescriptionText extends StatelessWidget {
