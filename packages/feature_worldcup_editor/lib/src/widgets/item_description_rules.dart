@@ -2,4 +2,4 @@
 ///
 /// 단일 사진 다이얼로그와 여러 장 설명 다이얼로그가 함께 쓴다. 두 곳이 각자
 /// 숫자를 들고 있던 시절에는 한쪽에만 제한이 빠져 규칙이 어긋났다(#19).
-const int worldCupItemDescriptionMaxLength = 50;
+const int worldCupItemDescriptionMaxLength = 100;

@@ -107,15 +107,15 @@ void main() {
     }
   });
 
-  testWidgets('사진 설명은 50자까지 입력되고 그 이상은 잘린다', (tester) async {
+  testWidgets('사진 설명은 100자까지 입력되고 그 이상은 잘린다', (tester) async {
     await tester.pumpWidget(_harness());
     await tester.pumpAndSettle();
 
     final field = find.byType(TextFormField);
-    await tester.enterText(field, 'ㄱ' * 55);
+    await tester.enterText(field, 'ㄱ' * 105);
     await tester.pump();
 
     final controller = tester.widget<TextFormField>(field).controller!;
-    expect(controller.text, hasLength(50));
+    expect(controller.text, hasLength(100));
   });
 }

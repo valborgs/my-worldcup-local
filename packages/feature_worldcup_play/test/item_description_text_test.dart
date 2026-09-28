@@ -98,15 +98,15 @@ void main() {
     expect(fit.fontSize, greaterThanOrEqualTo(minFontSize));
   });
 
-  test('입력 제한 최대치(50자) 설명도 잘리지 않고 상자 안에 들어간다', () {
-    // #35에서 입력 제한이 20자에서 50자로 늘었다.
-    final fifty = '가나다라마바사아자차' * 5;
-    expect(fifty.length, 50);
+  test('입력 제한 최대치(100자) 설명도 잘리지 않고 상자 안에 들어간다', () {
+    // 입력 제한 최대치인 100자 설명의 표시를 검증한다.
+    final hundred = '가나다라마바사아자차' * 10;
+    expect(hundred.length, 100);
 
-    final fit = fitFor(fifty);
+    final fit = fitFor(hundred);
 
     expect(fit.maxLines, isNull);
-    expect(laidOutHeight(fifty, fit), lessThanOrEqualTo(maxHeight));
+    expect(laidOutHeight(hundred, fit), lessThanOrEqualTo(maxHeight));
     expect(fit.fontSize, greaterThanOrEqualTo(minFontSize));
   });
 
