@@ -16,7 +16,7 @@
 **사용 언어** : Dart<br>
 **DB** : sqlite<br>
 **이미지 호스팅** : ImgBB<br>
-**상태 관리** : Provider<br>
+**상태 관리** : Riverpod<br>
 **사용 라이브러리** : google_mobile_ads, flutter_dotenv, http, kakao_flutter_sdk_share, provider, confetti, image_picker, dotted_border, sqflite 등<br>
 
 ## 어플리케이션 실행 화면
@@ -48,6 +48,6 @@
 ## 진행 영상
 [![Video Label](https://img.youtube.com/vi/YJWgZ4BQ-U8/0.jpg)](https://youtu.be/YJWgZ4BQ-U8)
 
-## 추후
-앱스토어에 배포할 예정이며 배포하기 전에 아직 못잡은 버그를 해결해야 한다.
+## 운영 현황
+스토어에 배포한 상태이며 꾸준히 운영 중이다. 추가 기능 업데이트나 자잘한 버그 수정 중
 
