@@ -9,6 +9,7 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 import '../screens/result_worldcup_screen.dart';
 import '../state/match_selection.dart';
 import 'game_item.dart';
+import '../state/animation_settings.dart';
 
 class WorldCupGame extends ConsumerStatefulWidget {
   final WorldCupModel worldCupModel;
@@ -108,8 +109,12 @@ class _WorldCupGameState extends ConsumerState<WorldCupGame> {
 
   // 항목을 선택하면 호출하는 메서드
   Future<void> showNext() async {
-    // 항목 선택하고 3초후에 다음으로 진행
-    return Future.delayed(const Duration(seconds: 3), () {
+    final option2 =
+        ref.read(selectionAnimationProvider) == SelectionAnimation.option2;
+    final duration = option2
+        ? Duration(milliseconds: maxRound == 1 ? 1800 : 900)
+        : const Duration(seconds: 3);
+    return Future.delayed(duration, () {
       if (!mounted) return;
       // 결승전이었을 경우
       if (maxRound == 1) {
@@ -154,6 +159,7 @@ class _WorldCupGameState extends ConsumerState<WorldCupGame> {
 
   @override
   Widget build(BuildContext context) {
+    final animationStyle = ref.watch(selectionAnimationProvider);
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -178,6 +184,8 @@ class _WorldCupGameState extends ConsumerState<WorldCupGame> {
                       position: SelectedItemPosition.top,
                       axis: axis,
                       matchId: _matchId,
+                      animationStyle: animationStyle,
+                      isFinal: maxRound == 1,
                     ),
                     const SizedBox(width: 16, height: 16),
                     GameItem(
@@ -186,6 +194,8 @@ class _WorldCupGameState extends ConsumerState<WorldCupGame> {
                       position: SelectedItemPosition.bottom,
                       axis: axis,
                       matchId: _matchId,
+                      animationStyle: animationStyle,
+                      isFinal: maxRound == 1,
                     ),
                   ],
                 ),

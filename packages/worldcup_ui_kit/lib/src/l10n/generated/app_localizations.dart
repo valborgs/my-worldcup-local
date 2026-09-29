@@ -2097,6 +2097,60 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'기기에 연결하지 못했습니다. 두 기기를 가까이 두고 다시 시도해주세요.'**
   String get nearbyConnectionFailed;
+
+  /// Selection animation settings: animationSettingsTitle
+  ///
+  /// In ko, this message translates to:
+  /// **'애니메이션 설정'**
+  String get animationSettingsTitle;
+
+  /// Selection animation settings: animationSettingsDescription
+  ///
+  /// In ko, this message translates to:
+  /// **'선택한 효과는 다음 게임부터 적용되며, 앱을 다시 열어도 유지됩니다.'**
+  String get animationSettingsDescription;
+
+  /// Selection animation settings: animationClassic
+  ///
+  /// In ko, this message translates to:
+  /// **'기본값'**
+  String get animationClassic;
+
+  /// Selection animation settings: animationClassicDescription
+  ///
+  /// In ko, this message translates to:
+  /// **'선택한 이미지가 중앙으로 이동하고 상대는 화면 밖으로 퇴장합니다.'**
+  String get animationClassicDescription;
+
+  /// Selection animation settings: animationOption2
+  ///
+  /// In ko, this message translates to:
+  /// **'옵션 1'**
+  String get animationOption2;
+
+  /// Selection animation settings: animationOption2Description
+  ///
+  /// In ko, this message translates to:
+  /// **'역동적인 효과 추가'**
+  String get animationOption2Description;
+
+  /// Selection animation settings: animationSaveFailed
+  ///
+  /// In ko, this message translates to:
+  /// **'설정을 저장하지 못했습니다. 다시 시도해 주세요.'**
+  String get animationSaveFailed;
+
+  /// Selection animation settings: animationAdvance
+  ///
+  /// In ko, this message translates to:
+  /// **'진출!'**
+  String get animationAdvance;
+
+  /// Selection animation settings: animationChampion
+  ///
+  /// In ko, this message translates to:
+  /// **'우승!'**
+  String get animationChampion;
 }
 
 class _AppLocalizationsDelegate

@@ -21,6 +21,7 @@ void main() {
     AppRoutes.help: null,
     AppRoutes.notices: null,
     AppRoutes.inquiry: null,
+    AppRoutes.animationSettings: null,
     AppRoutes.onboarding: null,
     AppRoutes.editor: EditorArgs(),
     AppRoutes.play: PlayArgs(worldCupId: 1, round: 8),

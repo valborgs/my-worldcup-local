@@ -13,6 +13,7 @@ abstract final class AppRoutes {
 
   static const notices = '/support/notices';
   static const inquiry = '/support/inquiry';
+  static const animationSettings = '/settings/animation';
 
   /// 첫 실행 온보딩. [help]와 화면은 같지만 끝나면 [list]로 replace 한다.
   ///
@@ -44,6 +45,7 @@ abstract final class AppRoutes {
     help,
     notices,
     inquiry,
+    animationSettings,
     onboarding,
     editor,
     play,

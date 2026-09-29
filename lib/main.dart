@@ -1,5 +1,7 @@
 import 'dart:developer';
 
+import 'package:feature_worldcup_play/feature_worldcup_play.dart';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -45,7 +47,26 @@ Future<void> main() async {
   // 위젯 트리 밖에서도 같은 의존성을 쓰기 위해 컨테이너를 직접 만든다.
   // 이 컨테이너를 그대로 UncontrolledProviderScope에 넘기므로, 부팅 중에
   // 연 DB 연결을 앱이 그대로 물려받는다.
-  final container = ProviderContainer(overrides: portOverrides);
+  final prefs = await SharedPreferences.getInstance();
+  final container = ProviderContainer(
+    overrides: [
+      ...portOverrides,
+      initialSelectionAnimationProvider.overrideWithValue(
+        prefs.getString(selectionAnimationPreferenceKey) ==
+                SelectionAnimation.option2.name
+            ? SelectionAnimation.option2
+            : SelectionAnimation.classic,
+      ),
+      saveSelectionAnimationProvider.overrideWithValue((value) async {
+        if (!await prefs.setString(
+          selectionAnimationPreferenceKey,
+          value.name,
+        )) {
+          throw StateError('Could not save animation preference');
+        }
+      }),
+    ],
+  );
 
   var enableBottomSheetSelectionPagerTransition =
       FeatureFlags.bottomSheetSelectionPagerTransitionDefault;
@@ -71,7 +92,6 @@ Future<void> main() async {
   // 구글 애드몹
   await MobileAds.instance.initialize();
 
-  SharedPreferences prefs = await SharedPreferences.getInstance();
   bool? isAlreadyShownHelp = prefs.getBool("isAlreadyShownHelp");
 
   // 앱을 시작할 때마다 샘플 월드컵 데이터를 최신 상태로 동기화한다.

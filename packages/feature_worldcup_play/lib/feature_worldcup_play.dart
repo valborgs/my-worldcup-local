@@ -5,3 +5,5 @@
 library;
 
 export 'src/screens/play_worldcup_screen.dart';
+export 'src/screens/animation_settings_screen.dart';
+export 'src/state/animation_settings.dart';

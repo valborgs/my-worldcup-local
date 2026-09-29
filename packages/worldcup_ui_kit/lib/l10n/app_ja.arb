@@ -1534,5 +1534,14 @@
   "nearbyConnectionFailed": "デバイスに接続できませんでした。2台のデバイスを近づけて、もう一度お試しください。",
   "@nearbyConnectionFailed": {
     "description": "주변 기기 연결 실패 안내"
-  }
+  },
+  "animationSettingsTitle": "アニメーション設定",
+  "animationSettingsDescription": "選んだ効果は次のゲームから適用され、アプリを再起動しても保持されます。",
+  "animationClassic": "デフォルト",
+  "animationClassicDescription": "選んだ画像が中央に移動し、相手は画面の外へ退場します。",
+  "animationOption2": "オプション 1",
+  "animationOption2Description": "ダイナミックな効果を追加",
+  "animationSaveFailed": "設定を保存できませんでした。もう一度お試しください。",
+  "animationAdvance": "進出！",
+  "animationChampion": "優勝！"
 }

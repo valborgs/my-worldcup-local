@@ -1093,4 +1093,33 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get nearbyConnectionFailed =>
       '기기에 연결하지 못했습니다. 두 기기를 가까이 두고 다시 시도해주세요.';
+
+  @override
+  String get animationSettingsTitle => '애니메이션 설정';
+
+  @override
+  String get animationSettingsDescription =>
+      '선택한 효과는 다음 게임부터 적용되며, 앱을 다시 열어도 유지됩니다.';
+
+  @override
+  String get animationClassic => '기본값';
+
+  @override
+  String get animationClassicDescription =>
+      '선택한 이미지가 중앙으로 이동하고 상대는 화면 밖으로 퇴장합니다.';
+
+  @override
+  String get animationOption2 => '옵션 1';
+
+  @override
+  String get animationOption2Description => '역동적인 효과 추가';
+
+  @override
+  String get animationSaveFailed => '설정을 저장하지 못했습니다. 다시 시도해 주세요.';
+
+  @override
+  String get animationAdvance => '진출!';
+
+  @override
+  String get animationChampion => '우승!';
 }

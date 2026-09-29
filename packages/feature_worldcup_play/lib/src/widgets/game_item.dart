@@ -8,6 +8,8 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../state/match_selection.dart';
 import 'item_description_text.dart';
+import '../state/animation_settings.dart';
+import 'selection_effect.dart';
 
 // 설명이 쓸 수 있는 항목 높이의 비율. 이 상자를 넘치면 글자 크기가 줄어든다.
 const double _maxTextHeightRatio = 0.4;
@@ -23,12 +25,16 @@ class GameItem extends ConsumerStatefulWidget {
   final SelectedItemPosition position;
   final Axis axis;
   final int matchId;
+  final SelectionAnimation animationStyle;
+  final bool isFinal;
 
   const GameItem(
     this.itemModel, {
     required this.position,
     required this.axis,
     required this.matchId,
+    this.animationStyle = SelectionAnimation.classic,
+    this.isFinal = false,
     super.key,
   });
 
@@ -41,6 +47,8 @@ class _GameItemState extends ConsumerState<GameItem>
   late AnimationController _controller;
   late Tween<Offset> _tween;
   late Animation<Offset> _animation;
+  bool _selected = false;
+  bool _active = false;
 
   void _initializeAnimation() {
     _controller = AnimationController(
@@ -58,8 +66,7 @@ class _GameItemState extends ConsumerState<GameItem>
     super.initState();
     _initializeAnimation();
 
-    // 선택 변화에 애니메이션으로만 반응한다. 위젯을 다시 그리지는 않으므로
-    // watch가 아니라 명령형 구독을 쓴다. 구독은 dispose에서 자동 해제된다.
+    // 선택 이벤트에서 효과를 시작한다. 구독은 dispose에서 자동 해제된다.
     ref.listenManual<MatchSelection>(
       matchSelectionProvider,
       (previous, next) => _onSelectionChanged(next),
@@ -73,6 +80,8 @@ class _GameItemState extends ConsumerState<GameItem>
       // 같은 승자가 다음 대결에서도 같은 key/위치로 배치되면 State가 재사용된다.
       // matchId로 실제 대결 전환을 구분해 직전 애니메이션만 초기화한다.
       _controller.reset();
+      _active = false;
+      _selected = false;
       _tween.begin = Offset.zero;
       _tween.end = Offset.zero;
     }
@@ -83,6 +92,21 @@ class _GameItemState extends ConsumerState<GameItem>
     // "선택되지 않음"으로 보여 화면 밖으로 밀려나는 애니메이션이 잘못
     // 재생된다.
     if (!selection.hasSelected) return;
+    final option2 = widget.animationStyle == SelectionAnimation.option2;
+    _controller.duration = option2
+        ? Duration(milliseconds: widget.isFinal ? 1800 : 900)
+        : const Duration(seconds: 1);
+    _animation = _tween.animate(
+      CurveTween(
+        curve: option2
+            ? const Interval(0.1, 0.5, curve: Curves.easeOutCubic)
+            : Curves.decelerate,
+      ).animate(_controller),
+    );
+    setState(() {
+      _active = true;
+      _selected = selection.position == widget.position;
+    });
 
     // position 기준 부호: top(위/좌) 방향이 양수, bottom(아래/우) 방향이 음수
     final sign = (widget.position == SelectedItemPosition.top) ? 1.0 : -1.0;
@@ -119,68 +143,77 @@ class _GameItemState extends ConsumerState<GameItem>
                   .select(widget.position, widget.itemModel);
             }
           },
-          child: Container(
-            color: Colors.black,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final shortestSide = constraints.biggest.shortestSide;
-                final fontSize = (shortestSide * 0.06).clamp(18.0, 34.0);
-                final bottomInset = shortestSide * 0.08;
-                // 설명이 이미지를 다 덮지 않도록 항목 높이의 일부만 내준다.
-                final maxTextHeight =
-                    constraints.maxHeight * _maxTextHeightRatio;
-                // BoxFit.contain 기준으로 가로/세로 중 어느 쪽이 제약이 될지 알 수 없으므로
-                // 박스의 긴 변을 기준으로 캐시 크기를 잡아 화질 저하 없이 상한만 둔다.
-                final cacheDimension =
-                    (constraints.biggest.longestSide *
-                            MediaQuery.of(context).devicePixelRatio)
-                        .round();
+          child: SelectionEffect(
+            animation: _controller,
+            enabled:
+                _active && widget.animationStyle == SelectionAnimation.option2,
+            winner: _selected,
+            isFinal: widget.isFinal,
+            child: Container(
+              color: Colors.black,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final shortestSide = constraints.biggest.shortestSide;
+                  final fontSize = (shortestSide * 0.06).clamp(18.0, 34.0);
+                  final bottomInset = shortestSide * 0.08;
+                  // 설명이 이미지를 다 덮지 않도록 항목 높이의 일부만 내준다.
+                  final maxTextHeight =
+                      constraints.maxHeight * _maxTextHeightRatio;
+                  // BoxFit.contain 기준으로 가로/세로 중 어느 쪽이 제약이 될지 알 수 없으므로
+                  // 박스의 긴 변을 기준으로 캐시 크기를 잡아 화질 저하 없이 상한만 둔다.
+                  final cacheDimension =
+                      (constraints.biggest.longestSide *
+                              MediaQuery.of(context).devicePixelRatio)
+                          .round();
 
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    widget.itemModel.worldCupIdx < 0
-                        ? Image.asset(
-                            widget.itemModel.imagePath,
-                            fit: BoxFit.contain,
-                            cacheWidth: cacheDimension,
-                          )
-                        : Image.file(
-                            File(widget.itemModel.imagePath),
-                            fit: BoxFit.contain,
-                            cacheWidth: cacheDimension,
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      widget.itemModel.worldCupIdx < 0
+                          ? Image.asset(
+                              widget.itemModel.imagePath,
+                              fit: BoxFit.contain,
+                              cacheWidth: cacheDimension,
+                            )
+                          : Image.file(
+                              File(widget.itemModel.imagePath),
+                              fit: BoxFit.contain,
+                              cacheWidth: cacheDimension,
+                            ),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            bottom: bottomInset,
+                            left: 12,
+                            right: 12,
                           ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          bottom: bottomInset,
-                          left: 12,
-                          right: 12,
-                        ),
-                        child: ItemDescriptionText(
-                          AppLocalizations.of(context).worldCupItemInfo(
-                            widget.itemModel.worldCupIdx,
-                            widget.itemModel.imagePath,
-                            widget.itemModel.imageInfo,
+                          child: ItemDescriptionText(
+                            AppLocalizations.of(context).worldCupItemInfo(
+                              widget.itemModel.worldCupIdx,
+                              widget.itemModel.imagePath,
+                              widget.itemModel.imageInfo,
+                            ),
+                            maxWidth: constraints.maxWidth - 24,
+                            maxHeight: maxTextHeight,
+                            minFontSize: _minDescriptionFontSize,
+                            style: TextStyle(
+                              fontSize: fontSize,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              backgroundColor: Colors.grey.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                            semanticsLabel: AppLocalizations.of(context)
+                                .playItemSemantics,
                           ),
-                          maxWidth: constraints.maxWidth - 24,
-                          maxHeight: maxTextHeight,
-                          minFontSize: _minDescriptionFontSize,
-                          style: TextStyle(
-                            fontSize: fontSize,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            backgroundColor: Colors.grey.withValues(alpha: 0.5),
-                          ),
-                          semanticsLabel: AppLocalizations.of(context)
-                              .playItemSemantics,
                         ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         ),
