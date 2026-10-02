@@ -11,14 +11,21 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 import 'package:worldcup_core/worldcup_core.dart';
 
+import '../state/match_history.dart';
+import '../widgets/match_history_dialog.dart';
+
 class ResultWorldCupScreen extends ConsumerStatefulWidget {
   final WorldCupModel worldCupModel;
   final WorldCupItemModel winnerModel;
   final int round;
+
+  /// 이 우승까지의 선택 과정. 진행 기록 다이얼로그에 쓴다.
+  final MatchHistory history;
   const ResultWorldCupScreen(
     this.worldCupModel,
     this.winnerModel,
     this.round, {
+    required this.history,
     super.key,
   });
 
@@ -253,6 +260,14 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const Padding(padding: EdgeInsets.only(top: 10)),
+                  // 진행 기록 버튼
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        showMatchHistoryDialog(context, widget.history),
+                    icon: const Icon(Icons.account_tree_outlined),
+                    label: Text(AppLocalizations.of(context).resultHistory),
                   ),
                   // 팡파레 효과
                   Container(

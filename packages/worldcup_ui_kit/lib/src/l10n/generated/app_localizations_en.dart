@@ -1203,4 +1203,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get animationChampion => 'Champion!';
+
+  @override
+  String get resultHistory => 'Match history';
+
+  @override
+  String get resultHistoryBracketView => 'Bracket';
+
+  @override
+  String get resultHistoryListView => 'List';
+
+  @override
+  String get resultHistoryFinal => 'Final';
+
+  @override
+  String resultHistoryStage(int round) {
+    return 'Round of $round';
+  }
+
+  @override
+  String resultHistoryGroup(String group) {
+    return 'Group $group';
+  }
+
+  @override
+  String get resultHistoryVersus => 'vs';
+
+  @override
+  String get resultHistoryChampion => 'Champion';
+
+  @override
+  String get resultHistoryAdvanced => 'Advanced';
+
+  @override
+  String get resultHistoryEliminated => 'Eliminated';
 }

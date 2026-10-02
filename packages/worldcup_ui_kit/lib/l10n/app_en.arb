@@ -1543,5 +1543,23 @@
   "animationOption2Description": "Adds dynamic effects",
   "animationSaveFailed": "Could not save your choice. Please try again.",
   "animationAdvance": "Advances!",
-  "animationChampion": "Champion!"
+  "animationChampion": "Champion!",
+  "resultHistory": "Match history",
+  "resultHistoryBracketView": "Bracket",
+  "resultHistoryListView": "List",
+  "resultHistoryFinal": "Final",
+  "resultHistoryStage": "Round of {round}",
+  "@resultHistoryStage": {
+    "description": "진행 기록 목록에서 한 '강'의 제목",
+    "placeholders": { "round": { "type": "int", "example": "8" } }
+  },
+  "resultHistoryGroup": "Group {group}",
+  "@resultHistoryGroup": {
+    "description": "한 '강' 안에서 대결을 구분하는 조 이름",
+    "placeholders": { "group": { "type": "String", "example": "A" } }
+  },
+  "resultHistoryVersus": "vs",
+  "resultHistoryChampion": "Champion",
+  "resultHistoryAdvanced": "Advanced",
+  "resultHistoryEliminated": "Eliminated"
 }

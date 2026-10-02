@@ -1552,5 +1552,47 @@
   "@animationOption2Description": {"description": "Selection animation settings: animationOption2Description"},
   "@animationSaveFailed": {"description": "Selection animation settings: animationSaveFailed"},
   "@animationAdvance": {"description": "Selection animation settings: animationAdvance"},
-  "@animationChampion": {"description": "Selection animation settings: animationChampion"}
+  "@animationChampion": {"description": "Selection animation settings: animationChampion"},
+  "resultHistory": "진행 기록",
+  "@resultHistory": {
+    "description": "우승 화면의 진행 기록 버튼과 진행 기록 다이얼로그 제목"
+  },
+  "resultHistoryBracketView": "대진표",
+  "@resultHistoryBracketView": {
+    "description": "진행 기록을 대진표(트리)로 보는 토글 항목"
+  },
+  "resultHistoryListView": "목록",
+  "@resultHistoryListView": {
+    "description": "진행 기록을 대결 목록으로 보는 토글 항목"
+  },
+  "resultHistoryFinal": "결승전",
+  "@resultHistoryFinal": {
+    "description": "진행 기록 목록에서 결승 대결의 제목"
+  },
+  "resultHistoryStage": "{round}강",
+  "@resultHistoryStage": {
+    "description": "진행 기록 목록에서 한 '강'의 제목",
+    "placeholders": { "round": { "type": "int", "example": "8" } }
+  },
+  "resultHistoryGroup": "{group}조",
+  "@resultHistoryGroup": {
+    "description": "한 '강' 안에서 대결을 구분하는 조 이름",
+    "placeholders": { "group": { "type": "String", "example": "A" } }
+  },
+  "resultHistoryVersus": "vs",
+  "@resultHistoryVersus": {
+    "description": "진행 기록에서 대결한 두 항목 사이의 구분 문구"
+  },
+  "resultHistoryChampion": "우승",
+  "@resultHistoryChampion": {
+    "description": "진행 기록에서 결승을 이긴 항목의 결과"
+  },
+  "resultHistoryAdvanced": "진출",
+  "@resultHistoryAdvanced": {
+    "description": "진행 기록에서 대결을 이겨 다음 강으로 올라간 항목의 결과"
+  },
+  "resultHistoryEliminated": "탈락",
+  "@resultHistoryEliminated": {
+    "description": "진행 기록에서 대결에 져 탈락한 항목의 결과"
+  }
 }

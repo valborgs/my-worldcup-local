@@ -1122,4 +1122,38 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get animationChampion => '우승!';
+
+  @override
+  String get resultHistory => '진행 기록';
+
+  @override
+  String get resultHistoryBracketView => '대진표';
+
+  @override
+  String get resultHistoryListView => '목록';
+
+  @override
+  String get resultHistoryFinal => '결승전';
+
+  @override
+  String resultHistoryStage(int round) {
+    return '$round강';
+  }
+
+  @override
+  String resultHistoryGroup(String group) {
+    return '$group조';
+  }
+
+  @override
+  String get resultHistoryVersus => 'vs';
+
+  @override
+  String get resultHistoryChampion => '우승';
+
+  @override
+  String get resultHistoryAdvanced => '진출';
+
+  @override
+  String get resultHistoryEliminated => '탈락';
 }
