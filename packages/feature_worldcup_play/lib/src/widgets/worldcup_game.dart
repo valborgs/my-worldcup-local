@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:worldcup_domain/worldcup_domain.dart';
 
 import '../screens/result_worldcup_screen.dart';
+import '../state/match_history.dart';
 import '../state/match_selection.dart';
 import 'game_item.dart';
 import '../state/animation_settings.dart';
@@ -42,6 +43,8 @@ class _WorldCupGameState extends ConsumerState<WorldCupGame> {
   int maxRound = -1;
   int _matchId = 0;
   bool _isTransitioning = false;
+  // 결과 화면의 진행 기록에 쓸, 지금까지 치른 대결들
+  final List<MatchRecord> _history = [];
 
   // 위에 있는 선택 항목
   late WorldCupItemModel topItem;
@@ -88,6 +91,15 @@ class _WorldCupGameState extends ConsumerState<WorldCupGame> {
     if (!selection.hasSelected || item == null || _isTransitioning) return;
     setState(() => _isTransitioning = true);
     nextList.add(item);
+    _history.add(
+      MatchRecord(
+        stage: maxRound * 2,
+        order: round,
+        first: topItem,
+        second: bottomItem,
+        winner: item,
+      ),
+    );
     showNext();
   }
 
@@ -133,6 +145,7 @@ class _WorldCupGameState extends ConsumerState<WorldCupGame> {
               widget.worldCupModel,
               winnerModel,
               widget.selectedRound,
+              history: MatchHistory(_history),
             ),
           ),
         );

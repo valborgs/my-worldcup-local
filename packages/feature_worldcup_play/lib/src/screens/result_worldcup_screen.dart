@@ -11,14 +11,21 @@ import 'package:worldcup_domain/worldcup_domain.dart';
 import 'package:worldcup_ui_kit/worldcup_ui_kit.dart';
 import 'package:worldcup_core/worldcup_core.dart';
 
+import '../state/match_history.dart';
+import '../widgets/match_history_dialog.dart';
+
 class ResultWorldCupScreen extends ConsumerStatefulWidget {
   final WorldCupModel worldCupModel;
   final WorldCupItemModel winnerModel;
   final int round;
+
+  /// 이 우승까지의 선택 과정. 진행 기록 다이얼로그에 쓴다.
+  final MatchHistory history;
   const ResultWorldCupScreen(
     this.worldCupModel,
     this.winnerModel,
     this.round, {
+    required this.history,
     super.key,
   });
 
@@ -253,6 +260,38 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const Padding(padding: EdgeInsets.only(top: 10)),
+                  // 진행 기록 버튼
+                  ElevatedButton(
+                    onPressed: () =>
+                        showMatchHistoryDialog(context, widget.history),
+                    style: const ButtonStyle(
+                      backgroundColor: WidgetStatePropertyAll(
+                        Colors.lightGreen,
+                      ),
+                      shape: WidgetStatePropertyAll(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(5.0)),
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      // Column 바로 아래라 폭을 정하지 않으면 화면 끝까지 늘어난다.
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.account_tree_outlined,
+                          color: Colors.black87,
+                        ),
+                        const Padding(padding: EdgeInsets.only(right: 10)),
+                        Text(
+                          AppLocalizations.of(context).resultHistory,
+                          // 연두색 위의 흰 글자는 대비가 낮아 잘 읽히지 않는다.
+                          style: const TextStyle(color: Colors.black87),
+                        ),
+                      ],
+                    ),
                   ),
                   // 팡파레 효과
                   Container(

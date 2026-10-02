@@ -1125,4 +1125,38 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get animationChampion => '優勝！';
+
+  @override
+  String get resultHistory => '対戦記録';
+
+  @override
+  String get resultHistoryBracketView => 'トーナメント表';
+
+  @override
+  String get resultHistoryListView => 'リスト';
+
+  @override
+  String get resultHistoryFinal => '決勝戦';
+
+  @override
+  String resultHistoryStage(int round) {
+    return 'ベスト$round';
+  }
+
+  @override
+  String resultHistoryGroup(String group) {
+    return '$group組';
+  }
+
+  @override
+  String get resultHistoryVersus => 'vs';
+
+  @override
+  String get resultHistoryChampion => '優勝';
+
+  @override
+  String get resultHistoryAdvanced => '進出';
+
+  @override
+  String get resultHistoryEliminated => '敗退';
 }

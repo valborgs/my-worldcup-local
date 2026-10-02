@@ -1543,5 +1543,23 @@
   "animationOption2Description": "ダイナミックな効果を追加",
   "animationSaveFailed": "設定を保存できませんでした。もう一度お試しください。",
   "animationAdvance": "進出！",
-  "animationChampion": "優勝！"
+  "animationChampion": "優勝！",
+  "resultHistory": "対戦記録",
+  "resultHistoryBracketView": "トーナメント表",
+  "resultHistoryListView": "リスト",
+  "resultHistoryFinal": "決勝戦",
+  "resultHistoryStage": "ベスト{round}",
+  "@resultHistoryStage": {
+    "description": "진행 기록 목록에서 한 '강'의 제목",
+    "placeholders": { "round": { "type": "int", "example": "8" } }
+  },
+  "resultHistoryGroup": "{group}組",
+  "@resultHistoryGroup": {
+    "description": "한 '강' 안에서 대결을 구분하는 조 이름",
+    "placeholders": { "group": { "type": "String", "example": "A" } }
+  },
+  "resultHistoryVersus": "vs",
+  "resultHistoryChampion": "優勝",
+  "resultHistoryAdvanced": "進出",
+  "resultHistoryEliminated": "敗退"
 }

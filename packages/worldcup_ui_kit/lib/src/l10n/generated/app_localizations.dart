@@ -2151,6 +2151,66 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'우승!'**
   String get animationChampion;
+
+  /// 우승 화면의 진행 기록 버튼과 진행 기록 다이얼로그 제목
+  ///
+  /// In ko, this message translates to:
+  /// **'진행 기록'**
+  String get resultHistory;
+
+  /// 진행 기록을 대진표(트리)로 보는 토글 항목
+  ///
+  /// In ko, this message translates to:
+  /// **'대진표'**
+  String get resultHistoryBracketView;
+
+  /// 진행 기록을 대결 목록으로 보는 토글 항목
+  ///
+  /// In ko, this message translates to:
+  /// **'목록'**
+  String get resultHistoryListView;
+
+  /// 진행 기록 목록에서 결승 대결의 제목
+  ///
+  /// In ko, this message translates to:
+  /// **'결승전'**
+  String get resultHistoryFinal;
+
+  /// 진행 기록 목록에서 한 '강'의 제목
+  ///
+  /// In ko, this message translates to:
+  /// **'{round}강'**
+  String resultHistoryStage(int round);
+
+  /// 한 '강' 안에서 대결을 구분하는 조 이름
+  ///
+  /// In ko, this message translates to:
+  /// **'{group}조'**
+  String resultHistoryGroup(String group);
+
+  /// 진행 기록에서 대결한 두 항목 사이의 구분 문구
+  ///
+  /// In ko, this message translates to:
+  /// **'vs'**
+  String get resultHistoryVersus;
+
+  /// 진행 기록에서 결승을 이긴 항목의 결과
+  ///
+  /// In ko, this message translates to:
+  /// **'우승'**
+  String get resultHistoryChampion;
+
+  /// 진행 기록에서 대결을 이겨 다음 강으로 올라간 항목의 결과
+  ///
+  /// In ko, this message translates to:
+  /// **'진출'**
+  String get resultHistoryAdvanced;
+
+  /// 진행 기록에서 대결에 져 탈락한 항목의 결과
+  ///
+  /// In ko, this message translates to:
+  /// **'탈락'**
+  String get resultHistoryEliminated;
 }
 
 class _AppLocalizationsDelegate
