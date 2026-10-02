@@ -52,10 +52,9 @@ Future<void> main() async {
     overrides: [
       ...portOverrides,
       initialSelectionAnimationProvider.overrideWithValue(
-        prefs.getString(selectionAnimationPreferenceKey) ==
-                SelectionAnimation.option2.name
-            ? SelectionAnimation.option2
-            : SelectionAnimation.classic,
+        selectionAnimationFromName(
+          prefs.getString(selectionAnimationPreferenceKey),
+        ),
       ),
       saveSelectionAnimationProvider.overrideWithValue((value) async {
         if (!await prefs.setString(

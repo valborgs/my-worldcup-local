@@ -2122,17 +2122,53 @@ abstract class AppLocalizations {
   /// **'선택한 이미지가 중앙으로 이동하고 상대는 화면 밖으로 퇴장합니다.'**
   String get animationClassicDescription;
 
-  /// Selection animation settings: animationOption2
+  /// Selection animation settings: animationOption1
   ///
   /// In ko, this message translates to:
   /// **'옵션 1'**
+  String get animationOption1;
+
+  /// Selection animation settings: animationOption1Description
+  ///
+  /// In ko, this message translates to:
+  /// **'역동적인 효과 추가'**
+  String get animationOption1Description;
+
+  /// Selection animation settings: animationOption2
+  ///
+  /// In ko, this message translates to:
+  /// **'옵션 2'**
   String get animationOption2;
 
   /// Selection animation settings: animationOption2Description
   ///
   /// In ko, this message translates to:
-  /// **'역동적인 효과 추가'**
+  /// **'효과를 최소화해 다음 대결로 바로 넘어갑니다.'**
   String get animationOption2Description;
+
+  /// Selection animation settings: animationOption3
+  ///
+  /// In ko, this message translates to:
+  /// **'옵션 3'**
+  String get animationOption3;
+
+  /// Selection animation settings: animationOption3Description
+  ///
+  /// In ko, this message translates to:
+  /// **'탈락한 이미지가 기울며 아래로 떨어집니다.'**
+  String get animationOption3Description;
+
+  /// Selection animation settings: animationOption4
+  ///
+  /// In ko, this message translates to:
+  /// **'옵션 4'**
+  String get animationOption4;
+
+  /// Selection animation settings: animationOption4Description
+  ///
+  /// In ko, this message translates to:
+  /// **'상대는 흑백으로 사라지고 선택한 이미지가 중앙에서 확대됩니다.'**
+  String get animationOption4Description;
 
   /// Selection animation settings: animationSaveFailed
   ///

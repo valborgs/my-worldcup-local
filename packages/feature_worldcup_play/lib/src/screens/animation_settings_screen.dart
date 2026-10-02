@@ -40,34 +40,63 @@ class _AnimationSettingsScreenState
     return Scaffold(
       appBar: AppBar(title: Text(strings.animationSettingsTitle)),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+        child: Column(
           children: [
-            Text(strings.animationSettingsDescription),
-            const SizedBox(height: 16),
-            for (final option in SelectionAnimation.values)
-              Card(
-                child: ListTile(
-                  enabled: !_saving,
-                  selected: selected == option,
-                  contentPadding: const EdgeInsets.all(16),
-                  leading: Icon(
-                    selected == option
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_off,
-                  ),
-                  title: Text(
-                    option == SelectionAnimation.classic
-                        ? strings.animationClassic
-                        : strings.animationOption2,
-                  ),
-                  subtitle: option == SelectionAnimation.classic
-                      ? null
-                      : Text(strings.animationOption2Description),
-                  onTap: () => _select(option),
-                ),
+            // 옵션이 화면보다 길어져도 보이도록 목록 밖, 고정된 자리에 둔다.
+            SizedBox(
+              height: 4,
+              child: _saving ? const LinearProgressIndicator() : null,
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Text(strings.animationSettingsDescription),
+                  const SizedBox(height: 16),
+                  for (final option in SelectionAnimation.values)
+                    Card(
+                      child: ListTile(
+                        enabled: !_saving,
+                        selected: selected == option,
+                        contentPadding: const EdgeInsets.all(16),
+                        leading: Icon(
+                          selected == option
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_off,
+                        ),
+                        title: Text(switch (option) {
+                          SelectionAnimation.classic =>
+                            strings.animationClassic,
+                          SelectionAnimation.option1 =>
+                            strings.animationOption1,
+                          SelectionAnimation.option2 =>
+                            strings.animationOption2,
+                          SelectionAnimation.option3 =>
+                            strings.animationOption3,
+                          SelectionAnimation.option4 =>
+                            strings.animationOption4,
+                        }),
+                        subtitle: switch (option) {
+                          SelectionAnimation.classic => null,
+                          SelectionAnimation.option1 => Text(
+                            strings.animationOption1Description,
+                          ),
+                          SelectionAnimation.option2 => Text(
+                            strings.animationOption2Description,
+                          ),
+                          SelectionAnimation.option3 => Text(
+                            strings.animationOption3Description,
+                          ),
+                          SelectionAnimation.option4 => Text(
+                            strings.animationOption4Description,
+                          ),
+                        },
+                        onTap: () => _select(option),
+                      ),
+                    ),
+                ],
               ),
-            if (_saving) const LinearProgressIndicator(),
+            ),
           ],
         ),
       ),
