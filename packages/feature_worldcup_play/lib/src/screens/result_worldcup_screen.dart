@@ -263,11 +263,35 @@ class _ResultWorldCupScreen extends ConsumerState<ResultWorldCupScreen> {
                   ),
                   const Padding(padding: EdgeInsets.only(top: 10)),
                   // 진행 기록 버튼
-                  OutlinedButton.icon(
+                  ElevatedButton(
                     onPressed: () =>
                         showMatchHistoryDialog(context, widget.history),
-                    icon: const Icon(Icons.account_tree_outlined),
-                    label: Text(AppLocalizations.of(context).resultHistory),
+                    style: const ButtonStyle(
+                      backgroundColor: WidgetStatePropertyAll(
+                        Colors.lightGreen,
+                      ),
+                      shape: WidgetStatePropertyAll(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(5.0)),
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      // Column 바로 아래라 폭을 정하지 않으면 화면 끝까지 늘어난다.
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.account_tree_outlined,
+                          color: Colors.black87,
+                        ),
+                        const Padding(padding: EdgeInsets.only(right: 10)),
+                        Text(
+                          AppLocalizations.of(context).resultHistory,
+                          // 연두색 위의 흰 글자는 대비가 낮아 잘 읽히지 않는다.
+                          style: const TextStyle(color: Colors.black87),
+                        ),
+                      ],
+                    ),
                   ),
                   // 팡파레 효과
                   Container(
