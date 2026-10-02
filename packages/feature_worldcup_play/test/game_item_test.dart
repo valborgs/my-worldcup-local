@@ -226,12 +226,8 @@ void main() {
         await tester.tap(bottomFinder, warnIfMissed: false);
         await tester.pump();
 
-        // 3초 지연 후 다음 대결(setGame)로 넘어간다.
-        await tester.pump(
-          Duration(
-            milliseconds: style == SelectionAnimation.classic ? 3000 : 900,
-          ),
-        );
+        // 스타일별 대기 시간이 지나면 다음 대결(setGame)로 넘어간다.
+        await tester.pump(style.matchDelay(isFinal: false));
 
         expect(
           tester.widget<IgnorePointer>(inputBlockerFinder).ignoring,

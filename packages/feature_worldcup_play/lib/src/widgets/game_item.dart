@@ -92,33 +92,49 @@ class _GameItemState extends ConsumerState<GameItem>
     // "선택되지 않음"으로 보여 화면 밖으로 밀려나는 애니메이션이 잘못
     // 재생된다.
     if (!selection.hasSelected) return;
-    final option2 = widget.animationStyle == SelectionAnimation.option2;
-    _controller.duration = option2
-        ? Duration(milliseconds: widget.isFinal ? 1800 : 900)
-        : const Duration(seconds: 1);
+    final style = widget.animationStyle;
+    final won = selection.position == widget.position;
+    _controller.duration = style.effectDuration(isFinal: widget.isFinal);
     _animation = _tween.animate(
       CurveTween(
-        curve: option2
-            ? const Interval(0.1, 0.5, curve: Curves.easeOutCubic)
-            : Curves.decelerate,
+        curve: switch (style) {
+          SelectionAnimation.classic => Curves.decelerate,
+          SelectionAnimation.option1 => const Interval(
+            0.1,
+            0.5,
+            curve: Curves.easeOutCubic,
+          ),
+          SelectionAnimation.option2 => Curves.linear,
+          SelectionAnimation.option3 => SelectionEffect.option3Fall,
+          SelectionAnimation.option4 => SelectionEffect.option4Move,
+        },
       ).animate(_controller),
     );
     setState(() {
       _active = true;
-      _selected = selection.position == widget.position;
+      _selected = won;
     });
 
+    _tween.end = _slideEnd(style, won);
+    _controller.forward();
+  }
+
+  // 선택 효과가 끝났을 때 항목이 가 있을 위치(자기 크기 대비 비율).
+  Offset _slideEnd(SelectionAnimation style, bool won) {
     // position 기준 부호: top(위/좌) 방향이 양수, bottom(아래/우) 방향이 음수
     final sign = (widget.position == SelectedItemPosition.top) ? 1.0 : -1.0;
-    // 자신이 선택되었으면 살짝 안쪽으로, 아니면 화면 밖으로 밀려난다.
-    final value = (selection.position == widget.position)
-        ? 0.5 * sign
-        : -1.1 * sign;
+    Offset along(double value) =>
+        (widget.axis == Axis.vertical) ? Offset(0, value) : Offset(value, 0);
 
-    _tween.end = (widget.axis == Axis.vertical)
-        ? Offset(0, value)
-        : Offset(value, 0);
-    _controller.forward();
+    return switch (style) {
+      // 자신이 선택되었으면 살짝 안쪽으로, 아니면 화면 밖으로 밀려난다.
+      SelectionAnimation.classic ||
+      SelectionAnimation.option1 => along(won ? 0.5 * sign : -1.1 * sign),
+      SelectionAnimation.option2 => Offset.zero,
+      // 탈락한 항목은 배치 방향과 상관없이 화면 아래로 떨어진다.
+      SelectionAnimation.option3 => won ? Offset.zero : const Offset(0, 1.2),
+      SelectionAnimation.option4 => won ? along(0.5 * sign) : Offset.zero,
+    };
   }
 
   @override
@@ -145,8 +161,9 @@ class _GameItemState extends ConsumerState<GameItem>
           },
           child: SelectionEffect(
             animation: _controller,
+            style: widget.animationStyle,
             enabled:
-                _active && widget.animationStyle == SelectionAnimation.option2,
+                _active && widget.animationStyle != SelectionAnimation.classic,
             winner: _selected,
             isFinal: widget.isFinal,
             child: Container(
