@@ -55,6 +55,41 @@ Widget host(MatchHistory history, {double textScale = 1}) {
   );
 }
 
+final bracketAvatars = find.descendant(
+  of: find.byType(MatchHistoryBracket),
+  matching: find.byType(MatchHistoryAvatar),
+);
+
+/// 대진표의 모든 칸이 대진표 영역 안에 들어와 있는지.
+bool wholeBracketVisible(WidgetTester tester) {
+  // 변환 행렬의 소수점 오차만큼 여유를 둔다.
+  final viewport = tester.getRect(find.byType(MatchHistoryBracket)).inflate(1);
+  return bracketAvatars.evaluate().every((element) {
+    final rect = tester.getRect(find.byWidget(element.widget));
+    return viewport.contains(rect.topLeft) &&
+        viewport.contains(rect.bottomRight);
+  });
+}
+
+/// 대진표 가운데에서 두 손가락을 끝까지 오므린다.
+Future<void> pinchIn(WidgetTester tester) async {
+  final center = tester.getCenter(find.byType(MatchHistoryBracket));
+  const start = 150.0;
+  const end = 3.0;
+  final left = await tester.startGesture(center - const Offset(start, 0));
+  final right = await tester.startGesture(center + const Offset(start, 0));
+  const steps = 20;
+  for (var i = 1; i <= steps; i++) {
+    final distance = start + (end - start) * i / steps;
+    await left.moveTo(center - Offset(distance, 0));
+    await right.moveTo(center + Offset(distance, 0));
+    await tester.pump();
+  }
+  await left.up();
+  await right.up();
+  await tester.pumpAndSettle();
+}
+
 void main() {
   final binding = TestWidgetsFlutterBinding.ensureInitialized();
   void useLocale(String code) {
@@ -120,6 +155,117 @@ void main() {
       scrollable: find.byType(Scrollable),
     );
     expect(find.text('16강'), findsOneWidget);
+  });
+
+  // 대진표는 가로로만 길어서, 축소 한계를 세로 길이로 잡으면 가로가 다
+  // 들어오기 전에 축소가 멈춘다.
+  for (final count in [8, 16, 32]) {
+    testWidgets('$count강 대진표를 오므리면 전체가 화면에 들어올 때까지 축소된다', (tester) async {
+      // 세로로 든 폰. 8강부터 대진표가 화면 폭을 넘는다.
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(host(playedHistory(count)));
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      expect(wholeBracketVisible(tester), isFalse);
+
+      await pinchIn(tester);
+
+      expect(wholeBracketVisible(tester), isTrue);
+    });
+  }
+
+  testWidgets('회전 버튼은 대진표 오른쪽 위에 있고 대진표를 눕혔다 세운다', (tester) async {
+    await tester.pumpWidget(host(playedHistory(16)));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    final rotate = find.byTooltip('대진표 회전');
+    final bracket = tester.getRect(find.byType(MatchHistoryBracket));
+    final button = tester.getRect(rotate);
+    expect(bracket.contains(button.topLeft), isTrue);
+    expect(bracket.contains(button.bottomRight), isTrue);
+    expect(button.center.dx, greaterThan(bracket.center.dx));
+    expect(button.center.dy, lessThan(bracket.center.dy));
+
+    // 모든 칸을 감싸는 영역. 화면 밖에 있는 칸도 포함한다.
+    Rect extent() => bracketAvatars
+        .evaluate()
+        .map((element) => tester.getRect(find.byWidget(element.widget)))
+        .reduce((a, b) => a.expandToInclude(b));
+    Rect champion() => tester.getRect(find.text('우승'));
+    Iterable<Rect> eliminated() => find
+        .text('탈락')
+        .evaluate()
+        .map((element) => tester.getRect(find.byWidget(element.widget)));
+
+    // 세운 대진표: 가로로 길고 우승 항목이 맨 위에 있다.
+    expect(extent().width, greaterThan(extent().height));
+    expect(eliminated().every((rect) => rect.top > champion().top), isTrue);
+
+    await tester.tap(rotate);
+    await tester.pumpAndSettle();
+
+    // 눕힌 대진표: 세로로 길고 우승 항목이 오른쪽 끝에 있으며, 처음부터 보인다.
+    expect(extent().height, greaterThan(extent().width));
+    expect(eliminated().every((rect) => rect.left < champion().left), isTrue);
+    expect(bracket.contains(champion().center), isTrue);
+    expect(bracketAvatars, findsNWidgets(31));
+
+    // 눕힌 상태에서도 전체가 들어올 때까지 축소된다.
+    expect(wholeBracketVisible(tester), isFalse);
+    await pinchIn(tester);
+    expect(wholeBracketVisible(tester), isTrue);
+
+    await tester.tap(rotate);
+    await tester.pumpAndSettle();
+    expect(extent().width, greaterThan(extent().height));
+
+    // 목록에서는 회전 버튼이 보이지 않는다.
+    await tester.tap(find.text('목록'));
+    await tester.pumpAndSettle();
+    expect(rotate.hitTestable(), findsNothing);
+  });
+
+  testWidgets('화면에 다 들어오는 대진표는 가운데에 놓이고 끌어도 밀려나지 않는다', (tester) async {
+    await tester.pumpWidget(host(playedHistory(4)));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(wholeBracketVisible(tester), isTrue);
+    final before = tester.getRect(find.text('우승'));
+    final bracket = tester.getRect(find.byType(MatchHistoryBracket));
+    expect(before.center.dx, moreOrLessEquals(bracket.center.dx, epsilon: 1));
+
+    await tester.drag(find.byType(MatchHistoryBracket), const Offset(300, 200));
+    await tester.pumpAndSettle();
+
+    expect(tester.getRect(find.text('우승')), before);
+  });
+
+  testWidgets('넓은 대진표는 끌어도 끝에서 멈춰 빈 화면이 나오지 않는다', (tester) async {
+    await tester.pumpWidget(host(playedHistory(16)));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    for (var i = 0; i < 5; i++) {
+      await tester.drag(
+        find.byType(MatchHistoryBracket),
+        const Offset(-600, 0),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    final bracket = tester.getRect(find.byType(MatchHistoryBracket));
+    final rightmost = bracketAvatars
+        .evaluate()
+        .map((element) => tester.getRect(find.byWidget(element.widget)).right)
+        .reduce((a, b) => a > b ? a : b);
+    // 마지막 칸이 화면 오른쪽 가장자리 근처에 남아 있다.
+    expect(rightmost, lessThanOrEqualTo(bracket.right));
+    expect(rightmost, greaterThan(bracket.right - 100));
   });
 
   // 넓은 대진표와 큰 글자, 긴 영어 문구에서도 칸이 넘치지 않아야 한다.

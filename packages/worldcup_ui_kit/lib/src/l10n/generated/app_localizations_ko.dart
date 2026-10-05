@@ -1152,6 +1152,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get resultHistoryListView => '목록';
 
   @override
+  String get resultHistoryRotateBracket => '대진표 회전';
+
+  @override
   String get resultHistoryFinal => '결승전';
 
   @override
