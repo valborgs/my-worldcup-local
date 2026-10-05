@@ -153,6 +153,14 @@ IDs -1019 through -1000 are reserved for disposable debug paging data and must
 not appear in the sample manifest or the sample deletion records.
 User tournaments have positive ids and are never touched by seeding.
 
+Sample deletions last for one *install*, not forever. Android Auto Backup is on
+(the manifest does not set `allowBackup`, and user tournaments rely on it), so a
+reinstall restores the whole database, deletion records included. The seeder
+keeps a marker file in `<data>/no_backup`, which is never backed up; when the
+marker is missing it treats the launch as a new install and clears the records.
+A debug build never shows this: its signature differs from the release backup,
+so the restore is rejected and the database starts empty.
+
 ## Localization
 
 Korean is the source and fallback language. Edit language-specific ARB files in
