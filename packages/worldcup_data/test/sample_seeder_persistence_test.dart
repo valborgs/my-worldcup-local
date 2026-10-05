@@ -200,6 +200,71 @@ void main() {
     expect(await SqliteWorldCupRepository(database).count(), 2);
   });
 
+  // 이슈 #44: Android 자동 백업은 재설치 때 DB를 통째로 복원하므로 삭제
+  // 기록까지 따라온다. 백업되지 않는 설치 표식이 없으면 새 설치로 본다.
+  group('reinstall with a restored backup', () {
+    late Directory noBackup;
+
+    Future<void> launch() async {
+      await database.close();
+      database = AppDatabase();
+      await SampleWorldCupSeeder(
+        database: database,
+        manifestLoader: () async => jsonEncode({
+          'worldCups': [
+            for (final id in [-1, -2])
+              {
+                'idx': id,
+                'title': 'sample $id',
+                'info': '',
+                'titleImage': image,
+                'maxRound': 4,
+                'items': [
+                  {'image': image, 'info': ''},
+                ],
+              },
+          ],
+        }),
+        noBackupDirectoryProvider: () async => noBackup,
+      ).sync();
+    }
+
+    setUp(() => noBackup = Directory('${directory.path}/no_backup'));
+
+    test('deleted samples stay deleted across restarts', () async {
+      await launch();
+      await SqliteWorldCupRepository(database).delete(-1);
+      await launch();
+      await launch();
+      expect(await SqliteWorldCupRepository(database).findById(-1), isNull);
+    });
+
+    test('deleted samples come back, user data stays', () async {
+      await launch();
+      final db = await database.database;
+      await db.insert(AppDatabase.worldCupTable, {'idx': 1, 'title': 'user'});
+      await SqliteWorldCupRepository(database).delete(-2);
+      await launch();
+
+      // 재설치: DB 파일은 백업에서 돌아오고, 백업 제외 디렉터리는 비어 있다.
+      await noBackup.delete(recursive: true);
+      await launch();
+
+      final restored = await database.database;
+      final rows = await restored.query(
+        AppDatabase.worldCupTable,
+        orderBy: 'idx',
+      );
+      expect(rows.map((row) => row['idx']), [-2, -1, 1]);
+      expect(await restored.query(AppDatabase.deletedSampleTable), isEmpty);
+
+      // 복원 뒤의 삭제는 다시 평소처럼 유지된다.
+      await SqliteWorldCupRepository(database).delete(-2);
+      await launch();
+      expect(await SqliteWorldCupRepository(database).findById(-2), isNull);
+    });
+  });
+
   test('v1 database upgrades without losing user data', () async {
     final legacy = await databaseFactory.openDatabase(
       '${directory.path}/${AppDatabase.defaultFileName}',
