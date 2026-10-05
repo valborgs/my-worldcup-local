@@ -1235,6 +1235,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resultHistoryListView => 'List';
 
   @override
+  String get resultHistoryRotateBracket => 'Rotate bracket';
+
+  @override
   String get resultHistoryFinal => 'Final';
 
   @override

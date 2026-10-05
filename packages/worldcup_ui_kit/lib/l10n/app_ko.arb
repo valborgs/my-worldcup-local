@@ -1577,6 +1577,10 @@
   "@resultHistoryListView": {
     "description": "진행 기록을 대결 목록으로 보는 토글 항목"
   },
+  "resultHistoryRotateBracket": "대진표 회전",
+  "@resultHistoryRotateBracket": {
+    "description": "대진표를 가로로 긴 배치와 세로로 긴 배치 사이에서 바꾸는 버튼의 툴팁과 접근성 라벨"
+  },
   "resultHistoryFinal": "결승전",
   "@resultHistoryFinal": {
     "description": "진행 기록 목록에서 결승 대결의 제목"

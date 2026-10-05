@@ -1154,6 +1154,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get resultHistoryListView => 'リスト';
 
   @override
+  String get resultHistoryRotateBracket => 'トーナメント表を回転';
+
+  @override
   String get resultHistoryFinal => '決勝戦';
 
   @override

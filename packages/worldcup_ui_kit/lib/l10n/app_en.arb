@@ -1553,6 +1553,7 @@
   "resultHistory": "Match history",
   "resultHistoryBracketView": "Bracket",
   "resultHistoryListView": "List",
+  "resultHistoryRotateBracket": "Rotate bracket",
   "resultHistoryFinal": "Final",
   "resultHistoryStage": "Round of {round}",
   "@resultHistoryStage": {

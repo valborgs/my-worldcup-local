@@ -1553,6 +1553,7 @@
   "resultHistory": "対戦記録",
   "resultHistoryBracketView": "トーナメント表",
   "resultHistoryListView": "リスト",
+  "resultHistoryRotateBracket": "トーナメント表を回転",
   "resultHistoryFinal": "決勝戦",
   "resultHistoryStage": "ベスト{round}",
   "@resultHistoryStage": {

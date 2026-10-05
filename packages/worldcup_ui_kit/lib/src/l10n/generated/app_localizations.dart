@@ -2206,6 +2206,12 @@ abstract class AppLocalizations {
   /// **'목록'**
   String get resultHistoryListView;
 
+  /// 대진표를 가로로 긴 배치와 세로로 긴 배치 사이에서 바꾸는 버튼의 툴팁과 접근성 라벨
+  ///
+  /// In ko, this message translates to:
+  /// **'대진표 회전'**
+  String get resultHistoryRotateBracket;
+
   /// 진행 기록 목록에서 결승 대결의 제목
   ///
   /// In ko, this message translates to:
