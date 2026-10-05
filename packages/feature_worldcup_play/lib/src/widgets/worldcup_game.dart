@@ -121,11 +121,9 @@ class _WorldCupGameState extends ConsumerState<WorldCupGame> {
 
   // 항목을 선택하면 호출하는 메서드
   Future<void> showNext() async {
-    final option2 =
-        ref.read(selectionAnimationProvider) == SelectionAnimation.option2;
-    final duration = option2
-        ? Duration(milliseconds: maxRound == 1 ? 1800 : 900)
-        : const Duration(seconds: 3);
+    final duration = ref
+        .read(selectionAnimationProvider)
+        .matchDelay(isFinal: maxRound == 1);
     return Future.delayed(duration, () {
       if (!mounted) return;
       // 결승전이었을 경우

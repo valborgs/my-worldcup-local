@@ -1109,10 +1109,29 @@ class AppLocalizationsKo extends AppLocalizations {
       '선택한 이미지가 중앙으로 이동하고 상대는 화면 밖으로 퇴장합니다.';
 
   @override
-  String get animationOption2 => '옵션 1';
+  String get animationOption1 => '옵션 1';
 
   @override
-  String get animationOption2Description => '역동적인 효과 추가';
+  String get animationOption1Description => '역동적인 효과 추가';
+
+  @override
+  String get animationOption2 => '옵션 2';
+
+  @override
+  String get animationOption2Description => '효과를 최소화해 다음 대결로 바로 넘어갑니다.';
+
+  @override
+  String get animationOption3 => '옵션 3';
+
+  @override
+  String get animationOption3Description => '탈락한 이미지가 기울며 아래로 떨어집니다.';
+
+  @override
+  String get animationOption4 => '옵션 4';
+
+  @override
+  String get animationOption4Description =>
+      '상대는 흑백으로 사라지고 선택한 이미지가 중앙에서 확대됩니다.';
 
   @override
   String get animationSaveFailed => '설정을 저장하지 못했습니다. 다시 시도해 주세요.';

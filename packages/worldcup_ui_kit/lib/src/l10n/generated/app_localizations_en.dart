@@ -1189,10 +1189,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'The selected image moves to the center while the other slides out.';
 
   @override
-  String get animationOption2 => 'Option 1';
+  String get animationOption1 => 'Option 1';
 
   @override
-  String get animationOption2Description => 'Adds dynamic effects';
+  String get animationOption1Description => 'Adds dynamic effects';
+
+  @override
+  String get animationOption2 => 'Option 2';
+
+  @override
+  String get animationOption2Description =>
+      'Keeps effects minimal and moves straight to the next match.';
+
+  @override
+  String get animationOption3 => 'Option 3';
+
+  @override
+  String get animationOption3Description =>
+      'The eliminated image tilts and drops off the screen.';
+
+  @override
+  String get animationOption4 => 'Option 4';
+
+  @override
+  String get animationOption4Description =>
+      'The other image fades to grayscale while your pick zooms in at the center.';
 
   @override
   String get animationSaveFailed =>

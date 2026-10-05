@@ -1112,10 +1112,28 @@ class AppLocalizationsJa extends AppLocalizations {
   String get animationClassicDescription => '選んだ画像が中央に移動し、相手は画面の外へ退場します。';
 
   @override
-  String get animationOption2 => 'オプション 1';
+  String get animationOption1 => 'オプション 1';
 
   @override
-  String get animationOption2Description => 'ダイナミックな効果を追加';
+  String get animationOption1Description => 'ダイナミックな効果を追加';
+
+  @override
+  String get animationOption2 => 'オプション 2';
+
+  @override
+  String get animationOption2Description => '効果を最小限にして、すぐ次の対戦に進みます。';
+
+  @override
+  String get animationOption3 => 'オプション 3';
+
+  @override
+  String get animationOption3Description => '敗退した画像が傾きながら下に落ちます。';
+
+  @override
+  String get animationOption4 => 'オプション 4';
+
+  @override
+  String get animationOption4Description => '相手は白黒になって消え、選んだ画像が中央で拡大されます。';
 
   @override
   String get animationSaveFailed => '設定を保存できませんでした。もう一度お試しください。';
